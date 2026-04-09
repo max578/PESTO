@@ -1,0 +1,43 @@
+Package: PESTO
+Type: Package
+Title: Parameter Estimation, Surrogates, and Tooling for Optimisation
+Version: 0.1.0
+Authors@R: c(
+    person("Max", "Moldovan", role = c("aut", "cre"),
+           email = "max.moldovan@adelaide.edu.au"),
+    person("Supremum Consulting Ltd", role = "cph")
+    )
+Description: High-performance parameter estimation, uncertainty quantification,
+    and inverse modelling toolkit built on modernised PEST++ algorithms.
+    Provides native R interfaces to iterative ensemble smoothers (IES),
+    Gauss-Levenberg-Marquardt (GLM) solvers, global sensitivity analysis,
+    and multi-objective optimisation under uncertainty. Includes
+    surrogate-accelerated IES via Gaussian Process and Random Fourier
+    Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen),
+    and convergence-aware adaptive ensemble sizing. Designed for
+    large-scale environmental, hydrological, and agricultural models with
+    support for highly-parameterised problems (>100,000 parameters).
+License: GPL (>= 3)
+URL: https://github.com/AAGI-AUS/PESTO
+BugReports: https://github.com/AAGI-AUS/PESTO/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+SystemRequirements: C++17
+Depends:
+    R (>= 4.1.0)
+Imports:
+    Rcpp (>= 1.0.12),
+    data.table,
+    ggplot2
+LinkingTo:
+    Rcpp,
+    RcppEigen
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    viridis,
+    microbenchmark
+VignetteBuilder: knitr
+Config/testthat/edition: 3

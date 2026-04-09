@@ -1,0 +1,35 @@
+# Compiled code
+src/*.o
+src/*.so
+src/*.dll
+src/*.rds
+src/symbols.rds
+
+# R package build artifacts
+*.tar.gz
+*.Rcheck/
+.Rproj.user/
+*.Rproj
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# R session
+.Rhistory
+.RData
+.Rdata
+.httr-oauth
+
+# Documentation build
+docs/
+inst/doc/
+Meta/
+
+# Byte-compiled
+*.pyc
+__pycache__/

@@ -1,0 +1,19 @@
+bibentry(
+  bibtype  = "Manual",
+  title    = "PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation",
+  author   = person("Max", "Moldovan"),
+  year     = "2026",
+  note     = "R package version 0.1.0",
+  url      = "https://github.com/AAGI-AUS/PESTO"
+)
+
+bibentry(
+  bibtype  = "Article",
+  title    = "PESTO: A high-performance R package for surrogate-accelerated parameter estimation and uncertainty quantification",
+  author   = c(
+    person("Max", "Moldovan")
+  ),
+  journal  = "Environmental Modelling \\& Software",
+  year     = "2026",
+  note     = "In preparation"
+)

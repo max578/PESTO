@@ -1,0 +1,293 @@
+---
+title: "Getting Started with PESTO"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with PESTO}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+## Introduction
+
+**PESTO** (Parameter ESTimation Optimised) is an R package
+that provides high-performance parameter estimation, uncertainty
+quantification, and inverse modelling capabilities. It builds on the
+modernised PEST++ algorithms developed by the USGS, bringing these
+powerful tools natively into the R ecosystem.
+
+### Key Features
+
+- **Iterative Ensemble Smoother (IES)**: Ensemble-based parameter
+  estimation that scales to 100,000+ parameters without computing
+  explicit Jacobians
+- **Gauss-Levenberg-Marquardt (GLM)**: Deterministic gradient-based
+  estimation with SVD regularisation
+- **Global Sensitivity Analysis**: Morris and Sobol methods
+- **Parametric Sweep**: Embarrassingly parallel model evaluations
+- **Publication-quality diagnostics**: ggplot2-based visualisations
+
+## Installation
+
+```{r install, eval = FALSE}
+# From GitHub (development version):
+remotes::install_github("supremum-consulting/PESTO")
+
+# PEST++ binaries must be on your PATH or bundled with the package
+```
+
+## Quick Start: Creating a Model Scenario
+
+Rather than requiring a pre-existing PEST control file, PESTO lets you
+define problems programmatically:
+
+```{r create-scenario}
+library(PESTO)
+library(data.table)
+
+# Define parameters
+parameters <- data.table(
+  parnme    = c("hk1", "hk2", "hk3", "ss1", "rch1"),
+  partrans  = c("log", "log", "log", "log", "fixed"),
+  parchglim = "factor",
+  parval1   = c(10, 5, 1, 1e-4, 1e-3),
+  parlbnd   = c(0.1, 0.01, 0.001, 1e-7, 1e-5),
+  parubnd   = c(1000, 500, 100, 0.01, 0.1),
+  pargp     = c("hk", "hk", "hk", "ss", "rch")
+)
+
+# Define observations
+observations <- data.table(
+  obsnme = paste0("h", 1:10),
+  obsval = c(25.3, 24.1, 22.8, 21.5, 20.2,
+             19.0, 17.8, 16.5, 15.3, 14.0),
+  weight = rep(1.0, 10),
+  obgnme = "heads"
+)
+
+# Create the scenario
+pst <- create_pest_scenario(
+  parameters   = parameters,
+  observations = observations,
+  model_command = "python run_groundwater.py"
+)
+
+print(pst)
+```
+
+## Core Computational Kernel
+
+PESTO provides the `ensemble_solution()` function — a high-performance
+C++ implementation of the IES update equation. This is the computational
+heart of the package:
+
+```{r ensemble-kernel}
+set.seed(42)
+npar  <- 50
+nobs  <- 100
+nreal <- 30
+
+# Generate synthetic ensemble differences
+par_diff  <- matrix(rnorm(npar * nreal, sd = 0.1), npar, nreal)
+obs_diff  <- matrix(rnorm(nobs * nreal, sd = 1.0), nobs, nreal)
+obs_resid <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+par_resid <- matrix(rnorm(npar * nreal, sd = 0.1), npar, nreal)
+weights   <- rep(1.0, nobs)
+parcov_inv <- rep(1.0, npar)
+Am <- matrix(rnorm(npar * (nreal - 1)), npar, nreal - 1)
+
+# Run the ensemble update
+upgrade <- ensemble_solution(
+  par_diff    = par_diff,
+  obs_diff    = obs_diff,
+  obs_resid   = obs_resid,
+  par_resid   = par_resid,
+  weights     = weights,
+  parcov_inv  = parcov_inv,
+  Am          = Am,
+  cur_lam     = 1.0
+)
+
+cat("Upgrade matrix dimensions:", dim(upgrade), "\n")
+cat("Mean absolute upgrade:", mean(abs(upgrade)), "\n")
+```
+
+## Performance Benchmarking
+
+The C++ kernel is significantly faster than equivalent R code:
+
+```{r benchmark, eval = TRUE}
+# Benchmark the kernel
+if (requireNamespace("microbenchmark", quietly = TRUE)) {
+  bench <- microbenchmark::microbenchmark(
+    PESTO_cpp = ensemble_solution(
+      par_diff, obs_diff, obs_resid, par_resid,
+      weights, parcov_inv, Am, cur_lam = 1.0
+    ),
+    times = 100
+  )
+  print(bench)
+}
+```
+
+## Computing Phi (Objective Function)
+
+```{r phi}
+phi_values <- compute_phi(obs_resid, weights)
+cat("Mean phi:", mean(phi_values), "\n")
+cat("Min phi:", min(phi_values), "\n")
+cat("Max phi:", max(phi_values), "\n")
+```
+
+## Visualisation
+
+PESTO provides publication-quality ggplot2-based diagnostics:
+
+```{r plot-phi, fig.cap = "Objective function convergence across iterations."}
+# Simulate convergence data
+phi_history <- data.table(
+  iteration = rep(0:5, each = 30),
+  phi = c(
+    rlnorm(30, 5, 0.5),
+    rlnorm(30, 4, 0.4),
+    rlnorm(30, 3.5, 0.3),
+    rlnorm(30, 3, 0.25),
+    rlnorm(30, 2.8, 0.2),
+    rlnorm(30, 2.7, 0.15)
+  ),
+  real = rep(paste0("r", 1:30), 6)
+)
+
+# Reshape wide for plot_phi
+phi_wide <- dcast(phi_history, iteration ~ real, value.var = "phi")
+
+plot_phi(phi_wide, show_reals = TRUE, title = "IES Convergence Example")
+```
+
+```{r plot-ensemble, fig.cap = "Prior vs posterior parameter distributions."}
+# Simulate prior and posterior ensembles
+prior <- data.table(
+  hk1 = rlnorm(50, log(10), 1),
+  hk2 = rlnorm(50, log(5), 1),
+  ss1 = rlnorm(50, log(1e-4), 0.5)
+)
+
+posterior <- data.table(
+  hk1 = rlnorm(50, log(12), 0.3),
+  hk2 = rlnorm(50, log(4.5), 0.3),
+  ss1 = rlnorm(50, log(8e-5), 0.2)
+)
+
+plot_ensemble(posterior, prior_ensemble = prior,
+              title = "Prior vs Posterior Parameter Distributions")
+```
+
+## Adaptive SVD Backends
+
+PESTO automatically selects the fastest SVD algorithm for your problem.
+For low-rank decompositions (typical in IES where ensemble size << observations),
+the randomised SVD provides dramatic speedups:
+
+```{r adaptive-svd}
+set.seed(42)
+A <- matrix(rnorm(1000 * 500), 1000, 500)
+
+# Automatic selection
+res_auto <- adaptive_svd(A, k = 20L, method = "auto")
+cat("Method:", res_auto$method_used, "\n")
+cat("Time:", round(res_auto$time_ms, 2), "ms\n")
+cat("Singular values (top 5):", round(res_auto$d[1:5], 3), "\n")
+
+# Compare: randomised SVD (fast, rank-k) vs full
+res_rsvd <- rsvd(A, k = 20)
+cat("\nrSVD dimensions: U =", dim(res_rsvd$u), ", V =", dim(res_rsvd$v), "\n")
+```
+
+## GPU-Accelerated Ensemble Solution
+
+The `ensemble_solution_gpu()` function wraps the IES kernel with
+adaptive SVD backend selection and returns performance diagnostics:
+
+```{r gpu-solution}
+set.seed(42)
+npar <- 100; nobs <- 500; nreal <- 50
+
+pd <- matrix(rnorm(npar * nreal), npar, nreal)
+od <- matrix(rnorm(nobs * nreal), nobs, nreal)
+or_ <- matrix(rnorm(nobs * nreal), nobs, nreal)
+pr <- matrix(rnorm(npar * nreal), npar, nreal)
+w <- rep(1.0, nobs); pc <- rep(1.0, npar)
+Am <- matrix(rnorm(npar * (nreal - 1)), npar, nreal - 1)
+
+result <- ensemble_solution_gpu(
+  pd, od, or_, pr, w, pc, Am,
+  cur_lam = 1.0, svd_method = "auto"
+)
+
+cat("SVD method:", result$svd_method, "\n")
+cat("SVD time:", round(result$svd_time_ms, 2), "ms\n")
+cat("Total time:", round(result$total_time_ms, 2), "ms\n")
+cat("Singular values used:", result$singular_values_used, "\n")
+```
+
+## Surrogate-Accelerated IES
+
+PESTO includes a Gaussian Process surrogate that can replace expensive
+model evaluations during IES iterations. See `vignette("surrogate-ies")`
+for full details.
+
+```{r surrogate-quick}
+set.seed(42)
+par_ens <- matrix(rnorm(50 * 10), 50, 10)
+obs_ens <- par_ens %*% matrix(rnorm(10 * 20), 10, 20) +
+  matrix(rnorm(50 * 20, sd = 0.1), 50, 20)
+obs_target <- rnorm(20)
+
+result <- surrogate_ensemble_update(
+  par_ens, obs_ens, obs_target,
+  weights = rep(1, 20), parcov_inv = rep(1, 10),
+  uncertainty_threshold = 0.1
+)
+
+cat("Model evaluations needed:", result$n_model_runs, "\n")
+cat("Surrogate evaluations:", result$n_surrogate_runs, "\n")
+cat("Savings:", sprintf("%.0f%%", result$savings_pct), "\n")
+```
+
+## Adaptive Ensemble Sizing
+
+Monitor ensemble health and get sizing recommendations:
+
+```{r adaptive-sizing}
+phi_values <- rlnorm(50, 3, 0.5)
+sizing <- adaptive_ensemble_size(phi_values, current_size = 50L)
+cat("Recommended size:", sizing$recommended_size, "\n")
+cat("CV(phi):", round(sizing$cv_phi, 3), "\n")
+cat("ESS:", round(sizing$ess, 1), "/", sizing$current_size, "\n")
+cat("Reason:", sizing$reasoning, "\n")
+```
+
+## Next Steps
+
+- See `vignette("surrogate-ies")` for the full surrogate-accelerated workflow
+- See `?pesto_ies` for the high-level IES interface (wraps pestpp-ies)
+- See `?pesto_glm` for deterministic Gauss-Levenberg-Marquardt estimation
+
+## References
+
+- White, J.T., Hunt, R.J., Fienen, M.N., & Doherty, J.E. (2020).
+  Approaches to Highly Parameterized Inversion: PEST++ Version 5.
+  USGS Techniques and Methods 7-C26.
+- Chen, Y., & Oliver, D.S. (2013). Levenberg-Marquardt forms of
+  the iterative ensemble smoother for efficient history matching
+  and uncertainty quantification. *Computational Geosciences*, 17(4).
+- Evensen, G. (2018). Analysis of iterative ensemble smoothers for
+  solving inverse problems. *Computational Geosciences*, 22(3).
