@@ -31,13 +31,34 @@
 #'     \item{savings_pct}{Percentage of model runs saved}
 #'     \item{gp_diagnostics}{GP training diagnostics}
 #'   }
-#' @export
 #' @references
 #' Rasmussen, C.E. & Williams, C.K.I. (2006). Gaussian Processes for
 #' Machine Learning. MIT Press.
 #'
 #' Liu, F. & Guillas, S. (2017). Dimension reduction for Gaussian process
 #' emulation. *Statistics and Computing*, 27(3), 785-802.
+#' @examples
+#' \donttest{
+#' set.seed(7L)
+#' n_real <- 15L; n_par <- 5L; n_obs <- 8L
+#' par_ens <- matrix(rnorm(n_real * n_par), n_real, n_par,
+#'                   dimnames = list(NULL, paste0("k", 1:n_par)))
+#' obs_ens <- matrix(rnorm(n_real * n_obs), n_real, n_obs,
+#'                   dimnames = list(NULL, paste0("h", 1:n_obs)))
+#' obs_target <- rnorm(n_obs)
+#' weights    <- rep(1.0, n_obs)
+#' parcov_inv <- rep(1.0, n_par)
+#' res <- pesto_surrogate_ies(
+#'   par_ensemble = par_ens,
+#'   obs_ensemble = obs_ens,
+#'   obs_target   = obs_target,
+#'   weights      = weights,
+#'   parcov_inv   = parcov_inv,
+#'   lambda       = 1.0
+#' )
+#' res$savings_pct
+#' }
+#' @export
 pesto_surrogate_ies <- function(par_ensemble,
                                 obs_ensemble,
                                 obs_target,
@@ -82,6 +103,15 @@ pesto_surrogate_ies <- function(par_ensemble,
 #' @param results List of surrogate update results from multiple iterations.
 #' @param title Character. Plot title.
 #' @return A ggplot2 object.
+#' @examples
+#' iter1 <- list(n_model_runs = 12L, n_surrogate_runs = 38L,
+#'               savings_pct = 76.0, mean_uncertainty = 0.18)
+#' iter2 <- list(n_model_runs = 8L,  n_surrogate_runs = 42L,
+#'               savings_pct = 84.0, mean_uncertainty = 0.11)
+#' iter3 <- list(n_model_runs = 5L,  n_surrogate_runs = 45L,
+#'               savings_pct = 90.0, mean_uncertainty = 0.07)
+#' p <- plot_surrogate_diagnostics(list(iter1, iter2, iter3))
+#' inherits(p, "ggplot")
 #' @export
 plot_surrogate_diagnostics <- function(results, title = "Surrogate IES Diagnostics") {
 

@@ -14,18 +14,30 @@
 #'   with columns `instruction_file`, `model_file`.
 #' @param pestpp_options Named list. PEST++ options.
 #' @return A `pesto_pst` object.
-#' @export
 #' @examples
-#' # pars <- data.table::data.table(
-#' #   parnme = c("k1", "k2"),
-#' #   partrans = "log",
-#' #   parchglim = "factor",
-#' #   parval1 = c(1.0, 0.5),
-#' #   parlbnd = c(0.01, 0.001),
-#' #   parubnd = c(100, 50),
-#' #   pargp = "hydraulic"
-#' # )
-#' # pst <- create_pest_scenario(pars, obs, "python model.py")
+#' pars <- data.table::data.table(
+#'   parnme = c("k1", "k2"),
+#'   partrans = "log",
+#'   parchglim = "factor",
+#'   parval1 = c(1.0, 0.5),
+#'   parlbnd = c(0.01, 0.001),
+#'   parubnd = c(100, 50),
+#'   pargp = "hydraulic"
+#' )
+#' obs <- data.table::data.table(
+#'   obsnme = c("h1", "h2"),
+#'   obsval = c(1.0, 2.0),
+#'   weight = c(1.0, 1.0),
+#'   obgnme = "head"
+#' )
+#' pst <- create_pest_scenario(
+#'   parameters    = pars,
+#'   observations  = obs,
+#'   model_command = "python model.py"
+#' )
+#' inherits(pst, "pesto_pst")
+#' pst$control_data$npar
+#' @export
 create_pest_scenario <- function(parameters,
                                   observations,
                                   model_command,

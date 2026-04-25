@@ -1,0 +1,67 @@
+cff-version: 1.2.0
+message: "If you use PESTO in your research, please cite both the software and the methods paper (in preparation)."
+title: "PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation"
+abstract: "High-performance R package for model-independent parameter estimation and uncertainty quantification, built on modernised PEST++ algorithms with surrogate-accelerated iterative ensemble smoothers, GPU-aware SVD backends, and adaptive ensemble sizing."
+type: software
+authors:
+  - family-names: Moldovan
+    given-names: Max
+    email: max.moldovan@adelaide.edu.au
+    orcid: "https://orcid.org/0000-0001-9680-8474"
+    affiliation: "University of Adelaide"
+license: GPL-3.0-or-later
+repository-code: "https://github.com/AAGI-AUS/PESTO"
+url: "https://github.com/AAGI-AUS/PESTO"
+version: 0.1.0
+date-released: "2026-04-25"
+keywords:
+  - "parameter estimation"
+  - "uncertainty quantification"
+  - "iterative ensemble smoother"
+  - "Gaussian process"
+  - "surrogate model"
+  - "inverse modelling"
+  - "PEST++"
+  - "R package"
+preferred-citation:
+  type: article
+  title: "PESTO: A high-performance R package for surrogate-accelerated parameter estimation and uncertainty quantification"
+  authors:
+    - family-names: Moldovan
+      given-names: Max
+      email: max.moldovan@adelaide.edu.au
+      orcid: "https://orcid.org/0000-0001-9680-8474"
+      affiliation: "University of Adelaide"
+  journal: "Environmental Modelling & Software"
+  year: 2026
+  notes: "In preparation"
+references:
+  - type: article
+    authors:
+      - family-names: Chen
+        given-names: Yan
+      - family-names: Oliver
+        given-names: Dean S.
+    title: "Levenberg-Marquardt forms of the iterative ensemble smoother for efficient history matching and uncertainty quantification"
+    journal: "Computational Geosciences"
+    volume: 17
+    issue: 4
+    start: 689
+    end: 703
+    year: 2013
+    doi: "10.1007/s10596-013-9351-5"
+  - type: article
+    authors:
+      - family-names: Halko
+        given-names: Nathan
+      - family-names: Martinsson
+        given-names: "Per-Gunnar"
+      - family-names: Tropp
+        given-names: Joel A.
+    title: "Finding structure with randomness: Probabilistic algorithms for constructing approximate matrix decompositions"
+    journal: "SIAM Review"
+    volume: 53
+    issue: 2
+    start: 217
+    end: 288
+    year: 2011

@@ -62,3 +62,28 @@ backend for automatic hardware acceleration. On macOS, uses Apple
 Accelerate (AMX coprocessor). On CUDA systems, uses cuSOLVER.
 For low-rank problems, automatically switches to randomised SVD.
 }
+\examples{
+set.seed(1L)
+npar  <- 4L
+nreal <- 20L
+nobs  <- 30L
+par_diff  <- matrix(rnorm(npar * nreal), npar, nreal)
+obs_diff  <- matrix(rnorm(nobs * nreal), nobs, nreal)
+obs_resid <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+par_resid <- matrix(rnorm(npar * nreal, sd = 0.1), npar, nreal)
+weights    <- rep(1, nobs)
+parcov_inv <- rep(1, npar)
+Am         <- matrix(0, 0, 0)
+res <- ensemble_solution_gpu(
+  par_diff   = par_diff,
+  obs_diff   = obs_diff,
+  obs_resid  = obs_resid,
+  par_resid  = par_resid,
+  weights    = weights,
+  parcov_inv = parcov_inv,
+  Am         = Am,
+  cur_lam    = 1.0,
+  svd_method = "auto"
+)
+dim(res$upgrade)
+}

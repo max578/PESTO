@@ -18,3 +18,11 @@ Numeric vector (nreal). Phi value per realisation.
 Calculates the weighted sum of squared residuals for each
 realisation in the ensemble.
 }
+\examples{
+set.seed(1L)
+residuals <- matrix(rnorm(5 * 4), 5, 4)
+weights   <- rep(1, 5)
+phi <- compute_phi(residuals, weights)
+length(phi)
+phi
+}

@@ -5,6 +5,7 @@
 \title{Plot Parameter Identifiability}
 \usage{
 plot_identifiability(
+  jacobian = NULL,
   jco_file = NULL,
   pst = NULL,
   n_sv = NULL,
@@ -12,9 +13,16 @@ plot_identifiability(
 )
 }
 \arguments{
-\item{jco_file}{Character. Path to .jco (Jacobian) file.}
+\item{jacobian}{Numeric matrix (n_obs x n_par). The Jacobian / sensitivity
+matrix. Column names, if present, are used as parameter labels;
+otherwise \code{p1}, \code{p2}, ... are generated. Either \code{jacobian} or
+\code{jco_file} must be supplied.}
 
-\item{pst}{A \code{pesto_pst} object for parameter names.}
+\item{jco_file}{Character. Path to a \code{.jco} (Jacobian) binary file.
+Mutually exclusive with \code{jacobian}.}
+
+\item{pst}{A \code{pesto_pst} object for parameter names. Optional; only
+used when reading from a \code{.jco} file and column names are absent.}
 
 \item{n_sv}{Integer. Number of singular values to retain.}
 
@@ -25,5 +33,15 @@ A ggplot2 object.
 }
 \description{
 Creates a bar plot of parameter identifiability based on
-the singular value decomposition of the Jacobian matrix.
+the singular value decomposition of the Jacobian matrix. Accepts
+either a numeric Jacobian matrix in memory or a path to a \code{.jco}
+(PEST binary) file.
+}
+\examples{
+J <- matrix(rnorm(30 * 8), nrow = 30, ncol = 8)
+J[, 7] <- 0.5 * J[, 1] + 0.5 * J[, 2]
+J[, 8] <- 1e-6 * rnorm(30)
+colnames(J) <- paste0("k", 1:8)
+p <- plot_identifiability(jacobian = J)
+inherits(p, "ggplot")
 }

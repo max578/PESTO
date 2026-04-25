@@ -6,10 +6,21 @@
 #' @param format Character. One of "csv" (default) or "binary".
 #' @return A data.table with realisations as rows and parameters/observations as columns.
 #'   The first column `real_name` contains realisation names.
-#' @export
 #' @examples
-#' # ens <- read_ensemble("prior.csv")
-#' # print(ens)
+#' ens <- data.table::data.table(
+#'   real_name = sprintf("real_%02d", 1:10),
+#'   k1 = rnorm(10, mean = 1.0, sd = 0.2),
+#'   k2 = rnorm(10, mean = 0.5, sd = 0.1),
+#'   k3 = rnorm(10, mean = 2.0, sd = 0.3)
+#' )
+#' tf <- tempfile(fileext = ".csv")
+#' on.exit(unlink(tf), add = TRUE)
+#' write_ensemble(ens, tf)
+#' ens_back <- read_ensemble(tf, format = "csv")
+#' identical(names(ens_back), names(ens))
+#' nrow(ens_back) == nrow(ens)
+#' @seealso [write_ensemble()]
+#' @export
 read_ensemble <- function(file, format = c("csv", "binary")) {
 
   format <- match.arg(format)
@@ -38,6 +49,17 @@ read_ensemble <- function(file, format = c("csv", "binary")) {
 #' @param file Character. Output file path.
 #' @param format Character. Currently only "csv" is supported.
 #' @return Invisible `NULL`.
+#' @examples
+#' ens <- data.table::data.table(
+#'   real_name = sprintf("real_%02d", 1:5),
+#'   k1 = runif(5, 0.1, 10),
+#'   k2 = runif(5, 0.01, 1)
+#' )
+#' tf <- tempfile(fileext = ".csv")
+#' on.exit(unlink(tf), add = TRUE)
+#' write_ensemble(ens, tf)
+#' file.exists(tf)
+#' @seealso [read_ensemble()]
 #' @export
 write_ensemble <- function(ensemble, file, format = "csv") {
   if (!data.table::is.data.table(ensemble)) {

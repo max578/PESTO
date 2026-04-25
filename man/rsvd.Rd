@@ -27,6 +27,14 @@ problems where the target rank k is much smaller than min(m,n).
 \details{
 Complexity: O(mn\emph{k) vs O(mn}min(m,n)) for full SVD.
 }
+\examples{
+set.seed(1L)
+A <- matrix(rnorm(10 * 6), nrow = 10, ncol = 6)
+res <- rsvd(A, k = 3L)
+length(res$d)
+A_hat <- res$u \%*\% diag(res$d) \%*\% t(res$v)
+mean((A - A_hat)^2)
+}
 \references{
 Halko, N., Martinsson, P.G., & Tropp, J.A. (2011). Finding structure
 with randomness: Probabilistic algorithms for constructing approximate

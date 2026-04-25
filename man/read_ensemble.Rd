@@ -19,6 +19,19 @@ The first column \code{real_name} contains realisation names.
 Reads PEST++ ensemble files in CSV or binary (.jcb/.jco) format.
 }
 \examples{
-# ens <- read_ensemble("prior.csv")
-# print(ens)
+ens <- data.table::data.table(
+  real_name = sprintf("real_\%02d", 1:10),
+  k1 = rnorm(10, mean = 1.0, sd = 0.2),
+  k2 = rnorm(10, mean = 0.5, sd = 0.1),
+  k3 = rnorm(10, mean = 2.0, sd = 0.3)
+)
+tf <- tempfile(fileext = ".csv")
+on.exit(unlink(tf), add = TRUE)
+write_ensemble(ens, tf)
+ens_back <- read_ensemble(tf, format = "csv")
+identical(names(ens_back), names(ens))
+nrow(ens_back) == nrow(ens)
+}
+\seealso{
+\code{\link[=write_ensemble]{write_ensemble()}}
 }

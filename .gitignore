@@ -33,3 +33,5 @@ Meta/
 # Byte-compiled
 *.pyc
 __pycache__/
+/doc/
+/Meta/

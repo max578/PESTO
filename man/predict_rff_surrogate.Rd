@@ -17,3 +17,13 @@ A list with mean predictions and approximate uncertainties.
 \description{
 Predict with RFF Sparse GP Surrogate
 }
+\examples{
+set.seed(1L)
+X_train <- matrix(rnorm(30 * 4), 30, 4)
+Y_train <- matrix(rnorm(30 * 6), 30, 6)
+rff     <- train_rff_surrogate(X_train, Y_train, n_features = 100L)
+X_new   <- matrix(rnorm(5 * 4), 5, 4)
+pred    <- predict_rff_surrogate(rff, X_new)
+dim(pred$mean)
+length(pred$uncertainty)
+}

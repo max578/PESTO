@@ -95,6 +95,14 @@ static VectorXd compute_cross_kernel(const MatrixXd& X, const VectorXd& x_new,
 //' @param noise_var Numeric. Observation noise variance.
 //' @return A list of class `step_gp` containing trained GP components:
 //'   K_inv (inverse kernel matrix), alpha (weight vectors), hyperparameters.
+//' @examples
+//' set.seed(1L)
+//' X_train <- matrix(rnorm(20 * 4), 20, 4)
+//' Y_train <- matrix(rnorm(20 * 6), 20, 6)
+//' gp <- train_gp_surrogate(X_train, Y_train)
+//' pred <- predict_gp_surrogate(gp, X_train)
+//' dim(pred$mean)
+//' length(pred$uncertainty)
 //' @export
 // [[Rcpp::export]]
 Rcpp::List train_gp_surrogate(
@@ -193,6 +201,15 @@ Rcpp::List train_gp_surrogate(
 //'     \item{variance}{Matrix (m x nobs). Prediction variance per output.}
 //'     \item{uncertainty}{Numeric vector (m). Mean prediction uncertainty per realisation.}
 //'   }
+//' @examples
+//' set.seed(1L)
+//' X_train <- matrix(rnorm(20 * 4), 20, 4)
+//' Y_train <- matrix(rnorm(20 * 6), 20, 6)
+//' gp      <- train_gp_surrogate(X_train, Y_train)
+//' X_new   <- matrix(rnorm(5 * 4), 5, 4)
+//' pred    <- predict_gp_surrogate(gp, X_new)
+//' dim(pred$mean)
+//' length(pred$uncertainty)
 //' @export
 // [[Rcpp::export]]
 Rcpp::List predict_gp_surrogate(const Rcpp::List& gp,
@@ -272,6 +289,28 @@ Rcpp::List predict_gp_surrogate(const Rcpp::List& gp,
 //'     \item{savings_pct}{Numeric. Percentage of model runs saved.}
 //'     \item{gp_diagnostics}{List. GP training diagnostics.}
 //'   }
+//' @examples
+//' \donttest{
+//' set.seed(1L)
+//' npar  <- 5L
+//' nreal <- 15L
+//' nobs  <- 8L
+//' par_ensemble <- matrix(rnorm(nreal * npar), nreal, npar)
+//' obs_ensemble <- matrix(rnorm(nreal * nobs), nreal, nobs)
+//' obs_target   <- rnorm(nobs)
+//' weights      <- rep(1, nobs)
+//' parcov_inv   <- rep(1, npar)
+//' res <- surrogate_ensemble_update(
+//'   par_ensemble = par_ensemble,
+//'   obs_ensemble = obs_ensemble,
+//'   obs_target   = obs_target,
+//'   weights      = weights,
+//'   parcov_inv   = parcov_inv,
+//'   cur_lam      = 1.0
+//' )
+//' dim(res$upgrade)
+//' res$savings_pct
+//' }
 //' @export
 // [[Rcpp::export]]
 Rcpp::List surrogate_ensemble_update(
@@ -344,7 +383,8 @@ Rcpp::List surrogate_ensemble_update(
     for (int i = 0; i < nreal; ++i) {
         par_diff.col(i) = par_ensemble.row(i).transpose() - par_mean;
         obs_diff.col(i) = blended_obs.row(i).transpose() - obs_mean;
-        obs_resid.col(i) = obs_target - blended_obs.row(i).transpose();
+        // ensemble_solution() expects sim - obs (see ensemble_solve.cpp docstring).
+        obs_resid.col(i) = blended_obs.row(i).transpose() - obs_target;
         par_resid.col(i) = VectorXd::Zero(npar);  // Relative to prior mean
     }
 
@@ -390,6 +430,16 @@ Rcpp::List surrogate_ensemble_update(
 //' @param max_size Integer. Maximum ensemble size (default 500).
 //' @param cv_target Numeric. Target coefficient of variation for phi (default 0.3).
 //' @return A list with recommended_size, reasoning, and diagnostics.
+//' @examples
+//' set.seed(1L)
+//' phi_values <- rnorm(50L, mean = 100, sd = 20)^2
+//' res <- adaptive_ensemble_size(
+//'   phi_values   = phi_values,
+//'   current_size = 50L
+//' )
+//' res$recommended_size
+//' res$cv_phi
+//' res$ess_ratio
 //' @export
 // [[Rcpp::export]]
 Rcpp::List adaptive_ensemble_size(
@@ -485,6 +535,15 @@ Rcpp::List adaptive_ensemble_size(
 //' @param length_scale Numeric. Kernel length scale (0 = median heuristic).
 //' @param noise_var Numeric. Observation noise variance.
 //' @return A list containing the trained RFF model.
+//' @examples
+//' set.seed(1L)
+//' X_train <- matrix(rnorm(30 * 4), 30, 4)
+//' Y_train <- matrix(rnorm(30 * 6), 30, 6)
+//' rff <- train_rff_surrogate(X_train, Y_train, n_features = 100L)
+//' rff$train_mse
+//' X_new <- matrix(rnorm(5 * 4), 5, 4)
+//' pred  <- predict_rff_surrogate(rff, X_new)
+//' dim(pred$mean)
 //' @export
 // [[Rcpp::export]]
 Rcpp::List train_rff_surrogate(
@@ -566,6 +625,15 @@ Rcpp::List train_rff_surrogate(
 //' @param rff A trained RFF model (from \code{train_rff_surrogate}).
 //' @param X_new Matrix (m x npar). New parameter sets.
 //' @return A list with mean predictions and approximate uncertainties.
+//' @examples
+//' set.seed(1L)
+//' X_train <- matrix(rnorm(30 * 4), 30, 4)
+//' Y_train <- matrix(rnorm(30 * 6), 30, 6)
+//' rff     <- train_rff_surrogate(X_train, Y_train, n_features = 100L)
+//' X_new   <- matrix(rnorm(5 * 4), 5, 4)
+//' pred    <- predict_rff_surrogate(rff, X_new)
+//' dim(pred$mean)
+//' length(pred$uncertainty)
 //' @export
 // [[Rcpp::export]]
 Rcpp::List predict_rff_surrogate(const Rcpp::List& rff,

@@ -38,3 +38,13 @@ is approximated by k(x,x') ~ z(x)^T z(x') where
 z(x) = sqrt(2/D) * cos(W\emph{x + b), where W are random frequencies.
 with w_j ~ N(0, I/l^2) and b_j ~ Uniform(0, 2}pi).
 }
+\examples{
+set.seed(1L)
+X_train <- matrix(rnorm(30 * 4), 30, 4)
+Y_train <- matrix(rnorm(30 * 6), 30, 6)
+rff <- train_rff_surrogate(X_train, Y_train, n_features = 100L)
+rff$train_mse
+X_new <- matrix(rnorm(5 * 4), 5, 4)
+pred  <- predict_rff_surrogate(rff, X_new)
+dim(pred$mean)
+}

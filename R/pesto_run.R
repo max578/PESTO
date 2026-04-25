@@ -24,10 +24,27 @@
 #'     \item{exit_code}{Integer exit code from pestpp-ies}
 #'     \item{runtime_seconds}{Total wall-clock runtime}
 #'   }
-#' @export
 #' @examples
-#' # result <- pesto_ies("model.pst", num_reals = 50, noptmax = 3)
-#' # plot_phi(result)
+#' \donttest{
+#' if (nzchar(Sys.which("pestpp-ies"))) {
+#'   pars <- data.table::data.table(
+#'     parnme = c("k1", "k2"), partrans = "log", parchglim = "factor",
+#'     parval1 = c(1.0, 0.5), parlbnd = c(0.01, 0.001),
+#'     parubnd = c(100, 50), pargp = "hydraulic"
+#'   )
+#'   obs <- data.table::data.table(
+#'     obsnme = c("h1", "h2"), obsval = c(1.0, 2.0),
+#'     weight = c(1.0, 1.0), obgnme = "head"
+#'   )
+#'   pst <- create_pest_scenario(pars, obs, model_command = "echo run")
+#'   tf <- tempfile(fileext = ".pst")
+#'   on.exit(unlink(tf), add = TRUE)
+#'   write_pst(pst, tf)
+#'   res <- pesto_ies(tf, num_reals = 3, noptmax = 1, verbose = FALSE)
+#'   res$exit_code
+#' }
+#' }
+#' @export
 pesto_ies <- function(pst_file,
                      exe = NULL,
                      num_reals = 50,
@@ -121,6 +138,26 @@ pesto_ies <- function(pst_file,
 #' @param working_dir Character. Working directory.
 #' @param verbose Logical. Print output.
 #' @return A list of class `pesto_glm_result`.
+#' @examples
+#' \donttest{
+#' if (nzchar(Sys.which("pestpp-glm"))) {
+#'   pars <- data.table::data.table(
+#'     parnme = c("k1", "k2"), partrans = "log", parchglim = "factor",
+#'     parval1 = c(1.0, 0.5), parlbnd = c(0.01, 0.001),
+#'     parubnd = c(100, 50), pargp = "hydraulic"
+#'   )
+#'   obs <- data.table::data.table(
+#'     obsnme = c("h1", "h2"), obsval = c(1.0, 2.0),
+#'     weight = c(1.0, 1.0), obgnme = "head"
+#'   )
+#'   pst <- create_pest_scenario(pars, obs, model_command = "echo run")
+#'   tf <- tempfile(fileext = ".pst")
+#'   on.exit(unlink(tf), add = TRUE)
+#'   write_pst(pst, tf)
+#'   res <- pesto_glm(tf, noptmax = 1, verbose = FALSE)
+#'   res$exit_code
+#' }
+#' }
 #' @export
 pesto_glm <- function(pst_file,
                      exe = NULL,
@@ -194,6 +231,31 @@ pesto_glm <- function(pst_file,
 #' @param working_dir Character. Working directory.
 #' @param verbose Logical. Print output.
 #' @return A list containing observation outputs for each realisation.
+#' @examples
+#' \donttest{
+#' if (nzchar(Sys.which("pestpp-swp"))) {
+#'   pars <- data.table::data.table(
+#'     parnme = c("k1", "k2"), partrans = "log", parchglim = "factor",
+#'     parval1 = c(1.0, 0.5), parlbnd = c(0.01, 0.001),
+#'     parubnd = c(100, 50), pargp = "hydraulic"
+#'   )
+#'   obs <- data.table::data.table(
+#'     obsnme = c("h1", "h2"), obsval = c(1.0, 2.0),
+#'     weight = c(1.0, 1.0), obgnme = "head"
+#'   )
+#'   pst <- create_pest_scenario(pars, obs, model_command = "echo run")
+#'   tf <- tempfile(fileext = ".pst")
+#'   on.exit(unlink(tf), add = TRUE)
+#'   write_pst(pst, tf)
+#'   par_ens <- data.table::data.table(
+#'     real_name = c("r1", "r2", "r3"),
+#'     k1 = c(0.8, 1.0, 1.2),
+#'     k2 = c(0.4, 0.5, 0.6)
+#'   )
+#'   res <- pesto_sweep(tf, par_ensemble = par_ens, verbose = FALSE)
+#'   res$exit_code
+#' }
+#' }
 #' @export
 pesto_sweep <- function(pst_file,
                        par_ensemble,
@@ -247,6 +309,26 @@ pesto_sweep <- function(pst_file,
 #' @param working_dir Character. Working directory.
 #' @param verbose Logical. Print output.
 #' @return A list of class `pesto_sen_result`.
+#' @examples
+#' \donttest{
+#' if (nzchar(Sys.which("pestpp-sen"))) {
+#'   pars <- data.table::data.table(
+#'     parnme = c("k1", "k2"), partrans = "log", parchglim = "factor",
+#'     parval1 = c(1.0, 0.5), parlbnd = c(0.01, 0.001),
+#'     parubnd = c(100, 50), pargp = "hydraulic"
+#'   )
+#'   obs <- data.table::data.table(
+#'     obsnme = c("h1", "h2"), obsval = c(1.0, 2.0),
+#'     weight = c(1.0, 1.0), obgnme = "head"
+#'   )
+#'   pst <- create_pest_scenario(pars, obs, model_command = "echo run")
+#'   tf <- tempfile(fileext = ".pst")
+#'   on.exit(unlink(tf), add = TRUE)
+#'   write_pst(pst, tf)
+#'   res <- pesto_sensitivity(tf, method = "morris", verbose = FALSE)
+#'   res$method
+#' }
+#' }
 #' @export
 pesto_sensitivity <- function(pst_file,
                              method = c("morris", "sobol"),
@@ -326,6 +408,10 @@ pesto_sensitivity <- function(pst_file,
 #' bundled PEST++ binaries.
 #'
 #' @return A list with version strings.
+#' @examples
+#' v <- pesto_version()
+#' v$pesto_version
+#' v$platform
 #' @export
 pesto_version <- function() {
   pkg_ver <- utils::packageVersion("PESTO")

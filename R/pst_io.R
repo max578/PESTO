@@ -19,10 +19,31 @@
 #'     \item{prior_information}{data.table of prior information (if present)}
 #'     \item{pestpp_options}{Named list of ++ options}
 #'   }
-#' @export
 #' @examples
-#' # pst <- read_pst("model.pst")
-#' # print(pst)
+#' pars <- data.table::data.table(
+#'   parnme = c("k1", "k2", "k3"),
+#'   partrans = c("log", "log", "none"),
+#'   parchglim = "factor",
+#'   parval1 = c(1.0, 0.5, 0.1),
+#'   parlbnd = c(0.01, 0.001, 0.0),
+#'   parubnd = c(100, 50, 1.0),
+#'   pargp = c("hydraulic", "hydraulic", "storage")
+#' )
+#' obs <- data.table::data.table(
+#'   obsnme = c("h1", "h2", "h3"),
+#'   obsval = c(1.0, 2.0, 1.5),
+#'   weight = c(1.0, 1.0, 0.5),
+#'   obgnme = "head"
+#' )
+#' pst <- create_pest_scenario(pars, obs, model_command = "echo run")
+#' tf <- tempfile(fileext = ".pst")
+#' on.exit(unlink(tf), add = TRUE)
+#' write_pst(pst, tf)
+#' pst_back <- read_pst(tf)
+#' pst_back$control_data$npar
+#' pst_back$control_data$nobs
+#' @seealso [write_pst()], [create_pest_scenario()]
+#' @export
 read_pst <- function(file) {
   if (!file.exists(file)) {
     stop("PST file not found: ", file, call. = FALSE)
@@ -212,6 +233,22 @@ read_pst <- function(file) {
 #' @param pst A `pesto_pst` object (as returned by [read_pst()]).
 #' @param file Character. Output file path.
 #' @return Invisible `NULL`. File is written as a side effect.
+#' @examples
+#' pars <- data.table::data.table(
+#'   parnme = c("k1", "k2"), partrans = "log", parchglim = "factor",
+#'   parval1 = c(1.0, 0.5), parlbnd = c(0.01, 0.001),
+#'   parubnd = c(100, 50), pargp = "hydraulic"
+#' )
+#' obs <- data.table::data.table(
+#'   obsnme = c("h1", "h2"), obsval = c(1.0, 2.0),
+#'   weight = c(1.0, 1.0), obgnme = "head"
+#' )
+#' pst <- create_pest_scenario(pars, obs, model_command = "echo run")
+#' tf <- tempfile(fileext = ".pst")
+#' on.exit(unlink(tf), add = TRUE)
+#' write_pst(pst, tf)
+#' file.exists(tf)
+#' @seealso [read_pst()]
 #' @export
 write_pst <- function(pst, file) {
   if (!inherits(pst, "pesto_pst")) {
@@ -300,6 +337,19 @@ write_pst <- function(pst, file) {
 #' Print method for pesto_pst objects
 #' @param x A `pesto_pst` object.
 #' @param ... Ignored.
+#' @return Invisibly returns `x`. Called for the side effect of printing.
+#' @examples
+#' pars <- data.table::data.table(
+#'   parnme = c("k1", "k2"), partrans = "log", parchglim = "factor",
+#'   parval1 = c(1.0, 0.5), parlbnd = c(0.01, 0.001),
+#'   parubnd = c(100, 50), pargp = "hydraulic"
+#' )
+#' obs <- data.table::data.table(
+#'   obsnme = c("h1", "h2"), obsval = c(1.0, 2.0),
+#'   weight = c(1.0, 1.0), obgnme = "head"
+#' )
+#' pst <- create_pest_scenario(pars, obs, model_command = "echo run")
+#' print(pst)
 #' @export
 print.pesto_pst <- function(x, ...) {
   cat("PESTO PST Control File\n")

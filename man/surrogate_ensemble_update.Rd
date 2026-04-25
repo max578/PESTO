@@ -61,3 +61,26 @@ based on prediction uncertainty.
 
 This typically reduces full model evaluations by 50-90\%.
 }
+\examples{
+\donttest{
+set.seed(1L)
+npar  <- 5L
+nreal <- 15L
+nobs  <- 8L
+par_ensemble <- matrix(rnorm(nreal * npar), nreal, npar)
+obs_ensemble <- matrix(rnorm(nreal * nobs), nreal, nobs)
+obs_target   <- rnorm(nobs)
+weights      <- rep(1, nobs)
+parcov_inv   <- rep(1, npar)
+res <- surrogate_ensemble_update(
+  par_ensemble = par_ensemble,
+  obs_ensemble = obs_ensemble,
+  obs_target   = obs_target,
+  weights      = weights,
+  parcov_inv   = parcov_inv,
+  cur_lam      = 1.0
+)
+dim(res$upgrade)
+res$savings_pct
+}
+}

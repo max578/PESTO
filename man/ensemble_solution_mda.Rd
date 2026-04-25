@@ -34,3 +34,21 @@ Implements the Multiple Data Assimilation (MDA) update from
 Evensen (2018), Section 14.3.2. Uses low-rank representation
 of the error covariance.
 }
+\examples{
+set.seed(1L)
+npar  <- 4L
+nreal <- 20L
+nobs  <- 30L
+par_diff  <- matrix(rnorm(npar * nreal), npar, nreal)
+obs_diff  <- matrix(rnorm(nobs * nreal), nobs, nreal)
+obs_resid <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+obs_err   <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+upgrade <- ensemble_solution_mda(
+  par_diff  = par_diff,
+  obs_diff  = obs_diff,
+  obs_resid = obs_resid,
+  obs_err   = obs_err,
+  cur_lam   = 1.0
+)
+dim(upgrade)
+}

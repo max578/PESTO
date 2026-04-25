@@ -24,3 +24,13 @@ Generates predictions and prediction uncertainties for new parameter
 sets using a trained GP surrogate. The uncertainty estimates are
 crucial for the adaptive switching criterion.
 }
+\examples{
+set.seed(1L)
+X_train <- matrix(rnorm(20 * 4), 20, 4)
+Y_train <- matrix(rnorm(20 * 6), 20, 6)
+gp      <- train_gp_surrogate(X_train, Y_train)
+X_new   <- matrix(rnorm(5 * 4), 5, 4)
+pred    <- predict_gp_surrogate(gp, X_new)
+dim(pred$mean)
+length(pred$uncertainty)
+}

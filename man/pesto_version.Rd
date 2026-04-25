@@ -13,3 +13,8 @@ A list with version strings.
 Returns version info for both the PESTO R package and the
 bundled PEST++ binaries.
 }
+\examples{
+v <- pesto_version()
+v$pesto_version
+v$platform
+}

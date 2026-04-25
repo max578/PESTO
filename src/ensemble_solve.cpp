@@ -24,7 +24,12 @@ using Eigen::DiagonalMatrix;
 //'
 //' @param par_diff Matrix (npar x nreal). Parameter anomalies (deviations from mean).
 //' @param obs_diff Matrix (nobs x nreal). Observation anomalies.
-//' @param obs_resid Matrix (nobs x nreal). Observation residuals (obs - sim).
+//' @param obs_resid Matrix (nobs x nreal). Observation residuals,
+//'   simulated minus observed (sim - obs). This sign convention is required so
+//'   that the leading negative in the GLM update
+//'   (\eqn{\Delta\theta = -\Delta\theta' V s (s^2 + \lambda I)^{-1} U^T r})
+//'   yields a descent step on \eqn{\Phi = \|W(g(\theta) - d^{obs})\|^2}.
+//'   Passing (obs - sim) inverts the gradient and causes phi to diverge.
 //' @param par_resid Matrix (npar x nreal). Parameter residuals (par - prior mean).
 //' @param weights Numeric vector (nobs). Observation weights (1/sqrt(variance)).
 //' @param parcov_inv Numeric vector (npar). Diagonal of inverse parameter covariance.
@@ -36,6 +41,29 @@ using Eigen::DiagonalMatrix;
 //' @param iter Integer. Current iteration number.
 //' @param reg_factor Numeric. Regularisation factor for upgrade_2 blending.
 //' @return Matrix (nreal x npar). Parameter upgrade vectors (one row per realisation).
+//' @examples
+//' set.seed(1L)
+//' npar  <- 4L
+//' nreal <- 20L
+//' nobs  <- 30L
+//' par_diff  <- matrix(rnorm(npar * nreal), npar, nreal)
+//' obs_diff  <- matrix(rnorm(nobs * nreal), nobs, nreal)
+//' obs_resid <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+//' par_resid <- matrix(rnorm(npar * nreal, sd = 0.1), npar, nreal)
+//' weights    <- rep(1, nobs)
+//' parcov_inv <- rep(1, npar)
+//' Am         <- matrix(0, 0, 0)
+//' upgrade <- ensemble_solution(
+//'   par_diff   = par_diff,
+//'   obs_diff   = obs_diff,
+//'   obs_resid  = obs_resid,
+//'   par_resid  = par_resid,
+//'   weights    = weights,
+//'   parcov_inv = parcov_inv,
+//'   Am         = Am,
+//'   cur_lam    = 1.0
+//' )
+//' dim(upgrade)
 //' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd ensemble_solution(
@@ -145,6 +173,23 @@ Eigen::MatrixXd ensemble_solution(
 //' @param cur_lam Numeric. Inflation factor.
 //' @param eigthresh Numeric. Eigenvalue truncation threshold.
 //' @return Matrix (nreal x npar). Parameter upgrade vectors.
+//' @examples
+//' set.seed(1L)
+//' npar  <- 4L
+//' nreal <- 20L
+//' nobs  <- 30L
+//' par_diff  <- matrix(rnorm(npar * nreal), npar, nreal)
+//' obs_diff  <- matrix(rnorm(nobs * nreal), nobs, nreal)
+//' obs_resid <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+//' obs_err   <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+//' upgrade <- ensemble_solution_mda(
+//'   par_diff  = par_diff,
+//'   obs_diff  = obs_diff,
+//'   obs_resid = obs_resid,
+//'   obs_err   = obs_err,
+//'   cur_lam   = 1.0
+//' )
+//' dim(upgrade)
 //' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd ensemble_solution_mda(
@@ -207,6 +252,13 @@ Eigen::MatrixXd ensemble_solution_mda(
 //' @param residuals Matrix (nobs x nreal). Observation residuals.
 //' @param weights Numeric vector (nobs). Observation weights.
 //' @return Numeric vector (nreal). Phi value per realisation.
+//' @examples
+//' set.seed(1L)
+//' residuals <- matrix(rnorm(5 * 4), 5, 4)
+//' weights   <- rep(1, 5)
+//' phi <- compute_phi(residuals, weights)
+//' length(phi)
+//' phi
 //' @export
 // [[Rcpp::export]]
 Eigen::VectorXd compute_phi(

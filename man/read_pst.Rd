@@ -31,6 +31,29 @@ data, observation groups, observation data, model command, and
 template/instruction file pairs.
 }
 \examples{
-# pst <- read_pst("model.pst")
-# print(pst)
+pars <- data.table::data.table(
+  parnme = c("k1", "k2", "k3"),
+  partrans = c("log", "log", "none"),
+  parchglim = "factor",
+  parval1 = c(1.0, 0.5, 0.1),
+  parlbnd = c(0.01, 0.001, 0.0),
+  parubnd = c(100, 50, 1.0),
+  pargp = c("hydraulic", "hydraulic", "storage")
+)
+obs <- data.table::data.table(
+  obsnme = c("h1", "h2", "h3"),
+  obsval = c(1.0, 2.0, 1.5),
+  weight = c(1.0, 1.0, 0.5),
+  obgnme = "head"
+)
+pst <- create_pest_scenario(pars, obs, model_command = "echo run")
+tf <- tempfile(fileext = ".pst")
+on.exit(unlink(tf), add = TRUE)
+write_pst(pst, tf)
+pst_back <- read_pst(tf)
+pst_back$control_data$npar
+pst_back$control_data$nobs
+}
+\seealso{
+\code{\link[=write_pst]{write_pst()}}, \code{\link[=create_pest_scenario]{create_pest_scenario()}}
 }

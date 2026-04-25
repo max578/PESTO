@@ -11,6 +11,22 @@
 
 \item{...}{Ignored.}
 }
+\value{
+Invisibly returns \code{x}. Called for the side effect of printing.
+}
 \description{
 Print method for pesto_pst objects
+}
+\examples{
+pars <- data.table::data.table(
+  parnme = c("k1", "k2"), partrans = "log", parchglim = "factor",
+  parval1 = c(1.0, 0.5), parlbnd = c(0.01, 0.001),
+  parubnd = c(100, 50), pargp = "hydraulic"
+)
+obs <- data.table::data.table(
+  obsnme = c("h1", "h2"), obsval = c(1.0, 2.0),
+  weight = c(1.0, 1.0), obgnme = "head"
+)
+pst <- create_pest_scenario(pars, obs, model_command = "echo run")
+print(pst)
 }

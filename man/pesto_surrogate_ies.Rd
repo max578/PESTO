@@ -61,6 +61,28 @@ to reduce the number of expensive full-model evaluations.
 
 This typically saves 50-90\% of model evaluations per iteration.
 }
+\examples{
+\donttest{
+set.seed(7L)
+n_real <- 15L; n_par <- 5L; n_obs <- 8L
+par_ens <- matrix(rnorm(n_real * n_par), n_real, n_par,
+                  dimnames = list(NULL, paste0("k", 1:n_par)))
+obs_ens <- matrix(rnorm(n_real * n_obs), n_real, n_obs,
+                  dimnames = list(NULL, paste0("h", 1:n_obs)))
+obs_target <- rnorm(n_obs)
+weights    <- rep(1.0, n_obs)
+parcov_inv <- rep(1.0, n_par)
+res <- pesto_surrogate_ies(
+  par_ensemble = par_ens,
+  obs_ensemble = obs_ens,
+  obs_target   = obs_target,
+  weights      = weights,
+  parcov_inv   = parcov_inv,
+  lambda       = 1.0
+)
+res$savings_pct
+}
+}
 \references{
 Rasmussen, C.E. & Williams, C.K.I. (2006). Gaussian Processes for
 Machine Learning. MIT Press.

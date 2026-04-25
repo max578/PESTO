@@ -62,6 +62,13 @@ using Eigen::VectorXd;
 //' Halko, N., Martinsson, P.G., & Tropp, J.A. (2011). Finding structure
 //' with randomness: Probabilistic algorithms for constructing approximate
 //' matrix decompositions. SIAM Review, 53(2), 217-288.
+//' @examples
+//' set.seed(1L)
+//' A <- matrix(rnorm(10 * 6), nrow = 10, ncol = 6)
+//' res <- rsvd(A, k = 3L)
+//' length(res$d)
+//' A_hat <- res$u %*% diag(res$d) %*% t(res$v)
+//' mean((A - A_hat)^2)
 //' @export
 // [[Rcpp::export]]
 Rcpp::List rsvd(const Eigen::MatrixXd& A, int k, int p = 10, int q = 2) {
@@ -136,6 +143,12 @@ extern "C" {
 //' @param A Matrix (m x n). Input matrix.
 //' @param thin Logical. If TRUE (default), compute thin SVD.
 //' @return A list with components U, d, V.
+//' @examples
+//' set.seed(1L)
+//' A <- matrix(rnorm(8 * 5), nrow = 8, ncol = 5)
+//' res <- accelerate_svd(A, thin = TRUE)
+//' length(res$d)
+//' all.equal(sort(res$d, decreasing = TRUE), svd(A)$d)
 //' @export
 // [[Rcpp::export]]
 Rcpp::List accelerate_svd(const Eigen::MatrixXd& A, bool thin = true) {
@@ -206,6 +219,12 @@ Rcpp::List accelerate_svd(const Eigen::MatrixXd& A, bool thin = true) {
 //'   "rsvd", "accelerate", "eigen", "cuda".
 //' @return A list with components U (m x k), d (k), V (n x k),
 //'   plus `method_used` and `time_ms`.
+//' @examples
+//' set.seed(1L)
+//' A <- matrix(rnorm(20 * 12), nrow = 20, ncol = 12)
+//' res <- adaptive_svd(A, k = 5L, method = "auto")
+//' length(res$d)
+//' is.character(res$method_used)
 //' @export
 // [[Rcpp::export]]
 Rcpp::List adaptive_svd(const Eigen::MatrixXd& A, int k = 0,
@@ -302,6 +321,30 @@ Rcpp::List adaptive_svd(const Eigen::MatrixXd& A, int k = 0,
 //' @param svd_method Character. SVD method: "auto", "rsvd", "accelerate", "eigen".
 //' @param target_rank Integer. Target rank for randomised SVD (0 = auto).
 //' @return A list with upgrade matrix and performance diagnostics.
+//' @examples
+//' set.seed(1L)
+//' npar  <- 4L
+//' nreal <- 20L
+//' nobs  <- 30L
+//' par_diff  <- matrix(rnorm(npar * nreal), npar, nreal)
+//' obs_diff  <- matrix(rnorm(nobs * nreal), nobs, nreal)
+//' obs_resid <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+//' par_resid <- matrix(rnorm(npar * nreal, sd = 0.1), npar, nreal)
+//' weights    <- rep(1, nobs)
+//' parcov_inv <- rep(1, npar)
+//' Am         <- matrix(0, 0, 0)
+//' res <- ensemble_solution_gpu(
+//'   par_diff   = par_diff,
+//'   obs_diff   = obs_diff,
+//'   obs_resid  = obs_resid,
+//'   par_resid  = par_resid,
+//'   weights    = weights,
+//'   parcov_inv = parcov_inv,
+//'   Am         = Am,
+//'   cur_lam    = 1.0,
+//'   svd_method = "auto"
+//' )
+//' dim(res$upgrade)
 //' @export
 // [[Rcpp::export]]
 Rcpp::List ensemble_solution_gpu(

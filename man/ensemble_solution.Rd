@@ -25,7 +25,12 @@ ensemble_solution(
 
 \item{obs_diff}{Matrix (nobs x nreal). Observation anomalies.}
 
-\item{obs_resid}{Matrix (nobs x nreal). Observation residuals (obs - sim).}
+\item{obs_resid}{Matrix (nobs x nreal). Observation residuals,
+simulated minus observed (sim - obs). This sign convention is required so
+that the leading negative in the GLM update
+(\eqn{\Delta\theta = -\Delta\theta' V s (s^2 + \lambda I)^{-1} U^T r})
+yields a descent step on \eqn{\Phi = \|W(g(\theta) - d^{obs})\|^2}.
+Passing (obs - sim) inverts the gradient and causes phi to diverge.}
 
 \item{par_resid}{Matrix (npar x nreal). Parameter residuals (par - prior mean).}
 
@@ -59,4 +64,28 @@ This is the computational hotspot of the iterative ensemble smoother.
 The update equation solves:
 \deqn{\Delta\theta = -\Delta\theta' V s (s^2 + \lambda I)^{-1} U^T r}
 where the SVD is performed on the scaled observation difference matrix.
+}
+\examples{
+set.seed(1L)
+npar  <- 4L
+nreal <- 20L
+nobs  <- 30L
+par_diff  <- matrix(rnorm(npar * nreal), npar, nreal)
+obs_diff  <- matrix(rnorm(nobs * nreal), nobs, nreal)
+obs_resid <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+par_resid <- matrix(rnorm(npar * nreal, sd = 0.1), npar, nreal)
+weights    <- rep(1, nobs)
+parcov_inv <- rep(1, npar)
+Am         <- matrix(0, 0, 0)
+upgrade <- ensemble_solution(
+  par_diff   = par_diff,
+  obs_diff   = obs_diff,
+  obs_resid  = obs_resid,
+  par_resid  = par_resid,
+  weights    = weights,
+  parcov_inv = parcov_inv,
+  Am         = Am,
+  cur_lam    = 1.0
+)
+dim(upgrade)
 }

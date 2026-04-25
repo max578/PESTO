@@ -13,7 +13,12 @@
 #'
 #' @param par_diff Matrix (npar x nreal). Parameter anomalies (deviations from mean).
 #' @param obs_diff Matrix (nobs x nreal). Observation anomalies.
-#' @param obs_resid Matrix (nobs x nreal). Observation residuals (obs - sim).
+#' @param obs_resid Matrix (nobs x nreal). Observation residuals,
+#'   simulated minus observed (sim - obs). This sign convention is required so
+#'   that the leading negative in the GLM update
+#'   (\eqn{\Delta\theta = -\Delta\theta' V s (s^2 + \lambda I)^{-1} U^T r})
+#'   yields a descent step on \eqn{\Phi = \|W(g(\theta) - d^{obs})\|^2}.
+#'   Passing (obs - sim) inverts the gradient and causes phi to diverge.
 #' @param par_resid Matrix (npar x nreal). Parameter residuals (par - prior mean).
 #' @param weights Numeric vector (nobs). Observation weights (1/sqrt(variance)).
 #' @param parcov_inv Numeric vector (npar). Diagonal of inverse parameter covariance.
@@ -25,6 +30,29 @@
 #' @param iter Integer. Current iteration number.
 #' @param reg_factor Numeric. Regularisation factor for upgrade_2 blending.
 #' @return Matrix (nreal x npar). Parameter upgrade vectors (one row per realisation).
+#' @examples
+#' set.seed(1L)
+#' npar  <- 4L
+#' nreal <- 20L
+#' nobs  <- 30L
+#' par_diff  <- matrix(rnorm(npar * nreal), npar, nreal)
+#' obs_diff  <- matrix(rnorm(nobs * nreal), nobs, nreal)
+#' obs_resid <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+#' par_resid <- matrix(rnorm(npar * nreal, sd = 0.1), npar, nreal)
+#' weights    <- rep(1, nobs)
+#' parcov_inv <- rep(1, npar)
+#' Am         <- matrix(0, 0, 0)
+#' upgrade <- ensemble_solution(
+#'   par_diff   = par_diff,
+#'   obs_diff   = obs_diff,
+#'   obs_resid  = obs_resid,
+#'   par_resid  = par_resid,
+#'   weights    = weights,
+#'   parcov_inv = parcov_inv,
+#'   Am         = Am,
+#'   cur_lam    = 1.0
+#' )
+#' dim(upgrade)
 #' @export
 ensemble_solution <- function(par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh = 1e-6, use_approx = TRUE, use_prior_scaling = FALSE, iter = 1L, reg_factor = -1.0) {
     .Call(`_PESTO_ensemble_solution`, par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh, use_approx, use_prior_scaling, iter, reg_factor)
@@ -43,6 +71,23 @@ ensemble_solution <- function(par_diff, obs_diff, obs_resid, par_resid, weights,
 #' @param cur_lam Numeric. Inflation factor.
 #' @param eigthresh Numeric. Eigenvalue truncation threshold.
 #' @return Matrix (nreal x npar). Parameter upgrade vectors.
+#' @examples
+#' set.seed(1L)
+#' npar  <- 4L
+#' nreal <- 20L
+#' nobs  <- 30L
+#' par_diff  <- matrix(rnorm(npar * nreal), npar, nreal)
+#' obs_diff  <- matrix(rnorm(nobs * nreal), nobs, nreal)
+#' obs_resid <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+#' obs_err   <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+#' upgrade <- ensemble_solution_mda(
+#'   par_diff  = par_diff,
+#'   obs_diff  = obs_diff,
+#'   obs_resid = obs_resid,
+#'   obs_err   = obs_err,
+#'   cur_lam   = 1.0
+#' )
+#' dim(upgrade)
 #' @export
 ensemble_solution_mda <- function(par_diff, obs_diff, obs_resid, obs_err, cur_lam = 1.0, eigthresh = 1e-6) {
     .Call(`_PESTO_ensemble_solution_mda`, par_diff, obs_diff, obs_resid, obs_err, cur_lam, eigthresh)
@@ -56,6 +101,13 @@ ensemble_solution_mda <- function(par_diff, obs_diff, obs_resid, obs_err, cur_la
 #' @param residuals Matrix (nobs x nreal). Observation residuals.
 #' @param weights Numeric vector (nobs). Observation weights.
 #' @return Numeric vector (nreal). Phi value per realisation.
+#' @examples
+#' set.seed(1L)
+#' residuals <- matrix(rnorm(5 * 4), 5, 4)
+#' weights   <- rep(1, 5)
+#' phi <- compute_phi(residuals, weights)
+#' length(phi)
+#' phi
 #' @export
 compute_phi <- function(residuals, weights) {
     .Call(`_PESTO_compute_phi`, residuals, weights)
@@ -79,6 +131,13 @@ compute_phi <- function(residuals, weights) {
 #' Halko, N., Martinsson, P.G., & Tropp, J.A. (2011). Finding structure
 #' with randomness: Probabilistic algorithms for constructing approximate
 #' matrix decompositions. SIAM Review, 53(2), 217-288.
+#' @examples
+#' set.seed(1L)
+#' A <- matrix(rnorm(10 * 6), nrow = 10, ncol = 6)
+#' res <- rsvd(A, k = 3L)
+#' length(res$d)
+#' A_hat <- res$u %*% diag(res$d) %*% t(res$v)
+#' mean((A - A_hat)^2)
 #' @export
 rsvd <- function(A, k, p = 10L, q = 2L) {
     .Call(`_PESTO_rsvd`, A, k, p, q)
@@ -93,6 +152,12 @@ rsvd <- function(A, k, p = 10L, q = 2L) {
 #' @param A Matrix (m x n). Input matrix.
 #' @param thin Logical. If TRUE (default), compute thin SVD.
 #' @return A list with components U, d, V.
+#' @examples
+#' set.seed(1L)
+#' A <- matrix(rnorm(8 * 5), nrow = 8, ncol = 5)
+#' res <- accelerate_svd(A, thin = TRUE)
+#' length(res$d)
+#' all.equal(sort(res$d, decreasing = TRUE), svd(A)$d)
 #' @export
 accelerate_svd <- function(A, thin = TRUE) {
     .Call(`_PESTO_accelerate_svd`, A, thin)
@@ -114,6 +179,12 @@ accelerate_svd <- function(A, thin = TRUE) {
 #'   "rsvd", "accelerate", "eigen", "cuda".
 #' @return A list with components U (m x k), d (k), V (n x k),
 #'   plus `method_used` and `time_ms`.
+#' @examples
+#' set.seed(1L)
+#' A <- matrix(rnorm(20 * 12), nrow = 20, ncol = 12)
+#' res <- adaptive_svd(A, k = 5L, method = "auto")
+#' length(res$d)
+#' is.character(res$method_used)
 #' @export
 adaptive_svd <- function(A, k = 0L, method = "auto") {
     .Call(`_PESTO_adaptive_svd`, A, k, method)
@@ -142,6 +213,30 @@ adaptive_svd <- function(A, k = 0L, method = "auto") {
 #' @param svd_method Character. SVD method: "auto", "rsvd", "accelerate", "eigen".
 #' @param target_rank Integer. Target rank for randomised SVD (0 = auto).
 #' @return A list with upgrade matrix and performance diagnostics.
+#' @examples
+#' set.seed(1L)
+#' npar  <- 4L
+#' nreal <- 20L
+#' nobs  <- 30L
+#' par_diff  <- matrix(rnorm(npar * nreal), npar, nreal)
+#' obs_diff  <- matrix(rnorm(nobs * nreal), nobs, nreal)
+#' obs_resid <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+#' par_resid <- matrix(rnorm(npar * nreal, sd = 0.1), npar, nreal)
+#' weights    <- rep(1, nobs)
+#' parcov_inv <- rep(1, npar)
+#' Am         <- matrix(0, 0, 0)
+#' res <- ensemble_solution_gpu(
+#'   par_diff   = par_diff,
+#'   obs_diff   = obs_diff,
+#'   obs_resid  = obs_resid,
+#'   par_resid  = par_resid,
+#'   weights    = weights,
+#'   parcov_inv = parcov_inv,
+#'   Am         = Am,
+#'   cur_lam    = 1.0,
+#'   svd_method = "auto"
+#' )
+#' dim(res$upgrade)
 #' @export
 ensemble_solution_gpu <- function(par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh = 1e-6, use_approx = TRUE, use_prior_scaling = FALSE, iter = 1L, reg_factor = -1.0, svd_method = "auto", target_rank = 0L) {
     .Call(`_PESTO_ensemble_solution_gpu`, par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh, use_approx, use_prior_scaling, iter, reg_factor, svd_method, target_rank)
@@ -164,6 +259,14 @@ ensemble_solution_gpu <- function(par_diff, obs_diff, obs_resid, par_resid, weig
 #' @param noise_var Numeric. Observation noise variance.
 #' @return A list of class `step_gp` containing trained GP components:
 #'   K_inv (inverse kernel matrix), alpha (weight vectors), hyperparameters.
+#' @examples
+#' set.seed(1L)
+#' X_train <- matrix(rnorm(20 * 4), 20, 4)
+#' Y_train <- matrix(rnorm(20 * 6), 20, 6)
+#' gp <- train_gp_surrogate(X_train, Y_train)
+#' pred <- predict_gp_surrogate(gp, X_train)
+#' dim(pred$mean)
+#' length(pred$uncertainty)
 #' @export
 train_gp_surrogate <- function(X_train, Y_train, length_scale = 0.0, signal_var = 0.0, noise_var = 1e-4) {
     .Call(`_PESTO_train_gp_surrogate`, X_train, Y_train, length_scale, signal_var, noise_var)
@@ -183,6 +286,15 @@ train_gp_surrogate <- function(X_train, Y_train, length_scale = 0.0, signal_var 
 #'     \item{variance}{Matrix (m x nobs). Prediction variance per output.}
 #'     \item{uncertainty}{Numeric vector (m). Mean prediction uncertainty per realisation.}
 #'   }
+#' @examples
+#' set.seed(1L)
+#' X_train <- matrix(rnorm(20 * 4), 20, 4)
+#' Y_train <- matrix(rnorm(20 * 6), 20, 6)
+#' gp      <- train_gp_surrogate(X_train, Y_train)
+#' X_new   <- matrix(rnorm(5 * 4), 5, 4)
+#' pred    <- predict_gp_surrogate(gp, X_new)
+#' dim(pred$mean)
+#' length(pred$uncertainty)
 #' @export
 predict_gp_surrogate <- function(gp, X_new) {
     .Call(`_PESTO_predict_gp_surrogate`, gp, X_new)
@@ -221,6 +333,28 @@ predict_gp_surrogate <- function(gp, X_new) {
 #'     \item{savings_pct}{Numeric. Percentage of model runs saved.}
 #'     \item{gp_diagnostics}{List. GP training diagnostics.}
 #'   }
+#' @examples
+#' \donttest{
+#' set.seed(1L)
+#' npar  <- 5L
+#' nreal <- 15L
+#' nobs  <- 8L
+#' par_ensemble <- matrix(rnorm(nreal * npar), nreal, npar)
+#' obs_ensemble <- matrix(rnorm(nreal * nobs), nreal, nobs)
+#' obs_target   <- rnorm(nobs)
+#' weights      <- rep(1, nobs)
+#' parcov_inv   <- rep(1, npar)
+#' res <- surrogate_ensemble_update(
+#'   par_ensemble = par_ensemble,
+#'   obs_ensemble = obs_ensemble,
+#'   obs_target   = obs_target,
+#'   weights      = weights,
+#'   parcov_inv   = parcov_inv,
+#'   cur_lam      = 1.0
+#' )
+#' dim(res$upgrade)
+#' res$savings_pct
+#' }
 #' @export
 surrogate_ensemble_update <- function(par_ensemble, obs_ensemble, obs_target, weights, parcov_inv, cur_lam = 1.0, uncertainty_threshold = 0.1, eigthresh = 1e-6) {
     .Call(`_PESTO_surrogate_ensemble_update`, par_ensemble, obs_ensemble, obs_target, weights, parcov_inv, cur_lam, uncertainty_threshold, eigthresh)
@@ -241,6 +375,16 @@ surrogate_ensemble_update <- function(par_ensemble, obs_ensemble, obs_target, we
 #' @param max_size Integer. Maximum ensemble size (default 500).
 #' @param cv_target Numeric. Target coefficient of variation for phi (default 0.3).
 #' @return A list with recommended_size, reasoning, and diagnostics.
+#' @examples
+#' set.seed(1L)
+#' phi_values <- rnorm(50L, mean = 100, sd = 20)^2
+#' res <- adaptive_ensemble_size(
+#'   phi_values   = phi_values,
+#'   current_size = 50L
+#' )
+#' res$recommended_size
+#' res$cv_phi
+#' res$ess_ratio
 #' @export
 adaptive_ensemble_size <- function(phi_values, current_size, min_size = 20L, max_size = 500L, cv_target = 0.3) {
     .Call(`_PESTO_adaptive_ensemble_size`, phi_values, current_size, min_size, max_size, cv_target)
@@ -264,6 +408,15 @@ adaptive_ensemble_size <- function(phi_values, current_size, min_size = 20L, max
 #' @param length_scale Numeric. Kernel length scale (0 = median heuristic).
 #' @param noise_var Numeric. Observation noise variance.
 #' @return A list containing the trained RFF model.
+#' @examples
+#' set.seed(1L)
+#' X_train <- matrix(rnorm(30 * 4), 30, 4)
+#' Y_train <- matrix(rnorm(30 * 6), 30, 6)
+#' rff <- train_rff_surrogate(X_train, Y_train, n_features = 100L)
+#' rff$train_mse
+#' X_new <- matrix(rnorm(5 * 4), 5, 4)
+#' pred  <- predict_rff_surrogate(rff, X_new)
+#' dim(pred$mean)
 #' @export
 train_rff_surrogate <- function(X_train, Y_train, n_features = 200L, length_scale = 0.0, noise_var = 1e-4) {
     .Call(`_PESTO_train_rff_surrogate`, X_train, Y_train, n_features, length_scale, noise_var)
@@ -274,6 +427,15 @@ train_rff_surrogate <- function(X_train, Y_train, n_features = 200L, length_scal
 #' @param rff A trained RFF model (from \code{train_rff_surrogate}).
 #' @param X_new Matrix (m x npar). New parameter sets.
 #' @return A list with mean predictions and approximate uncertainties.
+#' @examples
+#' set.seed(1L)
+#' X_train <- matrix(rnorm(30 * 4), 30, 4)
+#' Y_train <- matrix(rnorm(30 * 6), 30, 6)
+#' rff     <- train_rff_surrogate(X_train, Y_train, n_features = 100L)
+#' X_new   <- matrix(rnorm(5 * 4), 5, 4)
+#' pred    <- predict_rff_surrogate(rff, X_new)
+#' dim(pred$mean)
+#' length(pred$uncertainty)
 #' @export
 predict_rff_surrogate <- function(rff, X_new) {
     .Call(`_PESTO_predict_rff_surrogate`, rff, X_new)

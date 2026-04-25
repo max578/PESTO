@@ -10,6 +10,19 @@
 #' @param show_reals Logical. Show individual realisation traces.
 #' @param title Character. Plot title.
 #' @return A ggplot2 object.
+#' @examples
+#' phi_dt <- data.table::data.table(
+#'   iteration = 0:4,
+#'   total_runs = c(50L, 100L, 150L, 200L, 250L),
+#'   mean = c(1200, 450, 180, 95, 72),
+#'   min  = c(900, 320, 130, 70, 55),
+#'   max  = c(1700, 680, 260, 140, 105),
+#'   median = c(1180, 440, 175, 92, 70),
+#'   std    = c(180, 80, 35, 18, 12)
+#' )
+#' p <- plot_phi(phi_dt, log_scale = TRUE,
+#'               title = "Synthetic Phi Convergence")
+#' inherits(p, "ggplot")
 #' @export
 #' @importFrom ggplot2 ggplot aes geom_line geom_point geom_ribbon
 #'   scale_y_log10 labs theme_minimal theme element_text
@@ -132,6 +145,23 @@ plot_phi <- function(result,
 #' @param max_params Integer. Maximum parameters to display.
 #' @param title Character. Plot title.
 #' @return A ggplot2 object.
+#' @examples
+#' posterior <- data.table::data.table(
+#'   real_name = sprintf("real_%02d", 1:50),
+#'   k1 = rnorm(50, 1.0, 0.15),
+#'   k2 = rnorm(50, 0.5, 0.05),
+#'   k3 = rnorm(50, 2.0, 0.40),
+#'   k4 = rnorm(50, 0.1, 0.02)
+#' )
+#' prior <- data.table::data.table(
+#'   real_name = sprintf("real_%02d", 1:50),
+#'   k1 = rnorm(50, 1.0, 0.50),
+#'   k2 = rnorm(50, 0.5, 0.20),
+#'   k3 = rnorm(50, 2.0, 1.00),
+#'   k4 = rnorm(50, 0.1, 0.08)
+#' )
+#' p <- plot_ensemble(posterior, prior_ensemble = prior)
+#' inherits(p, "ggplot")
 #' @export
 plot_ensemble <- function(ensemble,
                           parameters = NULL,
@@ -207,28 +237,58 @@ plot_ensemble <- function(ensemble,
 #' Plot Parameter Identifiability
 #'
 #' Creates a bar plot of parameter identifiability based on
-#' the singular value decomposition of the Jacobian matrix.
+#' the singular value decomposition of the Jacobian matrix. Accepts
+#' either a numeric Jacobian matrix in memory or a path to a `.jco`
+#' (PEST binary) file.
 #'
-#' @param jco_file Character. Path to .jco (Jacobian) file.
-#' @param pst A `pesto_pst` object for parameter names.
+#' @param jacobian Numeric matrix (n_obs x n_par). The Jacobian / sensitivity
+#'   matrix. Column names, if present, are used as parameter labels;
+#'   otherwise `p1`, `p2`, ... are generated. Either `jacobian` or
+#'   `jco_file` must be supplied.
+#' @param jco_file Character. Path to a `.jco` (Jacobian) binary file.
+#'   Mutually exclusive with `jacobian`.
+#' @param pst A `pesto_pst` object for parameter names. Optional; only
+#'   used when reading from a `.jco` file and column names are absent.
 #' @param n_sv Integer. Number of singular values to retain.
 #' @param title Character. Plot title.
 #' @return A ggplot2 object.
+#' @examples
+#' J <- matrix(rnorm(30 * 8), nrow = 30, ncol = 8)
+#' J[, 7] <- 0.5 * J[, 1] + 0.5 * J[, 2]
+#' J[, 8] <- 1e-6 * rnorm(30)
+#' colnames(J) <- paste0("k", 1:8)
+#' p <- plot_identifiability(jacobian = J)
+#' inherits(p, "ggplot")
 #' @export
-plot_identifiability <- function(jco_file = NULL,
+plot_identifiability <- function(jacobian = NULL,
+                                 jco_file = NULL,
                                  pst = NULL,
                                  n_sv = NULL,
                                  title = "Parameter Identifiability") {
-  if (is.null(jco_file)) {
-    stop("jco_file must be provided", call. = FALSE)
+  if (is.null(jacobian) && is.null(jco_file)) {
+    stop("Either `jacobian` (a numeric matrix) or `jco_file` must be provided.",
+         call. = FALSE)
+  }
+  if (!is.null(jacobian) && !is.null(jco_file)) {
+    stop("Supply only one of `jacobian` or `jco_file`, not both.",
+         call. = FALSE)
   }
 
-  # Read Jacobian
-  jco <- .read_ensemble_binary(jco_file)
-  par_names <- names(jco)[-1]
+  if (!is.null(jacobian)) {
+    if (!is.matrix(jacobian) || !is.numeric(jacobian)) {
+      stop("`jacobian` must be a numeric matrix.", call. = FALSE)
+    }
+    mat <- jacobian
+    par_names <- colnames(mat)
+    if (is.null(par_names)) {
+      par_names <- paste0("p", seq_len(ncol(mat)))
+    }
+  } else {
+    jco <- .read_ensemble_binary(jco_file)
+    par_names <- names(jco)[-1]
+    mat <- as.matrix(jco[, -1, with = FALSE])
+  }
 
-  # Compute SVD
-  mat <- as.matrix(jco[, -1, with = FALSE])
   sv <- svd(mat)
 
   if (is.null(n_sv)) {

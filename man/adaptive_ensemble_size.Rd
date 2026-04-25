@@ -35,3 +35,14 @@ Uses the effective sample size (ESS) and coefficient of variation
 of phi to determine whether the ensemble is too large (wasting
 compute) or too small (poor UQ coverage).
 }
+\examples{
+set.seed(1L)
+phi_values <- rnorm(50L, mean = 100, sd = 20)^2
+res <- adaptive_ensemble_size(
+  phi_values   = phi_values,
+  current_size = 50L
+)
+res$recommended_size
+res$cv_phi
+res$ess_ratio
+}

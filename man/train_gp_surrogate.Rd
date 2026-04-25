@@ -37,3 +37,12 @@ determination (ARD) via median heuristic for length scale.
 The GP learns the mapping: parameters -> observations, enabling
 cheap prediction of model outputs for new parameter sets.
 }
+\examples{
+set.seed(1L)
+X_train <- matrix(rnorm(20 * 4), 20, 4)
+Y_train <- matrix(rnorm(20 * 6), 20, 6)
+gp <- train_gp_surrogate(X_train, Y_train)
+pred <- predict_gp_surrogate(gp, X_train)
+dim(pred$mean)
+length(pred$uncertainty)
+}

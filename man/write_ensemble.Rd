@@ -19,3 +19,17 @@ Invisible \code{NULL}.
 \description{
 Writes an ensemble data.table to CSV format compatible with PEST++.
 }
+\examples{
+ens <- data.table::data.table(
+  real_name = sprintf("real_\%02d", 1:5),
+  k1 = runif(5, 0.1, 10),
+  k2 = runif(5, 0.01, 1)
+)
+tf <- tempfile(fileext = ".csv")
+on.exit(unlink(tf), add = TRUE)
+write_ensemble(ens, tf)
+file.exists(tf)
+}
+\seealso{
+\code{\link[=read_ensemble]{read_ensemble()}}
+}

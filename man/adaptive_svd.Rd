@@ -30,3 +30,10 @@ dimensions and available hardware:
 \item \strong{CUDA cuSOLVER}: on GPU-equipped systems (when compiled with PESTO_USE_CUDA)
 }
 }
+\examples{
+set.seed(1L)
+A <- matrix(rnorm(20 * 12), nrow = 20, ncol = 12)
+res <- adaptive_svd(A, k = 5L, method = "auto")
+length(res$d)
+is.character(res$method_used)
+}

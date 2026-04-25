@@ -54,6 +54,23 @@ This is the primary method for ensemble-based parameter estimation
 and uncertainty quantification.
 }
 \examples{
-# result <- pesto_ies("model.pst", num_reals = 50, noptmax = 3)
-# plot_phi(result)
+\donttest{
+if (nzchar(Sys.which("pestpp-ies"))) {
+  pars <- data.table::data.table(
+    parnme = c("k1", "k2"), partrans = "log", parchglim = "factor",
+    parval1 = c(1.0, 0.5), parlbnd = c(0.01, 0.001),
+    parubnd = c(100, 50), pargp = "hydraulic"
+  )
+  obs <- data.table::data.table(
+    obsnme = c("h1", "h2"), obsval = c(1.0, 2.0),
+    weight = c(1.0, 1.0), obgnme = "head"
+  )
+  pst <- create_pest_scenario(pars, obs, model_command = "echo run")
+  tf <- tempfile(fileext = ".pst")
+  on.exit(unlink(tf), add = TRUE)
+  write_pst(pst, tf)
+  res <- pesto_ies(tf, num_reals = 3, noptmax = 1, verbose = FALSE)
+  res$exit_code
+}
+}
 }

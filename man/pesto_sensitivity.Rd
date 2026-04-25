@@ -32,3 +32,24 @@ A list of class \code{pesto_sen_result}.
 \description{
 Executes pestpp-sen for Morris or Sobol sensitivity analysis.
 }
+\examples{
+\donttest{
+if (nzchar(Sys.which("pestpp-sen"))) {
+  pars <- data.table::data.table(
+    parnme = c("k1", "k2"), partrans = "log", parchglim = "factor",
+    parval1 = c(1.0, 0.5), parlbnd = c(0.01, 0.001),
+    parubnd = c(100, 50), pargp = "hydraulic"
+  )
+  obs <- data.table::data.table(
+    obsnme = c("h1", "h2"), obsval = c(1.0, 2.0),
+    weight = c(1.0, 1.0), obgnme = "head"
+  )
+  pst <- create_pest_scenario(pars, obs, model_command = "echo run")
+  tf <- tempfile(fileext = ".pst")
+  on.exit(unlink(tf), add = TRUE)
+  write_pst(pst, tf)
+  res <- pesto_sensitivity(tf, method = "morris", verbose = FALSE)
+  res$method
+}
+}
+}

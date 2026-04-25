@@ -27,6 +27,28 @@ cheaper surrogate prediction.
 
 This vignette demonstrates the full workflow on a nonlinear test problem.
 
+### Regime of applicability
+
+The Gaussian-process surrogate inside PESTO is a tool with a clearly
+bounded operating envelope, and it is worth stating that envelope before
+the demo. As an empirical soft floor we recommend
+`n_train >= 5 * n_params` — below that ratio the GP posterior variance
+rarely drops far enough for the uncertainty-driven switching rule to
+fire, and the surrogate honestly defers to the full model on most
+realisations. The second axis is the smoothness of the forward model:
+smooth, near-linear responses are well-approximated by an RBF-kernel GP
+and yield large savings, whereas rough or near-discontinuous responses
+(sharp wetting fronts, threshold activations, regime switches) defeat
+the kernel and savings collapse. The third axis is ensemble size —
+larger ensembles improve the GP fit roughly as $\mathcal{O}(n^{-1})$ in
+posterior variance, and ensembles of fewer than about twenty
+realisations rarely produce a usable surrogate at any dimensionality.
+If your problem falls outside this envelope (high `n_params / n_train`
+ratio, rough forward model, or tiny ensemble), the right thing to do is
+run pure IES via `ensemble_solution()` — `surrogate_ensemble_update()`
+will report near-zero savings rather than degrading the posterior, but
+you pay the GP training cost for no return.
+
 ## The Test Problem
 
 We define a nonlinear forward model inspired by groundwater flow, where
@@ -145,7 +167,8 @@ par_mean <- colMeans(par_ens)
 obs_mean <- colMeans(obs_ens)
 par_diff <- t(par_ens) - par_mean
 obs_diff <- t(obs_ens) - obs_mean
-obs_resid <- matrix(rep(y_obs, n_real), n_obs, n_real) - t(obs_ens)
+# Sign: ensemble_solution() expects sim - obs (see ?ensemble_solution).
+obs_resid <- t(obs_ens) - matrix(rep(y_obs, n_real), n_obs, n_real)
 par_resid <- par_diff
 Am <- matrix(rnorm(n_par * (n_real - 1)), n_par, n_real - 1)
 
@@ -178,7 +201,7 @@ results_dt <- rbindlist(lapply(seq(0, 1, by = 0.1), function(alpha) {
 
   pm <- colMeans(par_ens); om <- colMeans(obs_a)
   pd <- t(par_ens) - pm; od <- t(obs_a) - om
-  or_ <- matrix(rep(y_a, n_real), n_obs, n_real) - t(obs_a)
+  or_ <- t(obs_a) - matrix(rep(y_a, n_real), n_obs, n_real)
   pr <- pd
   Am_a <- matrix(rnorm(n_par * (n_real - 1)), n_par, n_real - 1)
 

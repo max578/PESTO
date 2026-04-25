@@ -19,3 +19,10 @@ Uses R's linked LAPACK (which on macOS is Apple Accelerate/AMX,
 on Linux is typically OpenBLAS or MKL) for hardware-optimised
 SVD computation.
 }
+\examples{
+set.seed(1L)
+A <- matrix(rnorm(8 * 5), nrow = 8, ncol = 5)
+res <- accelerate_svd(A, thin = TRUE)
+length(res$d)
+all.equal(sort(res$d, decreasing = TRUE), svd(A)$d)
+}
