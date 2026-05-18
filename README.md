@@ -22,11 +22,24 @@ PESTO is a high-performance R package for model-independent parameter estimation
 
 ## Installation
 
+From GitHub (development version):
+
 ```r
-# Install from GitHub
-# install.packages("remotes")
-remotes::install_github("AAGI-AUS/PESTO")
+# install.packages("pak")
+pak::pak("AAGI-AUS/PESTO")
 ```
+
+Once the AAGI r-universe registry is live, pre-built binaries will
+be available:
+
+```r
+install.packages("PESTO", repos = c(
+  "https://aagi-aus.r-universe.dev",
+  "https://cloud.r-project.org"
+))
+```
+
+CRAN submission is in preparation.
 
 ### System requirements
 

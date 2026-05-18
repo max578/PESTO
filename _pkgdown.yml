@@ -1,0 +1,84 @@
+url: https://AAGI-AUS.github.io/PESTO/
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Core ensemble solvers
+  desc: C++ kernel update equations (Chen-Oliver IES, Evensen MDA) and weighted objective.
+  contents:
+  - ensemble_solution
+  - ensemble_solution_mda
+  - ensemble_solution_gpu
+  - compute_phi
+
+- title: SVD backends
+  desc: Automatic backend selection; randomised SVD; direct LAPACK.
+  contents:
+  - adaptive_svd
+  - accelerate_svd
+  - rsvd
+
+- title: High-level PEST++ wrappers
+  desc: Convenience wrappers driving PEST++ executables (`pestpp-ies`, `pestpp-glm`, …) from R.
+  contents:
+  - pesto_ies
+  - pesto_glm
+  - pesto_sweep
+  - pesto_sensitivity
+  - pesto_surrogate_ies
+  - pesto_version
+
+- title: In-process IES via R callback
+  desc: Driver and APSIM adapter for forward-model callable IES, bypassing the .pst file cycle.
+  contents:
+  - pesto_ies_callback
+  - apsim_callback
+
+- title: Surrogates
+  desc: Gaussian Process and Random Fourier Feature surrogates; convergence-aware ensemble sizing.
+  contents:
+  - train_gp_surrogate
+  - predict_gp_surrogate
+  - train_rff_surrogate
+  - predict_rff_surrogate
+  - surrogate_ensemble_update
+  - adaptive_ensemble_size
+
+- title: PEST control file I/O
+  desc: Read/write `.pst` files and ensemble snapshots; build scenarios programmatically.
+  contents:
+  - read_pst
+  - write_pst
+  - create_pest_scenario
+  - read_ensemble
+  - write_ensemble
+
+- title: Ensemble manifest (S7 cross-package contract)
+  desc: Versioned, hashed, provenance-tracked ensemble-run container consumed by kernR and proxymix.
+  contents:
+  - pesto_ensemble_manifest
+  - as_manifest
+  - write_manifest
+  - read_manifest
+  - verify_manifest
+
+- title: Visualisation
+  desc: Publication-grade plots for convergence, ensembles, identifiability, surrogate diagnostics.
+  contents:
+  - plot_phi
+  - plot_ensemble
+  - plot_identifiability
+  - plot_surrogate_diagnostics
+
+articles:
+- title: Get started
+  navbar: ~
+  contents:
+  - apsim-callback
+  - ensemble-manifest
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, news]
+    right: [github]
