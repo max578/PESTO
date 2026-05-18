@@ -17,12 +17,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Max Moldovan \email{max.moldovan@adelaide.edu.au}
-
-Other contributors:
-\itemize{
-  \item Supremum Consulting Ltd [copyright holder]
-}
+\strong{Maintainer}: Max Moldovan \email{max.moldovan@adelaide.edu.au} (\href{https://orcid.org/0000-0001-9680-8474}{ORCID}) [copyright holder]
 
 }
 \keyword{internal}

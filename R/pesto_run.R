@@ -402,6 +402,334 @@ pesto_sensitivity <- function(pst_file,
   )
 }
 
+#' Run IES with an In-Process R Callback Forward Model
+#'
+#' Drives an Iterative Ensemble Smoother entirely in R, using a user-supplied
+#' forward model callable instead of the PEST++ `.pst`-file invocation cycle.
+#' Each iteration:
+#'
+#' 1. Evaluates `forward_model(par_ensemble)` to obtain simulated observations.
+#' 2. Forms parameter / observation anomalies and residuals.
+#' 3. Calls the C++ kernel [ensemble_solution()] (GLM form, Chen & Oliver 2013)
+#'    to compute an `nreal x npar` upgrade.
+#' 4. Adds the upgrade to the current ensemble.
+#'
+#' The classic `.pst`-file path remains available via [pesto_ies()] for full
+#' PEST++ compatibility. Use this callback driver when the forward model is
+#' itself an R function (e.g. an `apsimx` wrapper from [apsim_callback()],
+#' a Python bridge, or a synthetic test problem) and the per-realisation
+#' file-I/O overhead of the `.pst` path is the bottleneck.
+#'
+#' Phase-1 behaviour: single lambda per iteration (or a user-supplied schedule).
+#' A line-search over `ies_lambda_mults` matching `pestpp-ies` is a planned
+#' Phase-2 enhancement; for the common case of a well-behaved forward model
+#' with `lambda = 1`, the GLM update reduces phi reliably (see vignette
+#' `apsim-callback`).
+#'
+#' @param forward_model A function with signature `function(theta) -> obs`,
+#'   where `theta` is an `nreal x npar` numeric matrix and `obs` is an
+#'   `nreal x nobs` numeric matrix. Failed realisations may return rows of
+#'   `NA`; the driver tolerates them (see `on_failure`).
+#' @param prior_ensemble Matrix or data.table, `nreal x npar`. Columns are
+#'   parameters; an optional `real_name` column is preserved if present.
+#'   Column names supply parameter names.
+#' @param obs Named numeric vector. Target observations.
+#' @param obs_sd Numeric scalar or vector of length `nobs`. Observation
+#'   standard deviation(s); the IES weights are `1/obs_sd`.
+#' @param noptmax Integer. Number of IES iterations (default 4).
+#' @param lambda Numeric scalar or vector. Marquardt lambda per iteration.
+#'   A scalar is recycled; a vector shorter than `noptmax` is right-padded
+#'   with its last value (default 1.0).
+#' @param parcov Numeric vector of length `npar`, the diagonal of the prior
+#'   parameter covariance. Defaults to the column-wise variance of
+#'   `prior_ensemble`; zero or negative entries are replaced with 1.0.
+#' @param eigthresh Numeric. SVD eigenvalue truncation threshold (default 1e-6).
+#' @param use_approx Logical. If TRUE (default), skip the prior-scaling
+#'   correction (upgrade_2); matches the typical `pestpp-ies` default.
+#' @param on_failure Character. `"na"` (default) carries failed realisations
+#'   forward unchanged and proceeds; `"stop"` aborts on any failure.
+#' @param verbose Logical. Print per-iteration phi summaries.
+#' @return A list of class `c("pesto_ies_callback_result", "pesto_ies_result")`
+#'   with components:
+#'   \describe{
+#'     \item{phi}{data.table of per-realisation phi by iteration.}
+#'     \item{par_ensemble}{Final parameter ensemble (data.table).}
+#'     \item{obs_ensemble}{Final simulated-observation ensemble (data.table).}
+#'     \item{iterations}{List of per-iteration metadata (lambda, mean phi,
+#'       failure count).}
+#'     \item{runtime_seconds}{Total wall-clock runtime.}
+#'     \item{n_forward_evals}{Total number of realisation-level forward
+#'       evaluations across all iterations (including the final refresh).}
+#'     \item{failure_rate}{Fraction of forward evaluations that returned NA.}
+#'   }
+#' @references
+#' Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
+#' iterative ensemble smoother for efficient history matching and
+#' uncertainty quantification. *Computational Geosciences*, 17(4), 689--703.
+#' @seealso [pesto_ies()] for the `.pst`-file path; [apsim_callback()]
+#'   for the apsimx adapter.
+#' @export
+#' @examples
+#' # Linear-Gaussian recovery toy
+#' set.seed(1)
+#' npar <- 3; nobs <- 6; nreal <- 80
+#' G <- matrix(rnorm(nobs * npar), nobs, npar)
+#' theta_true <- c(1.0, -0.5, 2.0)
+#' y <- as.numeric(G %*% theta_true) + rnorm(nobs, sd = 0.05)
+#' f <- function(theta) theta %*% t(G)
+#' prior <- matrix(rnorm(nreal * npar), nreal, npar,
+#'                 dimnames = list(NULL, paste0("p", 1:npar)))
+#' fit <- pesto_ies_callback(
+#'   forward_model = f, prior_ensemble = prior,
+#'   obs = setNames(y, paste0("o", 1:nobs)), obs_sd = 0.05,
+#'   noptmax = 5, verbose = FALSE
+#' )
+#' colMeans(as.matrix(fit$par_ensemble[, -1]))  # should approach theta_true
+pesto_ies_callback <- function(forward_model,
+                               prior_ensemble,
+                               obs,
+                               obs_sd,
+                               noptmax = 4L,
+                               lambda = 1.0,
+                               parcov = NULL,
+                               eigthresh = 1e-6,
+                               use_approx = TRUE,
+                               on_failure = c("na", "stop"),
+                               verbose = TRUE) {
+
+  on_failure <- match.arg(on_failure)
+  if (!is.function(forward_model)) {
+    stop("`forward_model` must be a function with signature ",
+         "function(theta) -> obs.", call. = FALSE)
+  }
+  noptmax <- as.integer(noptmax)
+  if (noptmax < 1L) stop("`noptmax` must be >= 1.", call. = FALSE)
+
+  # ---- Coerce prior ensemble ---------------------------------------------
+  if (data.table::is.data.table(prior_ensemble) ||
+      is.data.frame(prior_ensemble)) {
+    par_names_local <- setdiff(names(prior_ensemble), "real_name")
+    par_mat <- as.matrix(
+      data.table::as.data.table(prior_ensemble)[, par_names_local, with = FALSE]
+    )
+  } else {
+    par_mat <- as.matrix(prior_ensemble)
+    par_names_local <- colnames(par_mat)
+    if (is.null(par_names_local)) {
+      par_names_local <- paste0("par", seq_len(ncol(par_mat)))
+      colnames(par_mat) <- par_names_local
+    }
+  }
+  storage.mode(par_mat) <- "double"
+  nreal <- nrow(par_mat)
+  npar  <- ncol(par_mat)
+  if (nreal < 2L) {
+    stop("`prior_ensemble` must contain at least 2 realisations.",
+         call. = FALSE)
+  }
+
+  # ---- Coerce observations ----------------------------------------------
+  obs_vec <- as.numeric(obs)
+  obs_names_local <- names(obs)
+  if (is.null(obs_names_local)) {
+    obs_names_local <- paste0("obs", seq_along(obs_vec))
+  }
+  nobs <- length(obs_vec)
+
+  obs_sd_vec <- as.numeric(obs_sd)
+  if (length(obs_sd_vec) == 1L) obs_sd_vec <- rep(obs_sd_vec, nobs)
+  if (length(obs_sd_vec) != nobs || any(obs_sd_vec <= 0)) {
+    stop("`obs_sd` must be a positive scalar or length-nobs vector.",
+         call. = FALSE)
+  }
+  weights <- 1.0 / obs_sd_vec
+
+  # ---- Prior covariance diag --------------------------------------------
+  if (is.null(parcov)) {
+    parcov_diag <- apply(par_mat, 2L, stats::var)
+    parcov_diag[parcov_diag <= 0 | !is.finite(parcov_diag)] <- 1.0
+  } else {
+    parcov_diag <- as.numeric(parcov)
+    if (length(parcov_diag) != npar || any(parcov_diag <= 0)) {
+      stop("`parcov` must be a positive length-npar vector.", call. = FALSE)
+    }
+  }
+  parcov_inv <- 1.0 / parcov_diag
+
+  # ---- Lambda schedule --------------------------------------------------
+  lambda_seq <- as.numeric(lambda)
+  if (length(lambda_seq) < noptmax) {
+    lambda_seq <- c(
+      lambda_seq,
+      rep(lambda_seq[length(lambda_seq)], noptmax - length(lambda_seq))
+    )
+  }
+  lambda_seq <- lambda_seq[seq_len(noptmax)]
+
+  par_prior_mean <- colMeans(par_mat)
+
+  phi_history <- vector("list", noptmax)
+  iter_meta   <- vector("list", noptmax)
+  total_evals <- 0L
+  total_failures <- 0L
+
+  t0 <- proc.time()["elapsed"]
+
+  obs_mat <- .eval_forward_safe(forward_model, par_mat, nreal, nobs,
+                                on_failure, verbose)
+  total_evals    <- total_evals + nreal
+  total_failures <- total_failures + attr(obs_mat, "n_failures")
+
+  for (k in seq_len(noptmax)) {
+    ok <- stats::complete.cases(obs_mat)
+    if (sum(ok) < 2L) {
+      stop("Iteration ", k, ": fewer than 2 successful realisations; ",
+           "cannot continue.", call. = FALSE)
+    }
+    par_ok <- par_mat[ok, , drop = FALSE]
+    obs_ok <- obs_mat[ok, , drop = FALSE]
+    nreal_ok <- nrow(par_ok)
+
+    par_mean_iter <- colMeans(par_ok)
+    obs_mean_iter <- colMeans(obs_ok)
+    par_diff  <- t(sweep(par_ok, 2L, par_mean_iter, "-"))       # npar x nreal_ok
+    obs_diff  <- t(sweep(obs_ok, 2L, obs_mean_iter, "-"))       # nobs x nreal_ok
+    obs_resid <- matrix(obs_vec, nrow = nobs, ncol = nreal_ok) - t(obs_ok)
+    par_resid <- t(sweep(par_ok, 2L, par_prior_mean, "-"))      # npar x nreal_ok
+
+    phi_vec <- compute_phi(obs_resid, weights)
+    phi_history[[k]] <- data.table::data.table(
+      iteration   = k,
+      realisation = which(ok),
+      phi         = phi_vec
+    )
+    if (verbose) {
+      message(sprintf(
+        "[pesto_ies_callback] iter %d/%d: phi mean=%.4g min=%.4g max=%.4g (lambda=%.3g, nreal_ok=%d/%d)",
+        k, noptmax, mean(phi_vec), min(phi_vec), max(phi_vec),
+        lambda_seq[k], nreal_ok, nreal
+      ))
+    }
+
+    Am_k <- matrix(0.0, nrow = npar, ncol = max(nreal_ok - 1L, 1L))
+
+    upgrade <- ensemble_solution(
+      par_diff          = par_diff,
+      obs_diff          = obs_diff,
+      obs_resid         = obs_resid,
+      par_resid         = par_resid,
+      weights           = weights,
+      parcov_inv        = parcov_inv,
+      Am                = Am_k,
+      cur_lam           = lambda_seq[k],
+      eigthresh         = eigthresh,
+      use_approx        = use_approx,
+      use_prior_scaling = FALSE,
+      iter              = as.integer(k),
+      reg_factor        = -1.0
+    )
+    # upgrade: nreal_ok x npar. The C++ kernel returns the *negative-direction*
+    # step (the Chen-Oliver 2013 GLM update formula carries an explicit leading
+    # minus sign); apply by subtraction so phi descends.
+    par_ok_new <- par_ok - upgrade
+    par_mat[ok, ] <- par_ok_new
+
+    iter_meta[[k]] <- list(
+      lambda     = lambda_seq[k],
+      mean_phi   = mean(phi_vec),
+      n_failures = nreal - nreal_ok
+    )
+
+    if (k < noptmax) {
+      obs_mat <- .eval_forward_safe(forward_model, par_mat, nreal, nobs,
+                                    on_failure, verbose)
+      total_evals    <- total_evals + nreal
+      total_failures <- total_failures + attr(obs_mat, "n_failures")
+    }
+  }
+
+  obs_mat_final <- .eval_forward_safe(forward_model, par_mat, nreal, nobs,
+                                      on_failure, verbose)
+  total_evals    <- total_evals + nreal
+  total_failures <- total_failures + attr(obs_mat_final, "n_failures")
+
+  runtime <- as.numeric(proc.time()["elapsed"] - t0)
+
+  par_dt <- data.table::as.data.table(par_mat)
+  data.table::setnames(par_dt, par_names_local)
+  par_dt[, real_name := paste0("real_", seq_len(nreal))]
+  data.table::setcolorder(par_dt, c("real_name", par_names_local))
+
+  obs_dt <- data.table::as.data.table(obs_mat_final)
+  data.table::setnames(obs_dt, obs_names_local)
+  obs_dt[, real_name := paste0("real_", seq_len(nreal))]
+  data.table::setcolorder(obs_dt, c("real_name", obs_names_local))
+
+  output <- list(
+    phi             = data.table::rbindlist(phi_history),
+    par_ensemble    = par_dt,
+    obs_ensemble    = obs_dt,
+    iterations      = iter_meta,
+    runtime_seconds = runtime,
+    n_forward_evals = total_evals,
+    failure_rate    = total_failures / total_evals,
+    # Assimilation inputs preserved so downstream code (e.g. A5
+    # manifest emitter) can reconstruct the full run context.
+    obs_target      = stats::setNames(obs_vec, obs_names_local),
+    obs_sd          = stats::setNames(obs_sd_vec, obs_names_local),
+    weights         = stats::setNames(weights, obs_names_local)
+  )
+  class(output) <- c("pesto_ies_callback_result", "pesto_ies_result")
+  output
+}
+
+# Internal: evaluate forward_model with bulk-then-per-row fallback.
+# Returns an nreal x nobs matrix with attribute "n_failures".
+.eval_forward_safe <- function(f, par_mat, nreal, nobs, on_failure, verbose) {
+  bulk <- tryCatch(
+    {
+      r <- f(par_mat)
+      if (!is.matrix(r)) r <- as.matrix(r)
+      if (!identical(dim(r), c(nreal, nobs))) {
+        stop(sprintf(
+          "forward_model returned shape %dx%d; expected %dx%d.",
+          nrow(r), ncol(r), nreal, nobs), call. = FALSE)
+      }
+      storage.mode(r) <- "double"
+      r
+    },
+    error = function(e) {
+      if (on_failure == "stop") {
+        stop("forward_model failed: ", conditionMessage(e), call. = FALSE)
+      }
+      if (verbose) {
+        message("forward_model bulk-call failed (", conditionMessage(e),
+                "); retrying per realisation.")
+      }
+      out <- matrix(NA_real_, nrow = nreal, ncol = nobs)
+      for (i in seq_len(nreal)) {
+        ri <- tryCatch(
+          {
+            x <- f(par_mat[i, , drop = FALSE])
+            if (!is.matrix(x)) x <- matrix(as.numeric(x), nrow = 1L)
+            x[1L, ]
+          },
+          error = function(e2) rep(NA_real_, nobs)
+        )
+        if (length(ri) == nobs) out[i, ] <- as.numeric(ri)
+      }
+      out
+    }
+  )
+  n_fail <- sum(!stats::complete.cases(bulk))
+  if (on_failure == "stop" && n_fail > 0L) {
+    stop("forward_model returned NA for ", n_fail, " of ", nreal,
+         " realisations (on_failure = 'stop').", call. = FALSE)
+  }
+  attr(bulk, "n_failures") <- n_fail
+  bulk
+}
+
 #' Get PESTO package version information
 #'
 #' Returns version info for both the PESTO R package and the

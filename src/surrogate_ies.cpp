@@ -15,7 +15,7 @@
 //   - Liu & Guillas (2017). Dimension reduction for GP emulators.
 //   - Evensen et al. (2022). Data Assimilation Fundamentals.
 //
-// Copyright (c) 2026 Supremum Consulting Ltd. GPL-3.
+// Copyright (c) 2026 Max Moldovan. Licensed under GPL-3 or any later version.
 
 #include <Rcpp.h>
 #include <RcppEigen.h>

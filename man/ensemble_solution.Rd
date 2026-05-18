@@ -54,6 +54,10 @@ Passing (obs - sim) inverts the gradient and causes phi to diverge.}
 }
 \value{
 Matrix (nreal x npar). Parameter upgrade vectors (one row per realisation).
+The returned matrix is the \emph{negative-direction} step from the Chen-Oliver
+2013 GLM update formula. To advance the ensemble, apply by subtraction:
+\code{par_new = par_old - upgrade}. The R-side driver
+\code{\link[=pesto_ies_callback]{pesto_ies_callback()}} handles this convention internally.
 }
 \description{
 Implements the core IES ensemble update equation using the

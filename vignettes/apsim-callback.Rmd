@@ -1,0 +1,170 @@
+---
+title: "In-Process IES via R Callback — apsimx Adapter"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{In-Process IES via R Callback — apsimx Adapter}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  fig.width = 6, fig.height = 4
+)
+set.seed(20260516)
+```
+
+## Why a callback driver?
+
+`pesto_ies()` shells out to the `pestpp-ies` binary, which writes and
+reads `.pst` / ensemble / observation files between every realisation.
+For an in-process R forward model (an `apsimx` wrapper, a Python
+bridge, or a fast synthetic test problem), that file round-trip is
+pure overhead. `pesto_ies_callback()` keeps the same C++ ensemble
+kernel (`ensemble_solution()`, Chen & Oliver 2013) but drives the
+outer loop in R, calling the forward model in-process.
+
+This document shows:
+
+1. The driver on a synthetic linear-Gaussian problem (recovers truth).
+2. The shape of the `apsim_callback()` adapter for `apsimx` (run
+   block is disabled — needs APSIM installed).
+
+## A synthetic recovery example
+
+```{r}
+library(PESTO)
+
+npar  <- 4L
+nobs  <- 8L
+nreal <- 120L
+sigma <- 0.05
+
+G          <- matrix(rnorm(nobs * npar), nobs, npar)
+theta_true <- c(1.0, -0.5, 2.0, 0.25)
+y          <- as.numeric(G %*% theta_true) + rnorm(nobs, sd = sigma)
+names(y)   <- paste0("o", seq_len(nobs))
+
+# Forward model: any function that takes an (nreal x npar) matrix and
+# returns an (nreal x nobs) matrix.
+forward <- function(theta) theta %*% t(G)
+
+prior <- matrix(rnorm(nreal * npar), nreal, npar,
+                dimnames = list(NULL, paste0("p", seq_len(npar))))
+```
+
+Run six IES iterations with a single lambda:
+
+```{r}
+fit <- pesto_ies_callback(
+  forward_model  = forward,
+  prior_ensemble = prior,
+  obs            = y,
+  obs_sd         = sigma,
+  noptmax        = 6L,
+  lambda         = 1.0,
+  verbose        = FALSE
+)
+```
+
+Diagnostics:
+
+```{r}
+prior_rmse <- sqrt(mean((colMeans(prior) - theta_true)^2))
+post_mean  <- colMeans(as.matrix(fit$par_ensemble[, -1L]))
+post_rmse  <- sqrt(mean((post_mean - theta_true)^2))
+
+cat(sprintf("prior RMSE: %.4f\n", prior_rmse))
+cat(sprintf("posterior RMSE: %.4f\n", post_rmse))
+
+mean_phi <- vapply(fit$iterations, `[[`, numeric(1L), "mean_phi")
+print(mean_phi)
+```
+
+Posterior RMSE should be a small fraction of prior RMSE, and mean phi
+should decrease across iterations.
+
+The full per-realisation phi trajectory:
+
+```{r, fig.alt = "Per-realisation phi decreasing across IES iterations"}
+plot_phi(fit)
+```
+
+## Driving APSIM through `apsim_callback()`
+
+The adapter wraps `apsimx` so each realisation gets its own working
+copy of an APSIM template, parameter edits per `param_map`, a run, and
+an extraction step. The signature returned matches what
+`pesto_ies_callback()` expects.
+
+```{r,eval=FALSE}
+library(apsimx)   # >= 2.7.0 from CRAN
+# Requires a working APSIM Next Gen installation.
+
+forward <- apsim_callback(
+  template  = "wheat_wagga.apsimx",
+  param_map = list(
+    RUE = "Wheat.Leaf.Photosynthesis.RUE.FixedValue",
+    CN2 = "Soil.SoilWater.CN2Bare"
+  ),
+  output_extractor = function(sim) {
+    # sim is the data.frame of report-table variables.
+    as.numeric(sim$Wheat.Grain.Total.Wt)
+  }
+)
+
+prior <- cbind(
+  RUE = runif(40, 1.0, 2.0),
+  CN2 = runif(40, 60,  90)
+)
+
+fit <- pesto_ies_callback(
+  forward_model  = forward,
+  prior_ensemble = prior,
+  obs            = c(y_2018 = 4500, y_2019 = 5200, y_2020 = 4900),
+  obs_sd         = 250,
+  noptmax        = 4L
+)
+
+summary(fit$par_ensemble)
+```
+
+### Failure handling
+
+Per-realisation APSIM crashes (corrupt config, solver divergence,
+missing report variable) are caught by the adapter and emerge as `NA`
+rows. `pesto_ies_callback()`'s `on_failure = "na"` (default) carries
+those realisations forward unchanged so the ensemble survives partial
+failures; `on_failure = "stop"` aborts as soon as one row is missing.
+
+### Concurrency
+
+Phase-1 D4 runs realisations serially. Parallel evaluation (`future`,
+`mirai`, or `apsimx`'s own job-server modes) is a planned follow-up
+once `apsimx`'s thread-safety under ensemble load has been
+characterised. For pure-R synthetic models the serial loop is already
+fast enough that the overhead is dominated by `ensemble_solution()`
+itself.
+
+## When to prefer `pesto_ies()` instead
+
+Use the classic `.pst` path when:
+
+- Your forward model lives behind a non-R executable that PEST++ can
+  drive directly via its template/instruction-file mechanism.
+- You need full bit-for-bit compatibility with `pestpp-ies` behaviour
+  (e.g. for cross-validating against an existing PEST++ workflow).
+- You depend on `pestpp-ies`-specific features not yet exposed by the
+  R driver (full lambda line-search, regularisation modes,
+  Tikhonov priors).
+
+Otherwise the callback driver is faster to iterate, easier to debug,
+and avoids per-realisation file I/O entirely.
+
+## Reproducibility
+
+```{r}
+sessionInfo()
+```

@@ -41,6 +41,10 @@ using Eigen::DiagonalMatrix;
 //' @param iter Integer. Current iteration number.
 //' @param reg_factor Numeric. Regularisation factor for upgrade_2 blending.
 //' @return Matrix (nreal x npar). Parameter upgrade vectors (one row per realisation).
+//'   The returned matrix is the *negative-direction* step from the Chen-Oliver
+//'   2013 GLM update formula. To advance the ensemble, apply by subtraction:
+//'   `par_new = par_old - upgrade`. The R-side driver
+//'   [pesto_ies_callback()] handles this convention internally.
 //' @examples
 //' set.seed(1L)
 //' npar  <- 4L

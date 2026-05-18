@@ -8,7 +8,7 @@
 //   - Halko, Martinsson, Tropp (2011). Finding structure with randomness.
 //   - Liberty et al. (2007). Randomized algorithms for the low-rank approximation.
 //
-// Copyright (c) 2026 Supremum Consulting Ltd. GPL-3.
+// Copyright (c) 2026 Max Moldovan. Licensed under GPL-3 or any later version.
 
 #include <Rcpp.h>
 #include <RcppEigen.h>

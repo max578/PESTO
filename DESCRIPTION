@@ -1,11 +1,12 @@
 Package: PESTO
 Type: Package
 Title: Parameter Estimation, Surrogates, and Tooling for Optimisation
-Version: 0.2.0
+Version: 0.3.3
 Authors@R: c(
-    person("Max", "Moldovan", role = c("aut", "cre"),
-           email = "max.moldovan@adelaide.edu.au"),
-    person("Supremum Consulting Ltd", role = "cph")
+    person("Max", "Moldovan",
+           role = c("aut", "cre", "cph"),
+           email = "max.moldovan@adelaide.edu.au",
+           comment = c(ORCID = "0000-0001-9680-8474"))
     )
 Description: High-performance parameter estimation, uncertainty quantification,
     and inverse modelling toolkit built on modernised PEST++ algorithms.
@@ -30,7 +31,10 @@ Depends:
 Imports:
     Rcpp (>= 1.0.12),
     data.table,
-    ggplot2
+    ggplot2,
+    S7 (>= 0.2.0),
+    yaml (>= 2.3.0),
+    digest (>= 0.6.0)
 LinkingTo:
     Rcpp,
     RcppEigen
@@ -40,6 +44,7 @@ Suggests:
     rmarkdown,
     viridis,
     microbenchmark,
-    Matrix
+    Matrix,
+    apsimx (>= 2.7.0)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
