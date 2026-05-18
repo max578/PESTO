@@ -19,7 +19,8 @@ Description: High-performance parameter estimation, uncertainty quantification,
     large-scale environmental, hydrological, and agricultural models with
     support for highly-parameterised problems (>100,000 parameters).
 License: GPL (>= 3)
-URL: https://github.com/AAGI-AUS/PESTO
+URL: https://github.com/AAGI-AUS/PESTO,
+    https://AAGI-AUS.github.io/PESTO
 BugReports: https://github.com/AAGI-AUS/PESTO/issues
 Encoding: UTF-8
 Language: en-AU

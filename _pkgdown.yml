@@ -35,6 +35,12 @@ reference:
   - pesto_ies_callback
   - apsim_callback
 
+- title: Reference IES (pure R)
+  desc: Textbook Chen & Oliver (2013) reference implementation used as the
+    canonical comparison target by the comparison vignette.
+  contents:
+  - pesto_reference_ies
+
 - title: Surrogates
   desc: Gaussian Process and Random Fourier Feature surrogates; convergence-aware ensemble sizing.
   contents:
@@ -44,6 +50,7 @@ reference:
   - predict_rff_surrogate
   - surrogate_ensemble_update
   - adaptive_ensemble_size
+  - check_surrogate_regime
 
 - title: PEST control file I/O
   desc: Read/write `.pst` files and ensemble snapshots; build scenarios programmatically.
@@ -53,6 +60,7 @@ reference:
   - create_pest_scenario
   - read_ensemble
   - write_ensemble
+  - print.pesto_pst
 
 - title: Ensemble manifest (S7 cross-package contract)
   desc: Versioned, hashed, provenance-tracked ensemble-run container consumed by kernR and proxymix.
@@ -74,6 +82,15 @@ reference:
 articles:
 - title: Get started
   navbar: ~
+  contents:
+  - getting-started
+
+- title: Algorithms and comparison
+  contents:
+  - pestpp-comparison-and-simulation
+  - surrogate-ies
+
+- title: In-process IES and ensemble manifest
   contents:
   - apsim-callback
   - ensemble-manifest
