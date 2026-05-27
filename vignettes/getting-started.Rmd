@@ -85,7 +85,7 @@ print(pst)
 
 ## Core Computational Kernel
 
-PESTO provides the `ensemble_solution()` function — a high-performance
+PESTO provides the `ensemble_solution()` function -- a high-performance
 C++ implementation of the IES update equation. This is the computational
 heart of the package:
 

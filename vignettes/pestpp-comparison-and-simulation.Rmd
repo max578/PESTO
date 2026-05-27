@@ -26,16 +26,16 @@ knitr::opts_chunk$set(
 
 This vignette has three goals:
 
-1. **Scenario A** — show that PESTO's R-native iterative ensemble smoother
+1. **Scenario A** -- show that PESTO's R-native iterative ensemble smoother
    reproduces results from the upstream `pestpp-ies` binary on a small,
    well-posed analytical inverse problem (eight parameters, fifteen
    observations).
-2. **Scenario B** — exercise PESTO on a higher-dimensional, ill-posed
+2. **Scenario B** -- exercise PESTO on a higher-dimensional, ill-posed
    problem (one hundred parameters, two hundred observations) and surface
    both the wins (randomised SVD speedups, surrogate savings,
    identifiability diagnostics) and the honest trade-offs (rank-truncation
    sensitivity, small-rank rSVD penalties).
-3. **Scenario C** — run a fixed-seed Monte-Carlo simulation study that
+3. **Scenario C** -- run a fixed-seed Monte-Carlo simulation study that
    exercises every exported PESTO function at least once and reports
    convergence-rate distributions, surrogate savings, ESS evolution and
    sensitivity-ranking stability.
@@ -62,11 +62,11 @@ PAL <- c("#0072B2", "#D55E00", "#009E73", "#CC79A7", "#F0E442",
 **Comparison strategy.** This vignette compares PESTO native IES against
 two reference targets, in order of CRAN-availability:
 
-1. **Pure-R textbook reference** — `pesto_reference_ies()` is an
+1. **Pure-R textbook reference** -- `pesto_reference_ies()` is an
    independent implementation of Chen & Oliver (2013) eq. 12 in pure R.
    It is the canonical comparison target shipped with the package and
    used by every reader of this vignette.
-2. **Live `pestpp-ies` binary (developer-only)** — when the binary is
+2. **Live `pestpp-ies` binary (developer-only)** -- when the binary is
    resolvable (via the `PESTO_PESTPP_BIN` environment variable or
    `Sys.which("pestpp-ies")`) and a developer-side cache is present
    under `tools/pestpp_benchmark/`, the vignette extends the agreement
@@ -90,7 +90,7 @@ print(pesto_version())
 
 ---
 
-## Scenario A — low-dimensional, well-posed
+## Scenario A -- low-dimensional, well-posed
 
 ### Problem definition
 
@@ -103,7 +103,7 @@ $$y_i \;=\; \sum_{k=1}^{8} k\,\theta_k \, e^{-i / 10}\;+\;\varepsilon_i,
 
 This is a closed-form, analytically tractable inverse problem. The
 parameter weighting $k \cdot e^{-i/10}$ means high-index parameters are
-poorly identifiable — we expect the posterior to recover the first few
+poorly identifiable -- we expect the posterior to recover the first few
 parameters tightly and leave the tail diffuse.
 
 The same Python forward model (`forward.py`) is invoked from both the
@@ -209,7 +209,7 @@ for (iter in seq_len(n_iter_A)) {
   obs_mean <- rowMeans(obs_ens_A)
   par_diff <- par_ens_A - par_mean
   obs_diff <- obs_ens_A - obs_mean
-  # ensemble_solution() expects obs_resid = sim - obs — required for the GLM
+  # ensemble_solution() expects obs_resid = sim - obs -- required for the GLM
   # update's leading negative sign to act as a descent step (see ?ensemble_solution).
   obs_resid <- obs_ens_A - matrix(rep(y_obs_A, n_real_A), nrow = length(y_obs_A))
   par_resid <- par_diff
@@ -411,15 +411,14 @@ ggplot(pp_dt, aes(x = parameter, y = mean, colour = source)) +
 
 PESTO native and `pestpp-ies` agree on the **direction and ranking**
 of the posterior pull: both push $\theta_1$ down from the prior mean
-of 0.5, both centre $\theta_2$–$\theta_4$ in the same neighbourhood,
-and both leave $\theta_5$–$\theta_8$ near the prior because those
+of 0.5, both centre $\theta_2$--$\theta_4$ in the same neighbourhood,
+and both leave $\theta_5$--$\theta_8$ near the prior because those
 parameters are weakly identified by an exponentially-decaying
-observation kernel. The two posteriors are not numerically identical —
-PEST++ runs three additional Marquardt sub-cycles per iteration with
+observation kernel. The two posteriors are not numerically identical -- PEST++ runs three additional Marquardt sub-cycles per iteration with
 adaptive lambda selection and a different prior-ensemble seed, so the
 posterior credible intervals are wider but centred similarly.
 
-The headline numbers are the wall-clock split — PESTO native completes
+The headline numbers are the wall-clock split -- PESTO native completes
 the same number of IES iterations on the same problem orders of
 magnitude faster than the binary, because the binary spawns a
 sub-process per realisation per lambda per iteration and PESTO calls
@@ -429,7 +428,7 @@ for fast models like this one, in-process IES dominates.
 
 ---
 
-## Scenario B — high-dimensional, ill-posed
+## Scenario B -- high-dimensional, ill-posed
 
 ### Problem definition
 
@@ -442,7 +441,7 @@ highly-parameterised under-determined setup that motivated SVD
 regularisation.
 
 We use a synthetic R groundwater model rather than MODFLOW because we
-do not have the `mf6` binary on this machine — the structure (sparse
+do not have the `mf6` binary on this machine -- the structure (sparse
 linear solve, distributed log-transmissivity field) is faithful to a
 2-D confined aquifer.
 
@@ -690,11 +689,11 @@ plot_identifiability(jco_file = jco_path,
   theme(axis.text.y = element_text(size = 6))
 ```
 
-### rSVD vs LAPACK — sweep over target rank
+### rSVD vs LAPACK -- sweep over target rank
 
 Honest reporting requires showing where rSVD wins and where it loses.
 The dominant axis is the target rank $k$ relative to $\min(m,n)$, not
-the absolute matrix size — at small $k$ the random-projection sketch
+the absolute matrix size -- at small $k$ the random-projection sketch
 is decisively faster, while at $k \to \min(m,n)$ the dense LAPACK
 algorithm reclaims the lead.
 
@@ -741,7 +740,7 @@ cat("rsvd direct:   ", length(rs$d), " singular values, top sv = ",
 ### Honest reading
 
 - At **low rank** ($k \ll \min(m, n)$, the IES regime) randomised SVD
-  is decisively faster — typically 5x to 15x speedup over full LAPACK
+  is decisively faster -- typically 5x to 15x speedup over full LAPACK
   because cost scales as $O(mnk)$ rather than $O(mn \min(m, n))$.
 - At **high rank** ($k$ approaching $\min(m, n)$) the random-projection
   sketch becomes more expensive than the dense decomposition; LAPACK
@@ -753,7 +752,7 @@ cat("rsvd direct:   ", length(rs$d), " singular values, top sv = ",
 
 ---
 
-## Scenario C — comprehensive simulation study
+## Scenario C -- comprehensive simulation study
 
 ### Design
 
@@ -912,7 +911,7 @@ sim_summary <- data.table(
 knitr::kable(sim_summary, caption = "Scenario C: aggregate diagnostics.")
 ```
 
-**Honest reading — surrogate savings in this regime.** The mean
+**Honest reading -- surrogate savings in this regime.** The mean
 surrogate savings reported above will routinely sit at or near zero in
 this Scenario C configuration, and that is the algorithm behaving
 correctly rather than failing. With thirty parameters, thirty-member
@@ -921,9 +920,7 @@ surrogate sits squarely in the curse-of-dimensionality regime: the
 training-set size is only on the order of `n_train` $\approx$
 `n_params`, so the GP posterior variance stays above the switching
 threshold for almost every realisation, and the control-variate rule
-correctly defers to the full forward model. The favourable regime —
-where the same machinery saves a substantial fraction of evaluations —
-is the standalone surrogate demo earlier in the vignette, and it is
+correctly defers to the full forward model. The favourable regime -- where the same machinery saves a substantial fraction of evaluations -- is the standalone surrogate demo earlier in the vignette, and it is
 also the central case study of the dedicated
 `vignette("surrogate-ies", package = "PESTO")`. As a rule of thumb the
 surrogate begins to repay its training cost once
@@ -1002,7 +999,7 @@ if (interactive() && pestpp_available) {
 }
 ```
 
-### Plot helpers — `plot_phi`, `plot_ensemble`
+### Plot helpers -- `plot_phi`, `plot_ensemble`
 
 ```{r scen-c-plot-phi, fig.alt = "Phi convergence trajectory from the simulation study, summarised across all 50 replicates."}
 phi_C_dt <- data.table(iteration = c(0L, 1L),

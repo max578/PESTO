@@ -1,8 +1,8 @@
 ---
-title: "In-Process IES via R Callback — apsimx Adapter"
+title: "In-Process IES via R Callback -- apsimx Adapter"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{In-Process IES via R Callback — apsimx Adapter}
+  %\VignetteIndexEntry{In-Process IES via R Callback -- apsimx Adapter}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -30,7 +30,7 @@ This document shows:
 
 1. The driver on a synthetic linear-Gaussian problem (recovers truth).
 2. The shape of the `apsim_callback()` adapter for `apsimx` (run
-   block is disabled — needs APSIM installed).
+   block is disabled -- needs APSIM installed).
 
 ## A synthetic recovery example
 

@@ -1,8 +1,8 @@
 ---
-title: "Ensemble Manifests — the Cross-Package Contract"
+title: "Ensemble Manifests -- the Cross-Package Contract"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Ensemble Manifests — the Cross-Package Contract}
+  %\VignetteIndexEntry{Ensemble Manifests -- the Cross-Package Contract}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -19,8 +19,7 @@ parameter ensemble, simulated outputs, target observations, IES
 weights, the RNG seed, the lambda schedule, runtime context. To let
 `kernR`, `proxymix`, and the paper-writing pipeline consume that
 output **without reaching into PESTO-specific list internals**, v0.3.0
-introduces a versioned S7 contract object —
-`pesto_ensemble_manifest` — plus YAML+CSV persistence with SHA-256
+introduces a versioned S7 contract object -- `pesto_ensemble_manifest` -- plus YAML+CSV persistence with SHA-256
 integrity checking.
 
 This is Year-1 §A5 of the UQ ag-stack roadmap. It is deliberately
@@ -75,7 +74,7 @@ head(m@params)
 
 `write_manifest()` emits the YAML plus three RDS sidecars (`*_params.rds`,
 `*_outputs.rds`, `*_assim.rds`). RDS is used in preference to CSV so
-IEEE 754 doubles round-trip bit-exactly — the SHA-256 integrity check
+IEEE 754 doubles round-trip bit-exactly -- the SHA-256 integrity check
 would otherwise trip on formatter precision loss:
 
 ```{r}
@@ -101,9 +100,9 @@ cat(paste(readLines(file.path(dir, "wagga_2026_run01.yaml"))[1:14],
 
 ### Inspection CSVs (optional)
 
-For workflows that need a human-readable view of the ensemble — quick
+For workflows that need a human-readable view of the ensemble -- quick
 scans in Excel, ad-hoc exports for a domain collaborator, copy-paste
-into a Quarto narrative — `write_manifest()` accepts a
+into a Quarto narrative -- `write_manifest()` accepts a
 `format = "both"` argument that emits CSV sidecars **alongside** the
 RDS. The hash stays bound to the RDS (bit-exact integrity preserved),
 and the YAML records the inspection paths under a separate
@@ -129,7 +128,7 @@ dir3 <- tempfile("pesto_manifest_unverified_"); dir.create(dir3)
 write_manifest(m, file.path(dir3, "snapshot.yaml"),
                format = "csv_unverified")
 m_csv <- read_manifest(file.path(dir3, "snapshot.yaml"))
-verify_manifest(m_csv)$ok      # NA — see $message for why
+verify_manifest(m_csv)$ok      # NA -- see $message for why
 ```
 
 If you need both human inspection AND verifiable integrity, use
