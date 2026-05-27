@@ -1,3 +1,56 @@
+# PESTO 0.4.0
+
+## AAGI recipes uplift and canon channel migration
+
+This release contains no R, C++, or shipped-data changes. It is a
+governance, metadata, and project-hygiene release that lands the AAGI
+canon recipes on the `max578/PESTO` channel.
+
+### Canon channel migration
+
+* Primary canon channel migrated from `AAGI-AUS/PESTO` to
+  `max578/PESTO`. `DESCRIPTION`, `CITATION.cff`, `codemeta.json`,
+  `inst/CITATION`, `_pkgdown.yml`, `README.md`, `CONTRIBUTING.md`,
+  `API_STABILITY.md`, and the pkgdown GitHub Actions workflow header
+  now point to `https://github.com/max578/PESTO` and
+  `https://max578.github.io/PESTO`. The `aagi` git remote is retained
+  as a frozen read-only mirror; no push to `AAGI-AUS` without explicit
+  per-instance maintainer approval.
+* Package-root `CLAUDE.md` declares `aagi_aus: out-of-scope` so the
+  AAGI-AUS canon signal-detection deactivates for this package. The
+  file is excluded from R-package builds via `.Rbuildignore`.
+* `man/PESTO-package.Rd` regenerated to inherit the new URLs from
+  `DESCRIPTION` via `devtools::document()`.
+
+### Metadata version sync
+
+* `CITATION.cff` (`version: 0.1.0`), `codemeta.json` (`version: "0.1.0"`),
+  `inst/CITATION` (`R package version 0.3.3`), and the README citation
+  block were not in lock-step with `DESCRIPTION`. All four are now on
+  `0.4.0` with `date-released: "2026-05-28"` and
+  `dateModified: "2026-05-28"`.
+
+### Sole copyright holder
+
+* `codemeta.json` `copyrightHolder` corrected from
+  `Organization "Supremum Consulting Ltd"` to
+  `Person "Max Moldovan"` with ORCID `0000-0001-9680-8474` and
+  University of Adelaide affiliation, matching `Authors@R` and
+  `LICENSE.md`.
+
+### AAGI canon recipes added
+
+* `CODE_OF_CONDUCT.md` (Contributor Covenant v2.1, pointer form).
+* `SECURITY.md` (vulnerability reporting policy; maintainer email,
+  five-working-day acknowledgement, scope statement).
+* `air.toml` (Air formatter configuration: 80-char line width,
+  two-space indent, auto line endings).
+* `.lintr` (lintr defaults aligned with `r_style.md` direction:
+  80-char line, `snake_case` / `dotted.case` / symbols object names,
+  two-space indent; `src`, `tools`, `inst/extdata`, `vignettes`
+  excluded).
+* `.Rbuildignore` already excluded all four paths; no tarball impact.
+
 # PESTO 0.3.3
 
 ## FLIBS Makevars portability fix (closes critical-review P2 #7)

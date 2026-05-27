@@ -1,0 +1,17 @@
+linters: linters_with_defaults(
+    line_length_linter = line_length_linter(80L),
+    object_name_linter = object_name_linter(
+      styles = c("snake_case", "dotted.case", "symbols")
+    ),
+    object_length_linter = object_length_linter(40L),
+    cyclocomp_linter = NULL,
+    commented_code_linter = NULL,
+    indentation_linter = indentation_linter(indent = 2L)
+  )
+exclusions: list(
+    "src",
+    "tools",
+    "inst/extdata",
+    "vignettes"
+  )
+encoding: "UTF-8"

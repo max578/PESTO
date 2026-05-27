@@ -110,7 +110,7 @@ Randomised SVD: **35x** faster than full LAPACK at 2000x1000 for rank-20 approxi
 citation("PESTO")
 ```
 
-> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.3.3. https://github.com/max578/PESTO
+> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.4.0. https://github.com/max578/PESTO
 
 ## Related Projects
 
