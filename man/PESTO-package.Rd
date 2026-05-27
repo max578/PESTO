@@ -11,8 +11,9 @@ High-performance parameter estimation, uncertainty quantification, and inverse m
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/AAGI-AUS/PESTO}
-  \item Report bugs at \url{https://github.com/AAGI-AUS/PESTO/issues}
+  \item \url{https://github.com/max578/PESTO}
+  \item \url{https://max578.github.io/PESTO}
+  \item Report bugs at \url{https://github.com/max578/PESTO/issues}
 }
 
 }

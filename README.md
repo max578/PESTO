@@ -26,15 +26,14 @@ From GitHub (development version):
 
 ```r
 # install.packages("pak")
-pak::pak("AAGI-AUS/PESTO")
+pak::pak("max578/PESTO")
 ```
 
-Once the AAGI r-universe registry is live, pre-built binaries will
-be available:
+Pre-built binaries are available from the author's r-universe:
 
 ```r
 install.packages("PESTO", repos = c(
-  "https://aagi-aus.r-universe.dev",
+  "https://max578.r-universe.dev",
   "https://cloud.r-project.org"
 ))
 ```
@@ -111,7 +110,7 @@ Randomised SVD: **35x** faster than full LAPACK at 2000x1000 for rank-20 approxi
 citation("PESTO")
 ```
 
-> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.1.0. https://github.com/AAGI-AUS/PESTO
+> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.3.3. https://github.com/max578/PESTO
 
 ## Related Projects
 

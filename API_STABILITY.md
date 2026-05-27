@@ -71,6 +71,6 @@ carries the `NEWS.md` entry as its message.
 
 If you discover that a `PESTO` release has silently broken your
 pipeline, open an issue at
-<https://github.com/AAGI-AUS/PESTO/issues> with the version you
+<https://github.com/max578/PESTO/issues> with the version you
 upgraded from and to plus a small reproducible example. Unintended
 breaks at any stage are treated as bugs.

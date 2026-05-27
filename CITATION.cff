@@ -10,10 +10,10 @@ authors:
     orcid: "https://orcid.org/0000-0001-9680-8474"
     affiliation: "University of Adelaide"
 license: GPL-3.0-or-later
-repository-code: "https://github.com/AAGI-AUS/PESTO"
-url: "https://github.com/AAGI-AUS/PESTO"
-version: 0.1.0
-date-released: "2026-04-25"
+repository-code: "https://github.com/max578/PESTO"
+url: "https://github.com/max578/PESTO"
+version: 0.3.3
+date-released: "2026-05-18"
 keywords:
   - "parameter estimation"
   - "uncertainty quantification"
