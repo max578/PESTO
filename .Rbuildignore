@@ -38,3 +38,4 @@
 ^\.claude$
 ^\.positai$
 ^\.cursor$
+^CLAUDE\.md$
