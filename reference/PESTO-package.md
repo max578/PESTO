@@ -15,9 +15,11 @@ highly-parameterised problems (\>100,000 parameters).
 
 Useful links:
 
-- <https://github.com/AAGI-AUS/PESTO>
+- <https://github.com/max578/PESTO>
 
-- Report bugs at <https://github.com/AAGI-AUS/PESTO/issues>
+- <https://max578.github.io/PESTO>
+
+- Report bugs at <https://github.com/max578/PESTO/issues>
 
 ## Author
 

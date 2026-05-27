@@ -1,7 +1,7 @@
 # Read a manifest from YAML + sidecar data files
 
 Inverse of
-[`write_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/write_manifest.md).
+[`write_manifest()`](https://max578.github.io/PESTO/reference/write_manifest.md).
 Reads the YAML, loads the three sidecar data files (paths resolved
 relative to the YAML file), and reconstructs the
 `pesto_ensemble_manifest` S7 object. The file extensions in the YAML's

@@ -17,23 +17,23 @@ problem.
 The Gaussian-process surrogate inside PESTO is a tool with a clearly
 bounded operating envelope, and it is worth stating that envelope before
 the demo. As an empirical soft floor we recommend
-`n_train >= 5 * n_params` — below that ratio the GP posterior variance
+`n_train >= 5 * n_params` – below that ratio the GP posterior variance
 rarely drops far enough for the uncertainty-driven switching rule to
 fire, and the surrogate honestly defers to the full model on most
 realisations. The second axis is the smoothness of the forward model:
 smooth, near-linear responses are well-approximated by an RBF-kernel GP
 and yield large savings, whereas rough or near-discontinuous responses
 (sharp wetting fronts, threshold activations, regime switches) defeat
-the kernel and savings collapse. The third axis is ensemble size —
+the kernel and savings collapse. The third axis is ensemble size –
 larger ensembles improve the GP fit roughly as $`\mathcal{O}(n^{-1})`$
 in posterior variance, and ensembles of fewer than about twenty
 realisations rarely produce a usable surrogate at any dimensionality. If
 your problem falls outside this envelope (high `n_params / n_train`
 ratio, rough forward model, or tiny ensemble), the right thing to do is
 run pure IES via
-[`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
-—
-[`surrogate_ensemble_update()`](https://AAGI-AUS.github.io/PESTO/reference/surrogate_ensemble_update.md)
+[`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
+–
+[`surrogate_ensemble_update()`](https://max578.github.io/PESTO/reference/surrogate_ensemble_update.md)
 will report near-zero savings rather than degrading the posterior, but
 you pay the GP training cost for no return.
 
@@ -136,12 +136,12 @@ cat("Prediction RMSE:", round(pred_error, 6), "\n")
 ```
 
 The GP achieves near-zero prediction error because it is interpolating
-within its training set—this is by design, not an artefact.
+within its training set – this is by design, not an artefact.
 
 ## Step 4: Surrogate-Assisted IES Update
 
 The
-[`surrogate_ensemble_update()`](https://AAGI-AUS.github.io/PESTO/reference/surrogate_ensemble_update.md)
+[`surrogate_ensemble_update()`](https://max578.github.io/PESTO/reference/surrogate_ensemble_update.md)
 function performs the full algorithm:
 
 1.  Train GP from current ensemble

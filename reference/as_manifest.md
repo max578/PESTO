@@ -1,9 +1,9 @@
 # Convert a PESTO ensemble result into a `pesto_ensemble_manifest`
 
 Wraps the plain-list result returned by
-[`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
 (and, eventually,
-[`pesto_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies.md))
+[`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md))
 in the S7 manifest contract object so downstream packages can consume it
 via S7 dispatch without reaching into PESTO-specific list internals.
 

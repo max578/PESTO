@@ -26,16 +26,15 @@ From GitHub (development version):
 ``` r
 
 # install.packages("pak")
-pak::pak("AAGI-AUS/PESTO")
+pak::pak("max578/PESTO")
 ```
 
-Once the AAGI r-universe registry is live, pre-built binaries will be
-available:
+Pre-built binaries are available from the author’s r-universe:
 
 ``` r
 
 install.packages("PESTO", repos = c(
-  "https://aagi-aus.r-universe.dev",
+  "https://max578.r-universe.dev",
   "https://cloud.r-project.org"
 ))
 ```
@@ -106,9 +105,9 @@ approximation.
 
 ## Documentation
 
-- [`vignette("getting-started", package = "PESTO")`](https://AAGI-AUS.github.io/PESTO/articles/getting-started.md)
+- [`vignette("getting-started", package = "PESTO")`](https://max578.github.io/PESTO/articles/getting-started.md)
   – Introduction and basic usage
-- [`vignette("surrogate-ies", package = "PESTO")`](https://AAGI-AUS.github.io/PESTO/articles/surrogate-ies.md)
+- [`vignette("surrogate-ies", package = "PESTO")`](https://max578.github.io/PESTO/articles/surrogate-ies.md)
   – Surrogate-accelerated IES tutorial
 
 ## Citation
@@ -119,8 +118,8 @@ citation("PESTO")
 ```
 
 > Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and
-> Tooling for Optimisation. R package version 0.1.0.
-> <https://github.com/AAGI-AUS/PESTO>
+> Tooling for Optimisation. R package version 0.4.0.
+> <https://github.com/max578/PESTO>
 
 ## Related Projects
 

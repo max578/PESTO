@@ -1,8 +1,59 @@
 # Changelog
 
+## PESTO 0.4.0
+
+### AAGI recipes uplift and canon channel migration
+
+This release contains no R, C++, or shipped-data changes. It is a
+governance, metadata, and project-hygiene release that lands the AAGI
+canon recipes on the `max578/PESTO` channel.
+
+#### Canon channel migration
+
+- Primary canon channel migrated from `AAGI-AUS/PESTO` to
+  `max578/PESTO`. `DESCRIPTION`, `CITATION.cff`, `codemeta.json`,
+  `inst/CITATION`, `_pkgdown.yml`, `README.md`, `CONTRIBUTING.md`,
+  `API_STABILITY.md`, and the pkgdown GitHub Actions workflow header now
+  point to `https://github.com/max578/PESTO` and
+  `https://max578.github.io/PESTO`. The `aagi` git remote is retained as
+  a frozen read-only mirror; no push to `AAGI-AUS` without explicit
+  per-instance maintainer approval.
+- Package-root `CLAUDE.md` declares `aagi_aus: out-of-scope` so the
+  AAGI-AUS canon signal-detection deactivates for this package. The file
+  is excluded from R-package builds via `.Rbuildignore`.
+- `man/PESTO-package.Rd` regenerated to inherit the new URLs from
+  `DESCRIPTION` via `devtools::document()`.
+
+#### Metadata version sync
+
+- `CITATION.cff` (`version: 0.1.0`), `codemeta.json`
+  (`version: "0.1.0"`), `inst/CITATION` (`R package version 0.3.3`), and
+  the README citation block were not in lock-step with `DESCRIPTION`.
+  All four are now on `0.4.0` with `date-released: "2026-05-28"` and
+  `dateModified: "2026-05-28"`.
+
+#### Sole copyright holder
+
+- `codemeta.json` `copyrightHolder` corrected from
+  `Organization "Supremum Consulting Ltd"` to `Person "Max Moldovan"`
+  with ORCID `0000-0001-9680-8474` and University of Adelaide
+  affiliation, matching `Authors@R` and `LICENSE.md`.
+
+#### AAGI canon recipes added
+
+- `CODE_OF_CONDUCT.md` (Contributor Covenant v2.1, pointer form).
+- `SECURITY.md` (vulnerability reporting policy; maintainer email,
+  five-working-day acknowledgement, scope statement).
+- `air.toml` (Air formatter configuration: 80-char line width, two-space
+  indent, auto line endings).
+- `.lintr` (lintr defaults aligned with `r_style.md` direction: 80-char
+  line, `snake_case` / `dotted.case` / symbols object names, two-space
+  indent; `src`, `tools`, `inst/extdata`, `vignettes` excluded).
+- `.Rbuildignore` already excluded all four paths; no tarball impact.
+
 ## PESTO 0.3.3
 
-### FLIBS Makevars portability fix (closes critical-review P2 [\#7](https://github.com/AAGI-AUS/PESTO/issues/7))
+### FLIBS Makevars portability fix (closes critical-review P2 [\#7](https://github.com/max578/PESTO/issues/7))
 
 - `src/Makevars` `PKG_LIBS` now follows `$(BLAS_LIBS)` with `$(FLIBS)`
   per Writing R Extensions §1.2.1.5. Resolves the pre-existing
@@ -31,7 +82,7 @@
 - The legacy `format = "csv"` spelling is still accepted at the API
   boundary with a deprecation warning; the persisted form always uses
   `csv_unverified`.
-  [`read_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/read_manifest.md)
+  [`read_manifest()`](https://max578.github.io/PESTO/reference/read_manifest.md)
   normalises old YAMLs on the read side, so 0.3.1 manifests round-trip
   cleanly under 0.3.2.
 - Validator vocabulary updated: `{rds, both, csv_unverified}`. The old
@@ -48,7 +99,7 @@
 
 ### Manifest sidecar `format=` option (roadmap §A5 polish)
 
-- [`write_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/write_manifest.md)
+- [`write_manifest()`](https://max578.github.io/PESTO/reference/write_manifest.md)
   gains a `format = c("rds", "both", "csv")` argument. `"rds"` (default)
   preserves the current bit-exact binary behaviour. `"both"` writes RDS
   sidecars plus parallel CSV inspection files (`*_inspection.csv`); the
@@ -58,11 +109,11 @@
 - New S7 slot `format` on `pesto_ensemble_manifest` records the on-disk
   serialisation mode (default `"rds"`; preserved through read/write
   round-trips). Validator enforces the three-value vocabulary.
-- [`read_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/read_manifest.md)
+- [`read_manifest()`](https://max578.github.io/PESTO/reference/read_manifest.md)
   dispatches on file extension in the YAML’s `artefacts:` block — reads
   RDS via [`readRDS()`](https://rdrr.io/r/base/readRDS.html), CSV via
   [`utils::read.csv()`](https://rdrr.io/r/utils/read.table.html).
-- [`verify_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/verify_manifest.md)
+- [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
   gains a `message` field on its return list and returns `ok = NA` (with
   explanation) for `format = "csv"` manifests whose IEEE 754 doubles
   have round-tripped through a write formatter. Existing
@@ -87,20 +138,20 @@
   `failure_rate`). This is the contract object that downstream consumers
   (`kernR`, `proxymix`, paper-skill) will read.
 - New
-  [`as_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/as_manifest.md)
+  [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
   — S7 generic with a method for `pesto_ies_callback_result`.
   Non-destructive: wraps without mutating the source result.
 - New
-  [`write_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/write_manifest.md)
+  [`write_manifest()`](https://max578.github.io/PESTO/reference/write_manifest.md)
   /
-  [`read_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/read_manifest.md)
+  [`read_manifest()`](https://max578.github.io/PESTO/reference/read_manifest.md)
   — YAML+RDS serialisation. The YAML carries metadata + relative paths
   to three sidecar RDS files (`*_params.rds`, `*_outputs.rds`,
   `*_assim.rds`); RDS is used in preference to CSV so IEEE 754 doubles
   round-trip bit-exactly (the SHA-256 integrity check would otherwise
   trip on CSV formatter precision loss).
 - New
-  [`verify_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/verify_manifest.md)
+  [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
   — recomputes the SHA-256 over
   `(params, outputs, weights, obs_target, seed)` and compares to the
   stored value, returning a diagnostic list. Detects post-write
@@ -111,23 +162,23 @@
 ### In-Process IES via R Callback (UQ ag-stack roadmap §D4)
 
 - New
-  [`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
   — drives an Iterative Ensemble Smoother entirely in R using a
   user-supplied forward-model callable, bypassing the `.pst`-file
   write/read cycle of
-  [`pesto_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies.md).
+  [`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md).
   Each iteration calls the existing C++ kernel
-  [`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
+  [`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
   (Chen & Oliver, 2013). Tolerates per-realisation failures via
   `on_failure = c("na", "stop")` and reports a `failure_rate` in the
   result object. Phase-1 behaviour uses a single lambda per iteration
   (or user-supplied schedule); a full `pestpp-ies`-style lambda
   line-search is a planned Phase-2 enhancement.
 - New
-  [`apsim_callback()`](https://AAGI-AUS.github.io/PESTO/reference/apsim_callback.md)
+  [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
   — adapter that wraps the `apsimx` package (now in `Suggests`) into a
   forward-model closure suitable for
-  [`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md).
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md).
   Per-realisation template copy, parameter edit via
   [`apsimx::edit_apsimx()`](https://rdrr.io/pkg/apsimx/man/edit_apsimx.html)
   / [`edit_apsim()`](https://rdrr.io/pkg/apsimx/man/edit_apsim.html),
@@ -136,7 +187,7 @@
 - New vignette: `apsim-callback` — synthetic linear-Gaussian recovery
   demo plus disabled apsimx example.
 - New benchmark script: `inst/benchmarks/d4_callback_vs_pst.R`.
-- [`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)
+- [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
   records `obs_target`, `obs_sd`, and `weights` on its result list so
   the manifest emitter has full IES context to capture.
 
@@ -147,7 +198,7 @@
   script measures the callback path on a synthetic surrogate forward
   model only.
 - `apsimx` is in `Suggests` not `Imports`;
-  [`apsim_callback()`](https://AAGI-AUS.github.io/PESTO/reference/apsim_callback.md)
+  [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
   checks for it at call time with
   [`requireNamespace()`](https://rdrr.io/r/base/ns-load.html).
 - New hard imports: `S7 (>= 0.2.0)`, `yaml (>= 2.3.0)`,
@@ -158,7 +209,7 @@
 ### Bug fixes
 
 - **I1 —
-  [`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
+  [`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
   sign-convention bug.** The C++ kernel requires
   `obs_resid = sim - obs`; the docstring previously stated the inverse.
   Two genuine in-package call sites were silently inverting upgrades:
@@ -171,22 +222,22 @@
 
 ### New exported functions
 
-- [`pesto_reference_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_reference_ies.md)
+- [`pesto_reference_ies()`](https://max578.github.io/PESTO/reference/pesto_reference_ies.md)
   — pure-R, textbook implementation of the Chen & Oliver (2013) eq. 12
   IES update. Independent of the C++ kernel; used as the canonical
   comparison target by the comparison vignette so it ships and runs
   without the upstream `pestpp-ies` binary. Cross-validated against the
   C++ kernel at machine precision (max element-wise delta = 5.8e-15).
-- [`check_surrogate_regime()`](https://AAGI-AUS.github.io/PESTO/reference/check_surrogate_regime.md)
+- [`check_surrogate_regime()`](https://max578.github.io/PESTO/reference/check_surrogate_regime.md)
   — soft guardrail that warns when the surrogate-IES regime is
   unfavourable (`n_train < threshold * n_params`). Stand-alone helper,
   not auto-invoked by
-  [`pesto_surrogate_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_surrogate_ies.md)
+  [`pesto_surrogate_ies()`](https://max578.github.io/PESTO/reference/pesto_surrogate_ies.md)
   (v0.3 wiring candidate).
 
 ### API enhancements
 
-- [`plot_identifiability()`](https://AAGI-AUS.github.io/PESTO/reference/plot_identifiability.md)
+- [`plot_identifiability()`](https://max578.github.io/PESTO/reference/plot_identifiability.md)
   gains a `jacobian = NULL` matrix-input path. Backward-compatible:
   `jco_file = NULL` retained; the two are mutually exclusive.
 
@@ -194,7 +245,7 @@
 
 - `vignettes/pestpp-comparison-and-simulation.Rmd` now compares PESTO
   native IES against
-  [`pesto_reference_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_reference_ies.md)
+  [`pesto_reference_ies()`](https://max578.github.io/PESTO/reference/pesto_reference_ies.md)
   by default — no upstream binary required. The pure-R reference cache
   ships at `inst/extdata/pestpp_cache/scenario_a_reference.rds`
   (SHA-256-pinned to the prior ensemble). When the developer-side cache
@@ -218,7 +269,7 @@
   Section 3) covering the curse-of-dimensionality finding from
   investigation I3.
 - Kernel docstring
-  [`?ensemble_solution`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
+  [`?ensemble_solution`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
   now states the `sim - obs` convention with a full GLM-derivation
   rationale.
 - New `cran-comments.md` with per-NOTE justification.
@@ -245,7 +296,7 @@
   pestpp-ies) and is a v0.3 implementation milestone.
 - I3 — **DOCUMENTED** (this release): regime-of-applicability text added
   to both vignettes;
-  [`check_surrogate_regime()`](https://AAGI-AUS.github.io/PESTO/reference/check_surrogate_regime.md)
+  [`check_surrogate_regime()`](https://max578.github.io/PESTO/reference/check_surrogate_regime.md)
   helper exported.
 
 ## PESTO 0.1.1
@@ -266,68 +317,67 @@
 
 #### Core Features
 
-- [`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
+- [`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
   — High-performance C++ implementation of the IES ensemble update
   equation (Chen & Oliver, 2013) via RcppEigen.
-- [`ensemble_solution_mda()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution_mda.md)
+- [`ensemble_solution_mda()`](https://max578.github.io/PESTO/reference/ensemble_solution_mda.md)
   — Multiple Data Assimilation (Evensen, 2018) update kernel.
-- [`compute_phi()`](https://AAGI-AUS.github.io/PESTO/reference/compute_phi.md)
+- [`compute_phi()`](https://max578.github.io/PESTO/reference/compute_phi.md)
   — Fast weighted sum-of-squares objective function.
 
 #### Hardware Acceleration
 
-- [`adaptive_svd()`](https://AAGI-AUS.github.io/PESTO/reference/adaptive_svd.md)
+- [`adaptive_svd()`](https://max578.github.io/PESTO/reference/adaptive_svd.md)
   — Automatic SVD backend selection (LAPACK, Eigen BDCSVD, or randomised
   SVD) based on matrix size and target rank.
-- [`rsvd()`](https://AAGI-AUS.github.io/PESTO/reference/rsvd.md) —
+- [`rsvd()`](https://max578.github.io/PESTO/reference/rsvd.md) —
   Randomised SVD (Halko-Martinsson-Tropp, 2011) for asymptotically
   faster rank-k approximations.
-- [`accelerate_svd()`](https://AAGI-AUS.github.io/PESTO/reference/accelerate_svd.md)
+- [`accelerate_svd()`](https://max578.github.io/PESTO/reference/accelerate_svd.md)
   — Direct LAPACK SVD leveraging platform-optimised BLAS (Apple
   Accelerate/AMX on macOS, MKL or OpenBLAS on Linux).
-- [`ensemble_solution_gpu()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution_gpu.md)
+- [`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
   — GPU-ready ensemble solution with adaptive SVD backend and
   performance diagnostics.
 
 #### Surrogate-Accelerated IES (Novel)
 
-- [`train_gp_surrogate()`](https://AAGI-AUS.github.io/PESTO/reference/train_gp_surrogate.md)
+- [`train_gp_surrogate()`](https://max578.github.io/PESTO/reference/train_gp_surrogate.md)
   — Gaussian Process surrogate model training with automatic
   hyperparameter selection (median heuristic).
-- [`predict_gp_surrogate()`](https://AAGI-AUS.github.io/PESTO/reference/predict_gp_surrogate.md)
+- [`predict_gp_surrogate()`](https://max578.github.io/PESTO/reference/predict_gp_surrogate.md)
   — GP prediction with uncertainty quantification.
-- [`surrogate_ensemble_update()`](https://AAGI-AUS.github.io/PESTO/reference/surrogate_ensemble_update.md)
+- [`surrogate_ensemble_update()`](https://max578.github.io/PESTO/reference/surrogate_ensemble_update.md)
   — Surrogate-accelerated IES update with adaptive model/surrogate
   switching and control-variate bias correction.
-- [`adaptive_ensemble_size()`](https://AAGI-AUS.github.io/PESTO/reference/adaptive_ensemble_size.md)
+- [`adaptive_ensemble_size()`](https://max578.github.io/PESTO/reference/adaptive_ensemble_size.md)
   — Convergence-aware dynamic ensemble sizing based on ESS and
   coefficient of variation diagnostics.
 
 #### PEST++ Integration
 
-- [`read_pst()`](https://AAGI-AUS.github.io/PESTO/reference/read_pst.md)
-  /
-  [`write_pst()`](https://AAGI-AUS.github.io/PESTO/reference/write_pst.md)
+- [`read_pst()`](https://max578.github.io/PESTO/reference/read_pst.md) /
+  [`write_pst()`](https://max578.github.io/PESTO/reference/write_pst.md)
   — PEST control file I/O.
-- [`read_ensemble()`](https://AAGI-AUS.github.io/PESTO/reference/read_ensemble.md)
+- [`read_ensemble()`](https://max578.github.io/PESTO/reference/read_ensemble.md)
   /
-  [`write_ensemble()`](https://AAGI-AUS.github.io/PESTO/reference/write_ensemble.md)
+  [`write_ensemble()`](https://max578.github.io/PESTO/reference/write_ensemble.md)
   — Ensemble file I/O (CSV + binary).
-- [`pesto_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies.md),
-  [`pesto_glm()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_glm.md),
-  [`pesto_sweep()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_sweep.md),
-  [`pesto_sensitivity()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_sensitivity.md)
+- [`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md),
+  [`pesto_glm()`](https://max578.github.io/PESTO/reference/pesto_glm.md),
+  [`pesto_sweep()`](https://max578.github.io/PESTO/reference/pesto_sweep.md),
+  [`pesto_sensitivity()`](https://max578.github.io/PESTO/reference/pesto_sensitivity.md)
   — High-level wrappers for PEST++ executables.
-- [`create_pest_scenario()`](https://AAGI-AUS.github.io/PESTO/reference/create_pest_scenario.md)
+- [`create_pest_scenario()`](https://max578.github.io/PESTO/reference/create_pest_scenario.md)
   — Programmatic scenario builder.
 
 #### Visualisation
 
-- [`plot_phi()`](https://AAGI-AUS.github.io/PESTO/reference/plot_phi.md)
-  — Objective function convergence plotting.
-- [`plot_ensemble()`](https://AAGI-AUS.github.io/PESTO/reference/plot_ensemble.md)
+- [`plot_phi()`](https://max578.github.io/PESTO/reference/plot_phi.md) —
+  Objective function convergence plotting.
+- [`plot_ensemble()`](https://max578.github.io/PESTO/reference/plot_ensemble.md)
   — Prior/posterior parameter distribution comparison.
-- [`plot_identifiability()`](https://AAGI-AUS.github.io/PESTO/reference/plot_identifiability.md)
+- [`plot_identifiability()`](https://max578.github.io/PESTO/reference/plot_identifiability.md)
   — SVD-based parameter identifiability analysis.
-- [`plot_surrogate_diagnostics()`](https://AAGI-AUS.github.io/PESTO/reference/plot_surrogate_diagnostics.md)
+- [`plot_surrogate_diagnostics()`](https://max578.github.io/PESTO/reference/plot_surrogate_diagnostics.md)
   — Surrogate IES performance visualisation.

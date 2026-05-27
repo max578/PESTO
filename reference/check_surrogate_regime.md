@@ -3,9 +3,9 @@
 Issues a warning when the ratio of training points to parameters falls
 below an empirical threshold, where the Gaussian-process surrogate
 inside
-[`pesto_surrogate_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_surrogate_ies.md)
+[`pesto_surrogate_ies()`](https://max578.github.io/PESTO/reference/pesto_surrogate_ies.md)
 and
-[`surrogate_ensemble_update()`](https://AAGI-AUS.github.io/PESTO/reference/surrogate_ensemble_update.md)
+[`surrogate_ensemble_update()`](https://max578.github.io/PESTO/reference/surrogate_ensemble_update.md)
 is unlikely to repay its training cost. The check is a soft guardrail —
 it does not modify the run, only flags an unfavourable regime so the
 caller can decide whether to fall back to pure IES.
@@ -42,7 +42,7 @@ the warning side-effect.
 
 The default threshold of `5` corresponds to the soft floor
 `n_train >= 5 * n_params` documented in
-[`vignette("surrogate-ies", package = "PESTO")`](https://AAGI-AUS.github.io/PESTO/articles/surrogate-ies.md).
+[`vignette("surrogate-ies", package = "PESTO")`](https://max578.github.io/PESTO/articles/surrogate-ies.md).
 Below that floor the GP posterior variance typically stays above the
 uncertainty-driven switching threshold and surrogate savings collapse to
 near zero.
@@ -50,7 +50,7 @@ near zero.
 This is exposed as a stand-alone helper so users can call it explicitly
 before scheduling an expensive ensemble. It is **not** invoked
 automatically by
-[`pesto_surrogate_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_surrogate_ies.md)
+[`pesto_surrogate_ies()`](https://max578.github.io/PESTO/reference/pesto_surrogate_ies.md)
 in the current release; that wiring is tracked as a v0.2 enhancement
 candidate.
 
@@ -61,9 +61,9 @@ Machine Learning*. MIT Press.
 
 ## See also
 
-[`pesto_surrogate_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_surrogate_ies.md),
-[`surrogate_ensemble_update()`](https://AAGI-AUS.github.io/PESTO/reference/surrogate_ensemble_update.md),
-[`vignette("surrogate-ies", package = "PESTO")`](https://AAGI-AUS.github.io/PESTO/articles/surrogate-ies.md)
+[`pesto_surrogate_ies()`](https://max578.github.io/PESTO/reference/pesto_surrogate_ies.md),
+[`surrogate_ensemble_update()`](https://max578.github.io/PESTO/reference/surrogate_ensemble_update.md),
+[`vignette("surrogate-ies", package = "PESTO")`](https://max578.github.io/PESTO/articles/surrogate-ies.md)
 
 ## Examples
 

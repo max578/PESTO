@@ -1,4 +1,4 @@
-# Ensemble Manifests — the Cross-Package Contract
+# Ensemble Manifests -- the Cross-Package Contract
 
 ## Why a manifest?
 
@@ -7,7 +7,7 @@ parameter ensemble, simulated outputs, target observations, IES weights,
 the RNG seed, the lambda schedule, runtime context. To let `kernR`,
 `proxymix`, and the paper-writing pipeline consume that output **without
 reaching into PESTO-specific list internals**, v0.3.0 introduces a
-versioned S7 contract object — `pesto_ensemble_manifest` — plus YAML+CSV
+versioned S7 contract object – `pesto_ensemble_manifest` – plus YAML+CSV
 persistence with SHA-256 integrity checking.
 
 This is Year-1 §A5 of the UQ ag-stack roadmap. It is deliberately
@@ -50,12 +50,12 @@ m <- as_manifest(fit, seed = 20260516L,
                  apsim_version = NA_character_)
 print(m)
 #> <pesto_ensemble_manifest> schema 1.0.0
-#>   run_id        : ies_callback_20260518_212211_91655ec0
+#>   run_id        : ies_callback_20260527_224032_c0d2800d
 #>   method        : ies_callback  (noptmax=4)
 #>   ensemble      : 60 realisations x 3 parameters | 6 observations
 #>   failure rate  : 0.00%
-#>   pesto version : 0.3.3  apsim: NA
-#>   timestamp     : 2026-05-18T21:22:11+0000
+#>   pesto version : 0.4.0  apsim: NA
+#>   timestamp     : 2026-05-27T22:40:32+0000
 #>   data hash     : sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
 ```
 
@@ -64,7 +64,7 @@ Slots are reachable via the standard S7 `@` accessor:
 ``` r
 
 m@run_id
-#> [1] "ies_callback_20260518_212211_91655ec0"
+#> [1] "ies_callback_20260527_224032_c0d2800d"
 m@data_hash
 #> [1] "sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6"
 m@noptmax
@@ -81,10 +81,10 @@ head(m@params)
 
 ## Writing, reading, and verifying
 
-[`write_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/write_manifest.md)
+[`write_manifest()`](https://max578.github.io/PESTO/reference/write_manifest.md)
 emits the YAML plus three RDS sidecars (`*_params.rds`, `*_outputs.rds`,
 `*_assim.rds`). RDS is used in preference to CSV so IEEE 754 doubles
-round-trip bit-exactly — the SHA-256 integrity check would otherwise
+round-trip bit-exactly – the SHA-256 integrity check would otherwise
 trip on formatter precision loss:
 
 ``` r
@@ -113,7 +113,7 @@ A peek at what the YAML actually looks like (truncated):
 cat(paste(readLines(file.path(dir, "wagga_2026_run01.yaml"))[1:14],
           collapse = "\n"))
 #> schema_version: 1.0.0
-#> run_id: ies_callback_20260518_212211_91655ec0
+#> run_id: ies_callback_20260527_224032_c0d2800d
 #> data_hash: sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
 #> format: rds
 #> integrity: verifiable
@@ -124,16 +124,16 @@ cat(paste(readLines(file.path(dir, "wagga_2026_run01.yaml"))[1:14],
 #> seed: 20260516
 #> fidelity: ~
 #> apsim_version: ~
-#> pesto_version: 0.3.3
-#> timestamp: 2026-05-18T21:22:11+0000
+#> pesto_version: 0.4.0
+#> timestamp: 2026-05-27T22:40:32+0000
 ```
 
 ### Inspection CSVs (optional)
 
-For workflows that need a human-readable view of the ensemble — quick
+For workflows that need a human-readable view of the ensemble – quick
 scans in Excel, ad-hoc exports for a domain collaborator, copy-paste
-into a Quarto narrative —
-[`write_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/write_manifest.md)
+into a Quarto narrative –
+[`write_manifest()`](https://max578.github.io/PESTO/reference/write_manifest.md)
 accepts a `format = "both"` argument that emits CSV sidecars
 **alongside** the RDS. The hash stays bound to the RDS (bit-exact
 integrity preserved), and the YAML records the inspection paths under a
@@ -158,7 +158,7 @@ A `format = "csv_unverified"` mode (renamed from `"csv"` in PESTO 0.3.2)
 is available for one-way exports to non-R analysts where round-trip
 integrity is not required. The YAML carries `integrity: not_verifiable`
 so downstream tools can branch on the weaker contract;
-[`verify_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/verify_manifest.md)
+[`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
 returns `ok = NA` rather than a spurious `FALSE` because CSV formatter
 precision loss (~1 ULP at IEEE 754 epsilon) is enough to flip the hash:
 
@@ -168,7 +168,7 @@ dir3 <- tempfile("pesto_manifest_unverified_"); dir.create(dir3)
 write_manifest(m, file.path(dir3, "snapshot.yaml"),
                format = "csv_unverified")
 m_csv <- read_manifest(file.path(dir3, "snapshot.yaml"))
-verify_manifest(m_csv)$ok      # NA — see $message for why
+verify_manifest(m_csv)$ok      # NA -- see $message for why
 #> [1] NA
 ```
 
@@ -195,7 +195,7 @@ v$ok
 #> [1] FALSE
 ```
 
-[`verify_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/verify_manifest.md)
+[`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
 returns the stored vs recomputed hashes so a downstream consumer can
 fail fast and report the divergence cleanly.
 
@@ -207,7 +207,7 @@ DR-DATE counterfactuals, MMD posterior-predictive checks) and `proxymix`
 those packages never see PESTO-internal list shapes; they read
 `m@params`, `m@outputs`, `m@weights`, `m@obs_target` through the
 contract and let
-[`verify_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/verify_manifest.md)
+[`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
 gate on integrity.
 
 The companion jstyle `outputs_manifest.yaml` (the project-level artefact
@@ -241,7 +241,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.3.3
+#> [1] PESTO_0.4.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       

@@ -143,8 +143,8 @@ print(pst)
 ## Core Computational Kernel
 
 PESTO provides the
-[`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
-function — a high-performance C++ implementation of the IES update
+[`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
+function – a high-performance C++ implementation of the IES update
 equation. This is the computational heart of the package:
 
 ``` r
@@ -199,8 +199,8 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
   print(bench)
 }
 #> Unit: microseconds
-#>       expr     min      lq     mean   median       uq     max neval
-#>  PESTO_cpp 436.625 438.263 449.1043 443.9385 450.8255 588.318   100
+#>       expr     min      lq     mean  median      uq    max neval
+#>  PESTO_cpp 366.192 368.626 374.6106 371.696 376.993 472.86   100
 ```
 
 ## Computing Phi (Objective Function)
@@ -287,7 +287,7 @@ res_auto <- adaptive_svd(A, k = 20L, method = "auto")
 cat("Method:", res_auto$method_used, "\n")
 #> Method: rsvd (Halko-Martinsson-Tropp)
 cat("Time:", round(res_auto$time_ms, 2), "ms\n")
-#> Time: 17.86 ms
+#> Time: 15.2 ms
 cat("Singular values (top 5):", round(res_auto$d[1:5], 3), "\n")
 #> Singular values (top 5): 50.643 50.283 49.956 49.689 49.454
 
@@ -301,7 +301,7 @@ cat("\nrSVD dimensions: U =", dim(res_rsvd$u), ", V =", dim(res_rsvd$v), "\n")
 ## GPU-Accelerated Ensemble Solution
 
 The
-[`ensemble_solution_gpu()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution_gpu.md)
+[`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
 function wraps the IES kernel with adaptive SVD backend selection and
 returns performance diagnostics:
 
@@ -325,9 +325,9 @@ result <- ensemble_solution_gpu(
 cat("SVD method:", result$svd_method, "\n")
 #> SVD method: LAPACK (platform-optimised)
 cat("SVD time:", round(result$svd_time_ms, 2), "ms\n")
-#> SVD time: 2.19 ms
+#> SVD time: 1.91 ms
 cat("Total time:", round(result$total_time_ms, 2), "ms\n")
-#> Total time: 2.61 ms
+#> Total time: 2.3 ms
 cat("Singular values used:", result$singular_values_used, "\n")
 #> Singular values used: 50
 ```
@@ -336,7 +336,7 @@ cat("Singular values used:", result$singular_values_used, "\n")
 
 PESTO includes a Gaussian Process surrogate that can replace expensive
 model evaluations during IES iterations. See
-[`vignette("surrogate-ies")`](https://AAGI-AUS.github.io/PESTO/articles/surrogate-ies.md)
+[`vignette("surrogate-ies")`](https://max578.github.io/PESTO/articles/surrogate-ies.md)
 for full details.
 
 ``` r
@@ -382,13 +382,13 @@ cat("Reason:", sizing$reasoning, "\n")
 ## Next Steps
 
 - See
-  [`vignette("surrogate-ies")`](https://AAGI-AUS.github.io/PESTO/articles/surrogate-ies.md)
+  [`vignette("surrogate-ies")`](https://max578.github.io/PESTO/articles/surrogate-ies.md)
   for the full surrogate-accelerated workflow
 - See
-  [`?pesto_ies`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies.md)
+  [`?pesto_ies`](https://max578.github.io/PESTO/reference/pesto_ies.md)
   for the high-level IES interface (wraps pestpp-ies)
 - See
-  [`?pesto_glm`](https://AAGI-AUS.github.io/PESTO/reference/pesto_glm.md)
+  [`?pesto_glm`](https://max578.github.io/PESTO/reference/pesto_glm.md)
   for deterministic Gauss-Levenberg-Marquardt estimation
 
 ## References

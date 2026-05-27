@@ -13,7 +13,7 @@ write_pst(pst, file)
 - pst:
 
   A `pesto_pst` object (as returned by
-  [`read_pst()`](https://AAGI-AUS.github.io/PESTO/reference/read_pst.md)).
+  [`read_pst()`](https://max578.github.io/PESTO/reference/read_pst.md)).
 
 - file:
 
@@ -25,7 +25,7 @@ Invisible `NULL`. File is written as a side effect.
 
 ## See also
 
-[`read_pst()`](https://AAGI-AUS.github.io/PESTO/reference/read_pst.md)
+[`read_pst()`](https://max578.github.io/PESTO/reference/read_pst.md)
 
 ## Examples
 

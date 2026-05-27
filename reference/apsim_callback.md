@@ -1,7 +1,7 @@
 # apsimx Forward-Model Adapter for PESTO IES
 
 Builds an in-process forward-model closure for
-[`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
 that drives APSIM (Next Gen `.apsimx` or Classic `.apsim`) through the
 `apsimx` package without going via the `.pst`-file path. Used as Year-1
 §D4 of the UQ ag-stack roadmap (`uq_ag_stack_roadmap_v0.md`).
@@ -72,7 +72,7 @@ apsim_callback(
 
 A closure of signature `function(theta) -> obs` suitable for the
 `forward_model =` argument of
-[`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md).
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md).
 
 ## Details
 
@@ -96,7 +96,7 @@ produced by:
 
 Per-realisation failures (APSIM crash, missing output, extractor error)
 populate an `NA` row;
-[`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
 then carries that realisation forward unchanged or aborts, depending on
 its `on_failure` setting.
 
@@ -117,9 +117,9 @@ under ensemble load has not been verified.
 
 ## See also
 
-[`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
 for the IES driver;
-[`pesto_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies.md)
+[`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md)
 for the classic `.pst`-file path.
 
 ## Examples

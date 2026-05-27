@@ -3,7 +3,7 @@
 Recomputes the SHA-256 hash over
 `(params, outputs, weights, obs_target, seed)` and compares against the
 stored `data_hash`. Use this after
-[`read_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/read_manifest.md)
+[`read_manifest()`](https://max578.github.io/PESTO/reference/read_manifest.md)
 to confirm the data files have not been tampered with or silently
 re-saved.
 

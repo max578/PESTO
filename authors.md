@@ -8,18 +8,18 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/AAGI-AUS/PESTO/blob/main/inst/CITATION)
+[`inst/CITATION`](https://github.com/max578/PESTO/blob/main/inst/CITATION)
 
 Moldovan M (2026). *PESTO: Parameter Estimation, Surrogates, and Tooling
-for Optimisation*. R package version 0.1.0,
-<https://github.com/AAGI-AUS/PESTO>.
+for Optimisation*. R package version 0.4.0,
+<https://github.com/max578/PESTO>.
 
     @Manual{,
       title = {PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation},
       author = {Max Moldovan},
       year = {2026},
-      note = {R package version 0.1.0},
-      url = {https://github.com/AAGI-AUS/PESTO},
+      note = {R package version 0.4.0},
+      url = {https://github.com/max578/PESTO},
     }
 
 Moldovan M (2026). “PESTO: A high-performance R package for

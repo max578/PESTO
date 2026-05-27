@@ -3,7 +3,7 @@
 A textbook, pure-R implementation of one Iterative Ensemble Smoother
 (IES) parameter upgrade as published in Chen & Oliver (2013) eq. 12.
 This function is independent of
-[`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
+[`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
 (the C++ kernel) and exists for two purposes:
 
 ## Usage
@@ -65,7 +65,7 @@ A numeric matrix `(n_par x n_real)`: the parameter upgrade (add to
 
 The implementation is deliberately pedagogical — readability over speed.
 For production work use
-[`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
+[`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
 (the C++ kernel; \\\sim 35\times\\ faster on production-scale
 ensembles).
 
@@ -74,7 +74,7 @@ ensembles).
 This reference uses the textbook sign `obs_resid = obs - sim` with a
 positive leading sign in the upgrade. PESTO's C++ kernel uses the
 equivalent `obs_resid = sim - obs` with a leading negative sign (see
-[`?ensemble_solution`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)).
+[`?ensemble_solution`](https://max578.github.io/PESTO/reference/ensemble_solution.md)).
 Both yield identical upgrades; the difference is purely cosmetic. The
 two are cross-validated to machine precision in
 `inst/scripts/i2_paired_seed_check.R`.
@@ -92,7 +92,7 @@ inverse problems. *Computational Geosciences*, 22(3), 885–908.
 
 ## See also
 
-[`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
+[`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
 for the production C++ kernel.
 
 ## Examples

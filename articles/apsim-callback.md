@@ -1,15 +1,15 @@
-# In-Process IES via R Callback — apsimx Adapter
+# In-Process IES via R Callback -- apsimx Adapter
 
 ## Why a callback driver?
 
-[`pesto_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies.md)
+[`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md)
 shells out to the `pestpp-ies` binary, which writes and reads `.pst` /
 ensemble / observation files between every realisation. For an
 in-process R forward model (an `apsimx` wrapper, a Python bridge, or a
 fast synthetic test problem), that file round-trip is pure overhead.
-[`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
 keeps the same C++ ensemble kernel
-([`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md),
+([`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md),
 Chen & Oliver 2013) but drives the outer loop in R, calling the forward
 model in-process.
 
@@ -17,8 +17,8 @@ This document shows:
 
 1.  The driver on a synthetic linear-Gaussian problem (recovers truth).
 2.  The shape of the
-    [`apsim_callback()`](https://AAGI-AUS.github.io/PESTO/reference/apsim_callback.md)
-    adapter for `apsimx` (run block is disabled — needs APSIM
+    [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
+    adapter for `apsimx` (run block is disabled – needs APSIM
     installed).
 
 ## A synthetic recovery example
@@ -102,7 +102,7 @@ iterations](apsim-callback_files/figure-html/unnamed-chunk-5-1.png)
 The adapter wraps `apsimx` so each realisation gets its own working copy
 of an APSIM template, parameter edits per `param_map`, a run, and an
 extraction step. The signature returned matches what
-[`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
 expects.
 
 ``` r
@@ -143,7 +143,7 @@ summary(fit$par_ensemble)
 Per-realisation APSIM crashes (corrupt config, solver divergence,
 missing report variable) are caught by the adapter and emerge as `NA`
 rows.
-[`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)’s
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)’s
 `on_failure = "na"` (default) carries those realisations forward
 unchanged so the ensemble survives partial failures;
 `on_failure = "stop"` aborts as soon as one row is missing.
@@ -155,7 +155,7 @@ Phase-1 D4 runs realisations serially. Parallel evaluation (`future`,
 `apsimx`’s thread-safety under ensemble load has been characterised. For
 pure-R synthetic models the serial loop is already fast enough that the
 overhead is dominated by
-[`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
+[`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
 itself.
 
 ## When to prefer `pesto_ies()` instead
@@ -199,7 +199,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.3.3
+#> [1] PESTO_0.4.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       

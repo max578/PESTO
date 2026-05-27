@@ -89,7 +89,7 @@ Matrix (nreal x npar). Parameter upgrade vectors (one row per
 realisation). The returned matrix is the *negative-direction* step from
 the Chen-Oliver 2013 GLM update formula. To advance the ensemble, apply
 by subtraction: `par_new = par_old - upgrade`. The R-side driver
-[`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
 handles this convention internally.
 
 ## Details

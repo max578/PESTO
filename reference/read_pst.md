@@ -63,8 +63,8 @@ A list of class `pesto_pst` containing:
 
 ## See also
 
-[`write_pst()`](https://AAGI-AUS.github.io/PESTO/reference/write_pst.md),
-[`create_pest_scenario()`](https://AAGI-AUS.github.io/PESTO/reference/create_pest_scenario.md)
+[`write_pst()`](https://max578.github.io/PESTO/reference/write_pst.md),
+[`create_pest_scenario()`](https://max578.github.io/PESTO/reference/create_pest_scenario.md)
 
 ## Examples
 

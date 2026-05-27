@@ -10,7 +10,7 @@ The CRAN tarball is intentionally self-contained: every example, test,
 and vignette runs without the upstream `pestpp-ies` binary. The
 `vignettes/pestpp-comparison-and-simulation.Rmd` vignette compares PESTO
 native IES against the pure-R textbook reference
-([`pesto_reference_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_reference_ies.md))
+([`pesto_reference_ies()`](https://max578.github.io/PESTO/reference/pesto_reference_ies.md))
 by default; this comparison is what every end-user sees.
 
 If you have `pestpp-ies` installed and want the vignette to extend its
@@ -88,4 +88,4 @@ The Apple Silicon toolchain currently lacks `libgcov`, so
 
 PEST++ upstream lives at <https://github.com/usgs/pestpp>; PESTO is not
 a fork — it is a separate R-native re-engineering. Issues specific to
-PESTO go to <https://github.com/AAGI-AUS/PESTO/issues>.
+PESTO go to <https://github.com/max578/PESTO/issues>.

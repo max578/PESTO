@@ -1,7 +1,7 @@
 # Ensemble Solution with Adaptive SVD Backend
 
 Enhanced version of
-[`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
+[`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
 that uses the adaptive SVD backend for automatic hardware acceleration.
 On macOS, uses Apple Accelerate (AMX coprocessor). On CUDA systems, uses
 cuSOLVER. For low-rank problems, automatically switches to randomised

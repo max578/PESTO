@@ -122,16 +122,16 @@ with components:
 2.  Forms parameter / observation anomalies and residuals.
 
 3.  Calls the C++ kernel
-    [`ensemble_solution()`](https://AAGI-AUS.github.io/PESTO/reference/ensemble_solution.md)
+    [`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
     (GLM form, Chen & Oliver 2013) to compute an `nreal x npar` upgrade.
 
 4.  Adds the upgrade to the current ensemble.
 
 The classic `.pst`-file path remains available via
-[`pesto_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies.md)
+[`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md)
 for full PEST++ compatibility. Use this callback driver when the forward
 model is itself an R function (e.g. an `apsimx` wrapper from
-[`apsim_callback()`](https://AAGI-AUS.github.io/PESTO/reference/apsim_callback.md),
+[`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md),
 a Python bridge, or a synthetic test problem) and the per-realisation
 file-I/O overhead of the `.pst` path is the bottleneck.
 
@@ -149,9 +149,9 @@ uncertainty quantification. *Computational Geosciences*, 17(4), 689–703.
 
 ## See also
 
-[`pesto_ies()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies.md)
+[`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md)
 for the `.pst`-file path;
-[`apsim_callback()`](https://AAGI-AUS.github.io/PESTO/reference/apsim_callback.md)
+[`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
 for the apsimx adapter.
 
 ## Examples

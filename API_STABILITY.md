@@ -14,19 +14,19 @@ record so far:
   surrogates, PEST++ integration, visualisation).
 - `0.1.1` — sole-authorship consolidation; no API change.
 - `0.2.0` — added
-  [`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
   (in-process IES driver) and
-  [`apsim_callback()`](https://AAGI-AUS.github.io/PESTO/reference/apsim_callback.md)
+  [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
   (apsimx adapter). **No breaking changes.**
 - `0.3.0` — added `pesto_ensemble_manifest` (S7 cross-package contract)
   plus
-  [`as_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/as_manifest.md),
-  [`write_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/write_manifest.md),
-  [`read_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/read_manifest.md),
-  [`verify_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/verify_manifest.md).
+  [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md),
+  [`write_manifest()`](https://max578.github.io/PESTO/reference/write_manifest.md),
+  [`read_manifest()`](https://max578.github.io/PESTO/reference/read_manifest.md),
+  [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md).
   **No breaking changes.**
 - `0.3.1` — added `format = c("rds","both","csv")` to
-  [`write_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/write_manifest.md);
+  [`write_manifest()`](https://max578.github.io/PESTO/reference/write_manifest.md);
   backwards-compatible YAML.
 - `0.3.2` — renamed `format = "csv"` to `"csv_unverified"` at every call
   site; legacy `"csv"` still accepted with a deprecation warning, so
@@ -68,7 +68,7 @@ This policy is chosen because `PESTO` is invoked as the IES / surrogate
 backend from pipeline code that the maintainer cannot edit — kernR
 consumes the `pesto_ensemble_manifest` S7 contract; APSIM ensemble loops
 via
-[`pesto_ies_callback()`](https://AAGI-AUS.github.io/PESTO/reference/pesto_ies_callback.md)
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
 are written once and run for the life of a calibration campaign. Silent
 breakage across versions would defeat that contract.
 
@@ -81,6 +81,6 @@ carries the `NEWS.md` entry as its message.
 ## Reporting an unintended break
 
 If you discover that a `PESTO` release has silently broken your
-pipeline, open an issue at <https://github.com/AAGI-AUS/PESTO/issues>
-with the version you upgraded from and to plus a small reproducible
-example. Unintended breaks at any stage are treated as bugs.
+pipeline, open an issue at <https://github.com/max578/PESTO/issues> with
+the version you upgraded from and to plus a small reproducible example.
+Unintended breaks at any stage are treated as bugs.

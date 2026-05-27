@@ -33,7 +33,7 @@ write order).
 
 - `"rds"` (default) — RDS sidecars only. IEEE 754 doubles round-trip
   bit-exactly;
-  [`verify_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/verify_manifest.md)
+  [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
   recomputes the SHA-256 hash and confirms integrity.
 
 - `"both"` — RDS sidecars **plus** parallel inspection CSVs
@@ -43,7 +43,7 @@ write order).
 
 - `"csv_unverified"` — CSV sidecars only. The hash is still recorded
   (computed from the in-memory binary representation) but
-  [`verify_manifest()`](https://AAGI-AUS.github.io/PESTO/reference/verify_manifest.md)
+  [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
   cannot recompute it from disk: CSV write-formatter precision loss (~1
   ULP at IEEE 754 epsilon) would falsely fail the check. The YAML
   carries `integrity: not_verifiable` so downstream tools can branch

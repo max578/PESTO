@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,7 +41,7 @@
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/AAGI-AUS/PESTO/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/max578/PESTO/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -58,7 +58,7 @@
       <h1>Surrogate-Accelerated Iterative Ensemble Smoother</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/AAGI-AUS/PESTO/blob/main/vignettes/surrogate-ies.Rmd" class="external-link"><code>vignettes/surrogate-ies.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/max578/PESTO/blob/main/vignettes/surrogate-ies.Rmd" class="external-link"><code>vignettes/surrogate-ies.Rmd</code></a></small>
       <div class="d-none name"><code>surrogate-ies.Rmd</code></div>
     </div>
 
@@ -81,7 +81,7 @@ problem.</p>
 <p>The Gaussian-process surrogate inside PESTO is a tool with a clearly
 bounded operating envelope, and it is worth stating that envelope before
 the demo. As an empirical soft floor we recommend
-<code>n_train &gt;= 5 * n_params</code> — below that ratio the GP
+<code>n_train &gt;= 5 * n_params</code> – below that ratio the GP
 posterior variance rarely drops far enough for the uncertainty-driven
 switching rule to fire, and the surrogate honestly defers to the full
 model on most realisations. The second axis is the smoothness of the
@@ -89,7 +89,7 @@ forward model: smooth, near-linear responses are well-approximated by an
 RBF-kernel GP and yield large savings, whereas rough or
 near-discontinuous responses (sharp wetting fronts, threshold
 activations, regime switches) defeat the kernel and savings collapse.
-The third axis is ensemble size — larger ensembles improve the GP fit
+The third axis is ensemble size – larger ensembles improve the GP fit
 roughly as
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝒪</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>n</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathcal{O}(n^{-1})</annotation></semantics></math>
 in posterior variance, and ensembles of fewer than about twenty
@@ -97,7 +97,7 @@ realisations rarely produce a usable surrogate at any dimensionality. If
 your problem falls outside this envelope (high
 <code>n_params / n_train</code> ratio, rough forward model, or tiny
 ensemble), the right thing to do is run pure IES via
-<code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code> —
+<code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code> –
 <code><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update()</a></code> will report near-zero savings
 rather than degrading the posterior, but you pay the GP training cost
 for no return.</p>
@@ -118,7 +118,7 @@ is linear,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\alpha = 1</annotation></semantics></math>
 is strongly nonlinear.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/AAGI-AUS/PESTO" class="external-link">PESTO</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/max578/PESTO" class="external-link">PESTO</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Attaching package: 'data.table'</span></span>
@@ -196,7 +196,7 @@ is strongly nonlinear.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Prediction RMSE:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">pred_error</span>, <span class="fl">6</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Prediction RMSE: 0.000119</span></span></code></pre></div>
 <p>The GP achieves near-zero prediction error because it is
-interpolating within its training set—this is by design, not an
+interpolating within its training set – this is by design, not an
 artefact.</p>
 </div>
 <div class="section level2">
