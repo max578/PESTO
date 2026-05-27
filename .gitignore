@@ -35,3 +35,8 @@ Meta/
 __pycache__/
 /doc/
 /Meta/
+
+# AI assistant scratch dirs (AAGI canon convention)
+.claude/
+.positai/
+.cursor/
