@@ -1,6 +1,6 @@
 # pkgdown workflow for PESTO.
 # Site publishes to gh-pages and is served at
-# https://max578.github.io/PESTO/.
+# https://aagi-aus.github.io/PESTO/.
 
 on:
   push:

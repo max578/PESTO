@@ -4,7 +4,7 @@ bibentry(
   author   = person("Max", "Moldovan"),
   year     = "2026",
   note     = "R package version 0.4.1",
-  url      = "https://github.com/max578/PESTO"
+  url      = "https://github.com/AAGI-AUS/PESTO"
 )
 
 bibentry(

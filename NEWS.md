@@ -54,6 +54,16 @@ changes. The aim is to lift every source surface to the bar set out in
   sections per the AAGI repository-guidelines README contract.
   Citation block bumped to `R package version 0.4.1`.
 
+### Canonical metadata URLs
+
+* `DESCRIPTION URL` and `BugReports`, `CITATION.cff`,
+  `codemeta.json`, `inst/CITATION`, `_pkgdown.yml`, and the README
+  citation + issues links now point to
+  `https://github.com/AAGI-AUS/PESTO` (canon checklist item 5).
+  README install instructions and the personal r-universe URL are
+  retained at `max578/PESTO` and `https://max578.r-universe.dev` as
+  interim distribution infrastructure until the AAGI-AUS push lands.
+
 # PESTO 0.4.0
 
 ## AAGI recipes uplift and canon channel migration
