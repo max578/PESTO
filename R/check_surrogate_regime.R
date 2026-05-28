@@ -52,20 +52,11 @@
 #'
 #' @export
 check_surrogate_regime <- function(n_params, n_train, threshold = 5) {
+  .assert_positive_scalar(n_params, "n_params")
+  .assert_positive_scalar(n_train, "n_train")
+  .assert_positive_scalar(threshold, "threshold")
 
-  if (length(n_params) != 1L || !is.numeric(n_params) ||
-      !is.finite(n_params) || n_params <= 0) {
-    stop("`n_params` must be a single positive number.", call. = FALSE)
-  }
-  if (length(n_train) != 1L || !is.numeric(n_train) ||
-      !is.finite(n_train) || n_train <= 0) {
-    stop("`n_train` must be a single positive number.", call. = FALSE)
-  }
-  if (length(threshold) != 1L || !is.numeric(threshold) ||
-      !is.finite(threshold) || threshold <= 0) {
-    stop("`threshold` must be a single positive number.", call. = FALSE)
-  }
-
+  # Decide regime --------------------------------------------------------
   ratio_required <- threshold * n_params
   favourable <- n_train >= ratio_required
 

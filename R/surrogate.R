@@ -113,13 +113,15 @@ pesto_surrogate_ies <- function(par_ensemble,
 #' p <- plot_surrogate_diagnostics(list(iter1, iter2, iter3))
 #' inherits(p, "ggplot")
 #' @export
-plot_surrogate_diagnostics <- function(results, title = "Surrogate IES Diagnostics") {
-
+plot_surrogate_diagnostics <- function(results,
+                                       title = "Surrogate IES Diagnostics") {
   if (!is.list(results)) {
-    stop("results must be a list of surrogate update results", call. = FALSE)
+    stop("`results` must be a list of surrogate update results.",
+      call. = FALSE
+    )
   }
 
-  # Handle single result
+  # Accept either a single-iteration result or a list of them ------------
   if (!is.null(results$savings_pct)) {
     results <- list(results)
   }

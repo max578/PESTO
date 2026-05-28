@@ -95,33 +95,21 @@ apsim_callback <- function(template,
                            param_writer = NULL,
                            simulation_runner = NULL,
                            verbose = FALSE) {
-
-  if (!requireNamespace("apsimx", quietly = TRUE)) {
-    stop("apsim_callback() requires the 'apsimx' package (>= 2.7.0). ",
-         "Install with: install.packages('apsimx')", call. = FALSE)
-  }
-  if (!file.exists(template)) {
-    stop("APSIM template not found: ", template, call. = FALSE)
-  }
-  if (!is.list(param_map) || length(param_map) == 0L ||
-      is.null(names(param_map)) || any(names(param_map) == "") ||
-      !all(vapply(param_map, is.character, logical(1L)))) {
-    stop("`param_map` must be a non-empty named list of character node paths.",
-         call. = FALSE)
-  }
-  if (!is.function(output_extractor)) {
-    stop("`output_extractor` must be a function.", call. = FALSE)
-  }
+  .check_apsim_callback_inputs(template, param_map, output_extractor)
 
   template <- normalizePath(template, mustWork = TRUE)
   dir.create(workdir, recursive = TRUE, showWarnings = FALSE)
-  workdir  <- normalizePath(workdir)
+  workdir <- normalizePath(workdir)
 
   ext <- tolower(tools::file_ext(template))
   is_apsimx <- ext == "apsimx"
   if (!is_apsimx && ext != "apsim") {
-    stop("template extension must be .apsimx or .apsim; got '.", ext, "'.",
-         call. = FALSE)
+    stop(
+      sprintf(
+        "`template` extension must be .apsimx or .apsim; got '.%s'.", ext
+      ),
+      call. = FALSE
+    )
   }
 
   par_names_expected <- names(param_map)
@@ -130,24 +118,36 @@ apsim_callback <- function(template,
   runner <- simulation_runner %||% .default_apsim_runner(is_apsimx, verbose)
 
   function(theta) {
+    # Coerce theta and validate parameter columns ------------------------
     if (!is.matrix(theta)) theta <- as.matrix(theta)
     nreal <- nrow(theta)
 
     cols <- colnames(theta)
     if (is.null(cols)) {
       if (ncol(theta) != length(par_names_expected)) {
-        stop("theta has ", ncol(theta), " unnamed columns; param_map ",
-             "expects ", length(par_names_expected), ".", call. = FALSE)
+        stop(
+          sprintf(
+            "`theta` has %d unnamed columns; `param_map` expects %d.",
+            ncol(theta), length(par_names_expected)
+          ),
+          call. = FALSE
+        )
       }
       cols <- par_names_expected
       colnames(theta) <- cols
     }
     missing_pars <- setdiff(par_names_expected, cols)
     if (length(missing_pars) > 0L) {
-      stop("theta is missing parameters required by param_map: ",
-           paste(missing_pars, collapse = ", "), call. = FALSE)
+      stop(
+        sprintf(
+          "`theta` is missing parameters required by `param_map`: %s.",
+          paste(missing_pars, collapse = ", ")
+        ),
+        call. = FALSE
+      )
     }
 
+    # Per-realisation evaluation loop ------------------------------------
     obs_list <- vector("list", nreal)
     for (i in seq_len(nreal)) {
       run_file <- file.path(workdir, sprintf("real_%05d.%s", i, ext))
@@ -191,12 +191,21 @@ apsim_callback <- function(template,
       )
     }
 
+    # Assemble nreal x nobs result matrix --------------------------------
     nobs <- max(c(0L, vapply(obs_list,
                              function(v) if (is.null(v)) 0L else length(v),
                              integer(1L))))
     if (nobs == 0L) {
-      stop("apsim_callback: no realisation returned a usable output vector. ",
-           "Inspect `", workdir, "` for failed runs.", call. = FALSE)
+      stop(
+        sprintf(
+          paste0(
+            "apsim_callback: no realisation returned a usable output ",
+            "vector. Inspect `%s` for failed runs."
+          ),
+          workdir
+        ),
+        call. = FALSE
+      )
     }
 
     out_mat <- matrix(NA_real_, nrow = nreal, ncol = nobs)
@@ -258,3 +267,36 @@ apsim_callback <- function(template,
 
 # Internal helper: a tiny `%||%` so we don't take a rlang dep.
 `%||%` <- function(x, y) if (is.null(x)) y else x
+
+
+#' Validate inputs to `apsim_callback()`
+#'
+#' Checks the optional `apsimx` Suggests dependency, template path,
+#' `param_map` shape (named non-empty list of character node paths),
+#' and that `output_extractor` is callable.
+#'
+#' @noRd
+#' @keywords internal
+.check_apsim_callback_inputs <- function(template, param_map,
+                                         output_extractor) {
+  if (!requireNamespace("apsimx", quietly = TRUE)) {
+    stop(
+      paste0(
+        "`apsim_callback()` requires the 'apsimx' package (>= 2.7.0). ",
+        "Install with: install.packages('apsimx')."
+      ),
+      call. = FALSE
+    )
+  }
+  .assert_path_exists(template, "template")
+  if (!is.list(param_map) || length(param_map) == 0L ||
+    is.null(names(param_map)) || any(names(param_map) == "") ||
+    !all(vapply(param_map, is.character, logical(1L)))) {
+    stop(
+      "`param_map` must be a non-empty named list of character node paths.",
+      call. = FALSE
+    )
+  }
+  .assert_function(output_extractor, "output_extractor")
+  invisible(TRUE)
+}

@@ -157,7 +157,8 @@ test_that("write_manifest errors when directory does not exist", {
 })
 
 test_that("read_manifest errors when file is missing", {
-  expect_error(read_manifest("/nonexistent_file.yaml"), "not found")
+  expect_error(read_manifest("/nonexistent_file.yaml"),
+               "`file` does not exist")
 })
 
 # ---- format = "rds" / "both" / "csv" -----------------------------------

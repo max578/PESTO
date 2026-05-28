@@ -55,20 +55,17 @@ pesto_ies <- function(pst_file,
                      working_dir = NULL,
                      verbose = TRUE) {
 
+  # Resolve paths and binary ---------------------------------------------
   pst_file <- normalizePath(pst_file, mustWork = TRUE)
   if (is.null(working_dir)) {
     working_dir <- dirname(pst_file)
   }
-
   exe <- .find_pestpp_exe("pestpp-ies", exe)
 
-  # Build command with ++ args
-  args <- c(pst_file)
-
-  # Construct overrides
+  # Assemble PEST++ command-line overrides --------------------------------
   overrides <- list(
-    ies_num_reals = num_reals,
-    noptmax = noptmax,
+    ies_num_reals    = num_reals,
+    noptmax          = noptmax,
     ies_lambda_mults = paste(lambda_scale_fac, collapse = ",")
   )
   if (!is.null(ies_par_en)) {
@@ -76,28 +73,25 @@ pesto_ies <- function(pst_file,
   }
   overrides <- c(overrides, extra_args)
 
-  # Write overrides to a temporary ++ section or pass via command line
   override_args <- vapply(names(overrides), function(nm) {
     sprintf("/h :%s=%s", nm, as.character(overrides[[nm]]))
   }, character(1))
 
+  # Run pestpp-ies --------------------------------------------------------
   t0 <- proc.time()["elapsed"]
-
-  # Build full args: pst file + override arguments
   all_args <- c(basename(pst_file), override_args)
 
   result <- system2(
     command = exe,
-    args = all_args,
-    stdout = if (verbose) "" else TRUE,
-    stderr = if (verbose) "" else TRUE,
-    env = paste0("PATH=", dirname(exe), ":", Sys.getenv("PATH")),
-    wait = TRUE
+    args    = all_args,
+    stdout  = if (verbose) "" else TRUE,
+    stderr  = if (verbose) "" else TRUE,
+    env     = paste0("PATH=", dirname(exe), ":", Sys.getenv("PATH")),
+    wait    = TRUE
   )
-
   runtime <- proc.time()["elapsed"] - t0
 
-  # Parse outputs
+  # Parse outputs ---------------------------------------------------------
   base_name <- tools::file_path_sans_ext(basename(pst_file))
   phi_file <- file.path(working_dir, paste0(base_name, ".phi.actual.csv"))
   par_file <- file.path(working_dir, paste0(base_name, ".0.par.csv"))
@@ -166,26 +160,27 @@ pesto_glm <- function(pst_file,
                      working_dir = NULL,
                      verbose = TRUE) {
 
+  # Resolve paths and binary ---------------------------------------------
   pst_file <- normalizePath(pst_file, mustWork = TRUE)
   if (is.null(working_dir)) working_dir <- dirname(pst_file)
   exe <- .find_pestpp_exe("pestpp-glm", exe)
 
+  # Run pestpp-glm --------------------------------------------------------
   t0 <- proc.time()["elapsed"]
-
   result <- system2(
     command = exe,
-    args = c(basename(pst_file)),
-    stdout = if (verbose) "" else TRUE,
-    stderr = if (verbose) "" else TRUE,
-    wait = TRUE
+    args    = c(basename(pst_file)),
+    stdout  = if (verbose) "" else TRUE,
+    stderr  = if (verbose) "" else TRUE,
+    wait    = TRUE
   )
-
   runtime <- proc.time()["elapsed"] - t0
 
+  # Parse outputs ---------------------------------------------------------
   base_name <- tools::file_path_sans_ext(basename(pst_file))
 
   output <- list(
-    exit_code = result,
+    exit_code       = result,
     runtime_seconds = as.numeric(runtime)
   )
 
@@ -263,17 +258,19 @@ pesto_sweep <- function(pst_file,
                        working_dir = NULL,
                        verbose = TRUE) {
 
+  # Resolve paths and binary ---------------------------------------------
   pst_file <- normalizePath(pst_file, mustWork = TRUE)
   if (is.null(working_dir)) working_dir <- dirname(pst_file)
   exe <- .find_pestpp_exe("pestpp-swp", exe)
 
-  # Write parameter ensemble if data.table
-
-  if (data.table::is.data.table(par_ensemble) || is.data.frame(par_ensemble)) {
+  # Materialise the parameter ensemble for the binary --------------------
+  if (data.table::is.data.table(par_ensemble) ||
+      is.data.frame(par_ensemble)) {
     sweep_in <- file.path(working_dir, "sweep_in.csv")
     data.table::fwrite(par_ensemble, sweep_in)
   }
 
+  # Run pestpp-swp --------------------------------------------------------
   t0 <- proc.time()["elapsed"]
   result <- system2(
     command = exe,
@@ -284,8 +281,9 @@ pesto_sweep <- function(pst_file,
   )
   runtime <- proc.time()["elapsed"] - t0
 
+  # Parse outputs ---------------------------------------------------------
   output <- list(
-    exit_code = result,
+    exit_code       = result,
     runtime_seconds = as.numeric(runtime)
   )
 
@@ -337,11 +335,13 @@ pesto_sensitivity <- function(pst_file,
                              working_dir = NULL,
                              verbose = TRUE) {
 
+  # Resolve paths and binary ---------------------------------------------
   method <- match.arg(method)
   pst_file <- normalizePath(pst_file, mustWork = TRUE)
   if (is.null(working_dir)) working_dir <- dirname(pst_file)
   exe <- .find_pestpp_exe("pestpp-sen", exe)
 
+  # Run pestpp-sen --------------------------------------------------------
   t0 <- proc.time()["elapsed"]
   result <- system2(
     command = exe,
@@ -352,10 +352,11 @@ pesto_sensitivity <- function(pst_file,
   )
   runtime <- proc.time()["elapsed"] - t0
 
+  # Parse outputs ---------------------------------------------------------
   output <- list(
-    exit_code = result,
+    exit_code       = result,
     runtime_seconds = as.numeric(runtime),
-    method = method
+    method          = method
   )
 
   base_name <- tools::file_path_sans_ext(basename(pst_file))
@@ -377,27 +378,35 @@ pesto_sensitivity <- function(pst_file,
 .find_pestpp_exe <- function(name, user_path = NULL) {
   if (!is.null(user_path)) {
     if (!file.exists(user_path)) {
-      stop("Executable not found: ", user_path, call. = FALSE)
+      stop(
+        sprintf("Executable not found: %s", user_path),
+        call. = FALSE
+      )
     }
     return(normalizePath(user_path))
   }
 
-  # Check bundled binaries
+  # Bundled binary (preferred)  -----------------------------------------
   pkg_bin <- system.file("bin", name, package = "PESTO")
   if (nchar(pkg_bin) > 0 && file.exists(pkg_bin)) {
     return(pkg_bin)
   }
 
-  # Check PATH
+  # Fall back to PATH  --------------------------------------------------
   sys_exe <- Sys.which(name)
   if (nchar(sys_exe) > 0) {
     return(sys_exe)
   }
 
   stop(
-    "Cannot find ", name, " executable. Either:\n",
-    "  1. Install PEST++ and ensure it is on your PATH, or\n",
-    "  2. Specify the path via the 'exe' argument.",
+    sprintf(
+      paste0(
+        "Cannot find %s executable. Either:\n",
+        "  1. Install PEST++ and ensure it is on your PATH, or\n",
+        "  2. Specify the path via the `exe` argument."
+      ),
+      name
+    ),
     call. = FALSE
   )
 }
@@ -497,15 +506,12 @@ pesto_ies_callback <- function(forward_model,
                                on_failure = c("na", "stop"),
                                verbose = TRUE) {
 
+  # Validate inputs -----------------------------------------------------
   on_failure <- match.arg(on_failure)
-  if (!is.function(forward_model)) {
-    stop("`forward_model` must be a function with signature ",
-         "function(theta) -> obs.", call. = FALSE)
-  }
+  .check_pesto_ies_callback_inputs(forward_model, noptmax, eigthresh)
   noptmax <- as.integer(noptmax)
-  if (noptmax < 1L) stop("`noptmax` must be >= 1.", call. = FALSE)
 
-  # ---- Coerce prior ensemble ---------------------------------------------
+  # Coerce prior ensemble -----------------------------------------------
   if (data.table::is.data.table(prior_ensemble) ||
       is.data.frame(prior_ensemble)) {
     par_names_local <- setdiff(names(prior_ensemble), "real_name")
@@ -524,11 +530,13 @@ pesto_ies_callback <- function(forward_model,
   nreal <- nrow(par_mat)
   npar  <- ncol(par_mat)
   if (nreal < 2L) {
-    stop("`prior_ensemble` must contain at least 2 realisations.",
-         call. = FALSE)
+    stop(
+      "`prior_ensemble` must contain at least 2 realisations.",
+      call. = FALSE
+    )
   }
 
-  # ---- Coerce observations ----------------------------------------------
+  # Coerce observations -------------------------------------------------
   obs_vec <- as.numeric(obs)
   obs_names_local <- names(obs)
   if (is.null(obs_names_local)) {
@@ -539,24 +547,31 @@ pesto_ies_callback <- function(forward_model,
   obs_sd_vec <- as.numeric(obs_sd)
   if (length(obs_sd_vec) == 1L) obs_sd_vec <- rep(obs_sd_vec, nobs)
   if (length(obs_sd_vec) != nobs || any(obs_sd_vec <= 0)) {
-    stop("`obs_sd` must be a positive scalar or length-nobs vector.",
-         call. = FALSE)
+    stop(
+      "`obs_sd` must be a positive scalar or length-nobs vector.",
+      call. = FALSE
+    )
   }
   weights <- 1.0 / obs_sd_vec
 
-  # ---- Prior covariance diag --------------------------------------------
+  # Prior covariance diagonal -------------------------------------------
   if (is.null(parcov)) {
     parcov_diag <- apply(par_mat, 2L, stats::var)
     parcov_diag[parcov_diag <= 0 | !is.finite(parcov_diag)] <- 1.0
   } else {
     parcov_diag <- as.numeric(parcov)
     if (length(parcov_diag) != npar || any(parcov_diag <= 0)) {
-      stop("`parcov` must be a positive length-npar vector.", call. = FALSE)
+      stop(
+        sprintf(
+          "`parcov` must be a positive length-%d vector.", npar
+        ),
+        call. = FALSE
+      )
     }
   }
   parcov_inv <- 1.0 / parcov_diag
 
-  # ---- Lambda schedule --------------------------------------------------
+  # Lambda schedule -----------------------------------------------------
   lambda_seq <- as.numeric(lambda)
   if (length(lambda_seq) < noptmax) {
     lambda_seq <- c(
@@ -566,6 +581,7 @@ pesto_ies_callback <- function(forward_model,
   }
   lambda_seq <- lambda_seq[seq_len(noptmax)]
 
+  # IES iteration loop --------------------------------------------------
   par_prior_mean <- colMeans(par_mat)
 
   phi_history <- vector("list", noptmax)
@@ -583,8 +599,16 @@ pesto_ies_callback <- function(forward_model,
   for (k in seq_len(noptmax)) {
     ok <- stats::complete.cases(obs_mat)
     if (sum(ok) < 2L) {
-      stop("Iteration ", k, ": fewer than 2 successful realisations; ",
-           "cannot continue.", call. = FALSE)
+      stop(
+        sprintf(
+          paste0(
+            "Iteration %d: fewer than 2 successful realisations. ",
+            "Cannot continue."
+          ),
+          k
+        ),
+        call. = FALSE
+      )
     }
     par_ok <- par_mat[ok, , drop = FALSE]
     obs_ok <- obs_mat[ok, , drop = FALSE]
@@ -648,6 +672,7 @@ pesto_ies_callback <- function(forward_model,
     }
   }
 
+  # Final refresh and assemble result -----------------------------------
   obs_mat_final <- .eval_forward_safe(forward_model, par_mat, nreal, nobs,
                                       on_failure, verbose)
   total_evals    <- total_evals + nreal
@@ -691,20 +716,29 @@ pesto_ies_callback <- function(forward_model,
       r <- f(par_mat)
       if (!is.matrix(r)) r <- as.matrix(r)
       if (!identical(dim(r), c(nreal, nobs))) {
-        stop(sprintf(
-          "forward_model returned shape %dx%d; expected %dx%d.",
-          nrow(r), ncol(r), nreal, nobs), call. = FALSE)
+        stop(
+          sprintf(
+            "`forward_model` returned shape %dx%d. Expected %dx%d.",
+            nrow(r), ncol(r), nreal, nobs
+          ),
+          call. = FALSE
+        )
       }
       storage.mode(r) <- "double"
       r
     },
     error = function(e) {
       if (on_failure == "stop") {
-        stop("forward_model failed: ", conditionMessage(e), call. = FALSE)
+        stop(
+          sprintf("`forward_model` failed: %s", conditionMessage(e)),
+          call. = FALSE
+        )
       }
       if (verbose) {
-        message("forward_model bulk-call failed (", conditionMessage(e),
-                "); retrying per realisation.")
+        message(
+          "forward_model bulk-call failed (", conditionMessage(e),
+          "); retrying per realisation."
+        )
       }
       out <- matrix(NA_real_, nrow = nreal, ncol = nobs)
       for (i in seq_len(nreal)) {
@@ -723,8 +757,16 @@ pesto_ies_callback <- function(forward_model,
   )
   n_fail <- sum(!stats::complete.cases(bulk))
   if (on_failure == "stop" && n_fail > 0L) {
-    stop("forward_model returned NA for ", n_fail, " of ", nreal,
-         " realisations (on_failure = 'stop').", call. = FALSE)
+    stop(
+      sprintf(
+        paste0(
+          "`forward_model` returned NA for %d of %d realisations ",
+          "(on_failure = \"stop\")."
+        ),
+        n_fail, nreal
+      ),
+      call. = FALSE
+    )
   }
   attr(bulk, "n_failures") <- n_fail
   bulk
@@ -757,4 +799,31 @@ pesto_version <- function() {
     platform = R.version$platform,
     r_version = R.version.string
   )
+}
+
+
+# Internal helpers ------------------------------------------------------
+
+#' Validate the pre-coercion inputs to `pesto_ies_callback()`
+#'
+#' Catches the cheap, type-and-shape-level errors before the function
+#' starts coercing the prior ensemble. Post-coercion checks (`nreal`,
+#' `npar`, `nobs` agreement) stay inline in the caller, where the
+#' derived shapes are visible.
+#'
+#' @noRd
+#' @keywords internal
+.check_pesto_ies_callback_inputs <- function(forward_model, noptmax,
+                                             eigthresh) {
+  .assert_function(forward_model, "forward_model")
+  noptmax_int <- suppressWarnings(as.integer(noptmax))
+  if (length(noptmax_int) != 1L || is.na(noptmax_int) ||
+      noptmax_int < 1L) {
+    stop(
+      "`noptmax` must be a positive integer scalar (>= 1).",
+      call. = FALSE
+    )
+  }
+  .assert_positive_scalar(eigthresh, "eigthresh")
+  invisible(TRUE)
 }

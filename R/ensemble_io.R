@@ -22,11 +22,8 @@
 #' @seealso [write_ensemble()]
 #' @export
 read_ensemble <- function(file, format = c("csv", "binary")) {
-
   format <- match.arg(format)
-  if (!file.exists(file)) {
-    stop("Ensemble file not found: ", file, call. = FALSE)
-  }
+  .assert_path_exists(file, "file")
 
   if (format == "csv") {
     dt <- data.table::fread(file, header = TRUE)

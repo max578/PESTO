@@ -91,32 +91,11 @@ pesto_reference_ies <- function(par_ensemble,
                                 obs_target,
                                 weights,
                                 lambda = 1.0) {
+  .check_reference_ies_inputs(
+    par_ensemble, obs_ensemble, obs_target, weights, lambda
+  )
 
-  if (!is.matrix(par_ensemble) || !is.numeric(par_ensemble)) {
-    stop("`par_ensemble` must be a numeric matrix (n_par x n_real).",
-         call. = FALSE)
-  }
-  if (!is.matrix(obs_ensemble) || !is.numeric(obs_ensemble)) {
-    stop("`obs_ensemble` must be a numeric matrix (n_obs x n_real).",
-         call. = FALSE)
-  }
-  if (ncol(par_ensemble) != ncol(obs_ensemble)) {
-    stop("`par_ensemble` and `obs_ensemble` must share the same number ",
-         "of realisations (columns).", call. = FALSE)
-  }
-  if (length(obs_target) != nrow(obs_ensemble)) {
-    stop("`obs_target` length must equal `nrow(obs_ensemble)`.",
-         call. = FALSE)
-  }
-  if (length(weights) != length(obs_target)) {
-    stop("`weights` must have the same length as `obs_target`.",
-         call. = FALSE)
-  }
-  if (length(lambda) != 1L || !is.finite(lambda) || lambda < 0) {
-    stop("`lambda` must be a single non-negative finite numeric.",
-         call. = FALSE)
-  }
-
+  # Ensemble geometry ----------------------------------------------------
   n_real <- ncol(par_ensemble)
   scale  <- 1 / sqrt(n_real - 1)
   w_diag <- diag(weights)
@@ -126,18 +105,59 @@ pesto_reference_ies <- function(par_ensemble,
   par_diff <- par_ensemble - par_mean
   obs_diff <- obs_ensemble - obs_mean
 
-  # Sign: obs - sim (textbook); positive leading sign on the upgrade.
+  # Residuals (textbook obs - sim sign convention) -----------------------
   y_resid <- matrix(rep(obs_target, n_real), nrow = length(obs_target)) -
              obs_ensemble
 
-  # SVD of the scaled, weighted observation difference matrix.
-  svd_res <- svd(scale * w_diag %*% obs_diff)
-  sigma <- svd_res$d
+  # SVD of the scaled, weighted observation difference matrix ------------
+  svd_res  <- svd(scale * w_diag %*% obs_diff)
+  sigma    <- svd_res$d
   inv_term <- 1 / (sigma^2 + (lambda + 1))
 
-  upgrade_factor <- svd_res$v %*% diag(sigma * inv_term, nrow = length(sigma)) %*%
-                    t(svd_res$u) %*% (w_diag %*% y_resid)
+  upgrade_factor <-
+    svd_res$v %*% diag(sigma * inv_term, nrow = length(sigma)) %*%
+    t(svd_res$u) %*% (w_diag %*% y_resid)
 
   upgrade <- (scale * par_diff) %*% upgrade_factor
   upgrade
+}
+
+
+# Internal helpers ------------------------------------------------------
+
+#' Validate inputs to `pesto_reference_ies()`
+#'
+#' Checks matrix shapes, vector-length agreement, and `lambda`
+#' admissibility. Called from the function preamble so the body reads
+#' as the IES update equation.
+#'
+#' @noRd
+#' @keywords internal
+.check_reference_ies_inputs <- function(par_ensemble, obs_ensemble,
+                                        obs_target, weights, lambda) {
+  .assert_matrix(par_ensemble, "par_ensemble")
+  .assert_matrix(obs_ensemble, "obs_ensemble")
+  .assert_same_ncol(par_ensemble, obs_ensemble,
+    "par_ensemble", "obs_ensemble"
+  )
+  if (length(obs_target) != nrow(obs_ensemble)) {
+    stop(
+      sprintf(
+        "`obs_target` length (%d) must equal `nrow(obs_ensemble)` (%d).",
+        length(obs_target), nrow(obs_ensemble)
+      ),
+      call. = FALSE
+    )
+  }
+  if (length(weights) != length(obs_target)) {
+    stop(
+      sprintf(
+        "`weights` (length %d) must match `obs_target` (length %d).",
+        length(weights), length(obs_target)
+      ),
+      call. = FALSE
+    )
+  }
+  .assert_nonneg_scalar(lambda, "lambda")
+  invisible(TRUE)
 }

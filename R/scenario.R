@@ -39,12 +39,12 @@
 #' pst$control_data$npar
 #' @export
 create_pest_scenario <- function(parameters,
-                                  observations,
-                                  model_command,
-                                  template_files = NULL,
-                                  instruction_files = NULL,
-                                  pestpp_options = list()) {
-
+                                 observations,
+                                 model_command,
+                                 template_files = NULL,
+                                 instruction_files = NULL,
+                                 pestpp_options = list()) {
+  # Coerce inputs to data.table without mutating the caller's copy ------
   if (!data.table::is.data.table(parameters)) {
     parameters <- data.table::as.data.table(parameters)
   } else {
@@ -56,20 +56,22 @@ create_pest_scenario <- function(parameters,
     observations <- data.table::copy(observations)
   }
 
-  # Validate required columns
-  req_par <- c("parnme", "partrans", "parchglim", "parval1", "parlbnd", "parubnd", "pargp")
-  missing_par <- setdiff(req_par, names(parameters))
-  if (length(missing_par) > 0) {
-    stop("Missing parameter columns: ", paste(missing_par, collapse = ", "), call. = FALSE)
-  }
+  # Validate required columns -------------------------------------------
+  .assert_required_cols(
+    parameters,
+    c(
+      "parnme", "partrans", "parchglim", "parval1",
+      "parlbnd", "parubnd", "pargp"
+    ),
+    "parameters"
+  )
+  .assert_required_cols(
+    observations,
+    c("obsnme", "obsval", "weight", "obgnme"),
+    "observations"
+  )
 
-  req_obs <- c("obsnme", "obsval", "weight", "obgnme")
-  missing_obs <- setdiff(req_obs, names(observations))
-  if (length(missing_obs) > 0) {
-    stop("Missing observation columns: ", paste(missing_obs, collapse = ", "), call. = FALSE)
-  }
-
-  # Add defaults
+  # Fill in optional columns with PEST defaults -------------------------
   if (!"scale" %in% names(parameters)) parameters[, scale := 1.0]
   if (!"offset" %in% names(parameters)) parameters[, offset := 0.0]
   if (!"dercom" %in% names(parameters)) parameters[, dercom := 1L]

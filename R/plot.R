@@ -24,8 +24,6 @@
 #'               title = "Synthetic Phi Convergence")
 #' inherits(p, "ggplot")
 #' @export
-#' @importFrom ggplot2 ggplot aes geom_line geom_point geom_ribbon
-#'   scale_y_log10 labs theme_minimal theme element_text
 plot_phi <- function(result,
                      log_scale = TRUE,
                      show_reals = FALSE,
@@ -33,11 +31,18 @@ plot_phi <- function(result,
 
   if (inherits(result, "pesto_ies_result")) {
     phi_dt <- result$phi
-    if (is.null(phi_dt)) stop("No phi data in result", call. = FALSE)
+    if (is.null(phi_dt)) {
+      stop("`result` is a `pesto_ies_result` without a `$phi` slot.",
+        call. = FALSE
+      )
+    }
   } else if (data.table::is.data.table(result) || is.data.frame(result)) {
     phi_dt <- data.table::copy(data.table::as.data.table(result))
   } else {
-    stop("result must be a pesto_ies_result or data.table", call. = FALSE)
+    stop(
+      "`result` must be a `pesto_ies_result` or a data.frame/data.table.",
+      call. = FALSE
+    )
   }
 
   # Try to identify iteration and phi columns
@@ -110,7 +115,7 @@ plot_phi <- function(result,
         colour = "steelblue", size = 2.5
       )
   } else {
-    stop("Cannot identify phi columns in data", call. = FALSE)
+    stop("Cannot identify phi columns in `result`.", call. = FALSE)
   }
 
   p <- p +
@@ -183,8 +188,11 @@ plot_ensemble <- function(ensemble,
   }
 
   parameters <- intersect(parameters, num_cols)
-  if (length(parameters) == 0) {
-    stop("No valid numeric parameter columns found", call. = FALSE)
+  if (length(parameters) == 0L) {
+    stop(
+      "No valid numeric parameter columns found in `ensemble`.",
+      call. = FALSE
+    )
   }
 
   # Melt for plotting
@@ -265,19 +273,9 @@ plot_identifiability <- function(jacobian = NULL,
                                  pst = NULL,
                                  n_sv = NULL,
                                  title = "Parameter Identifiability") {
-  if (is.null(jacobian) && is.null(jco_file)) {
-    stop("Either `jacobian` (a numeric matrix) or `jco_file` must be provided.",
-         call. = FALSE)
-  }
-  if (!is.null(jacobian) && !is.null(jco_file)) {
-    stop("Supply only one of `jacobian` or `jco_file`, not both.",
-         call. = FALSE)
-  }
+  .check_identifiability_inputs(jacobian, jco_file)
 
   if (!is.null(jacobian)) {
-    if (!is.matrix(jacobian) || !is.numeric(jacobian)) {
-      stop("`jacobian` must be a numeric matrix.", call. = FALSE)
-    }
     mat <- jacobian
     par_names <- colnames(mat)
     if (is.null(par_names)) {
@@ -321,4 +319,35 @@ plot_identifiability <- function(jacobian = NULL,
     )
 
   p
+}
+
+
+# Internal helpers ------------------------------------------------------
+
+#' Validate inputs to `plot_identifiability()`
+#'
+#' Enforces XOR between `jacobian` (numeric matrix) and `jco_file`
+#' (path on disk) and rejects bare-class mismatches. Called from the
+#' function preamble so the main body reads as the plotting contract.
+#'
+#' @noRd
+#' @keywords internal
+.check_identifiability_inputs <- function(jacobian, jco_file) {
+  if (is.null(jacobian) && is.null(jco_file)) {
+    stop(
+      "Either `jacobian` (a numeric matrix) or `jco_file` must be provided.",
+      call. = FALSE
+    )
+  }
+  if (!is.null(jacobian) && !is.null(jco_file)) {
+    stop("Supply only one of `jacobian` or `jco_file`, not both.",
+      call. = FALSE
+    )
+  }
+  if (!is.null(jacobian)) {
+    .assert_matrix(jacobian, "jacobian")
+  } else {
+    .assert_path_exists(jco_file, "jco_file")
+  }
+  invisible(TRUE)
 }

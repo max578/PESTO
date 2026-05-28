@@ -119,9 +119,9 @@ A `format = "csv_unverified"` mode (renamed from `"csv"` in PESTO 0.3.2)
 is available for one-way exports to non-R analysts where round-trip
 integrity is not required. The YAML carries
 `integrity: not_verifiable` so downstream tools can branch on the
-weaker contract; `verify_manifest()` returns `ok = NA` rather than a
-spurious `FALSE` because CSV formatter precision loss (~1 ULP at
-IEEE 754 epsilon) is enough to flip the hash:
+weaker contract. The `verify_manifest()` function returns `ok = NA`
+rather than a spurious `FALSE` because CSV formatter precision loss
+(~1 ULP at IEEE 754 epsilon) is enough to flip the hash:
 
 ```{r}
 dir3 <- tempfile("pesto_manifest_unverified_"); dir.create(dir3)
@@ -133,7 +133,7 @@ verify_manifest(m_csv)$ok      # NA -- see $message for why
 
 If you need both human inspection AND verifiable integrity, use
 `format = "both"`. The `csv_unverified` mode is deliberately named
-to flag the weaker contract at every call-site; it is for export, not
+to flag the weaker contract at every call-site. It is for export, not
 for storage you intend to re-load and trust.
 
 ## Tamper-detection
@@ -160,7 +160,7 @@ downstream consumer can fail fast and report the divergence cleanly.
 The manifest is the single object that `kernR` (HSIC identifiability,
 DR-DATE counterfactuals, MMD posterior-predictive checks) and
 `proxymix` (GMM density-ratio bridges) consume. By dispatching on the
-S7 class, those packages never see PESTO-internal list shapes; they
+S7 class, those packages never see PESTO-internal list shapes. They
 read `m@params`, `m@outputs`, `m@weights`, `m@obs_target` through the
 contract and let `verify_manifest()` gate on integrity.
 

@@ -3,7 +3,8 @@
 
 #' @useDynLib PESTO, .registration = TRUE
 #' @importFrom Rcpp sourceCpp
-#' @importFrom ggplot2 .data
+#' @importFrom ggplot2 .data ggplot aes geom_line geom_point geom_ribbon
+#'   scale_y_log10 labs theme_minimal theme element_text
 #' @importFrom data.table data.table as.data.table fread fwrite setDT
 #'   setnames is.data.table rbindlist melt dcast set `:=` .SD .I .N
 #' @importFrom stats var median

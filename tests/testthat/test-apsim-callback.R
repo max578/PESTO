@@ -25,7 +25,7 @@ test_that("apsim_callback validates inputs", {
   expect_error(
     apsim_callback("nonexistent.apsimx",
                    list(a = "X"), identity),
-    "template not found"
+    "`template` does not exist"
   )
   expect_error(
     apsim_callback(tmpf, list(), identity),

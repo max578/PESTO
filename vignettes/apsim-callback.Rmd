@@ -137,7 +137,8 @@ Per-realisation APSIM crashes (corrupt config, solver divergence,
 missing report variable) are caught by the adapter and emerge as `NA`
 rows. `pesto_ies_callback()`'s `on_failure = "na"` (default) carries
 those realisations forward unchanged so the ensemble survives partial
-failures; `on_failure = "stop"` aborts as soon as one row is missing.
+failures. Setting `on_failure = "stop"` aborts as soon as one row is
+missing.
 
 ### Concurrency
 

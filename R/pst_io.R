@@ -45,14 +45,12 @@
 #' @seealso [write_pst()], [create_pest_scenario()]
 #' @export
 read_pst <- function(file) {
-  if (!file.exists(file)) {
-    stop("PST file not found: ", file, call. = FALSE)
-  }
+  .assert_path_exists(file, "file")
 
+  # Read and locate section markers --------------------------------------
   lines <- readLines(file, warn = FALSE)
   lines <- trimws(lines)
 
-  # Find section markers
   sections <- c(
     "pcf", "* control data", "* parameter groups",
     "* parameter data", "* observation groups",
@@ -73,7 +71,7 @@ read_pst <- function(file) {
 
   result <- list()
 
-  # Parse control data
+  # Parse control data ---------------------------------------------------
   cd_start <- section_idx[["* control data"]]
   if (!is.null(cd_start)) {
     cd_lines <- lines[(cd_start + 1):(cd_start + 4)]
@@ -99,7 +97,7 @@ read_pst <- function(file) {
     )
   }
 
-  # Parse parameter data
+  # Parse parameter data -------------------------------------------------
   pd_start <- section_idx[["* parameter data"]]
   og_start <- section_idx[["* observation groups"]]
   if (!is.null(pd_start) && !is.null(og_start)) {
@@ -131,7 +129,7 @@ read_pst <- function(file) {
     }
   }
 
-  # Parse observation data
+  # Parse observation data -----------------------------------------------
   od_start <- section_idx[["* observation data"]]
   mc_start <- section_idx[["* model command line"]]
   if (!is.null(od_start) && !is.null(mc_start)) {
@@ -157,7 +155,7 @@ read_pst <- function(file) {
     }
   }
 
-  # Parse model command
+  # Parse model command --------------------------------------------------
   if (!is.null(mc_start)) {
     mio_start <- section_idx[["* model input/output"]]
     if (!is.null(mio_start)) {
@@ -167,7 +165,7 @@ read_pst <- function(file) {
     }
   }
 
-  # Parse template/instruction files
+  # Parse template/instruction files -------------------------------------
   mio_start <- section_idx[["* model input/output"]]
   if (!is.null(mio_start)) {
     # Find next section or end of file
@@ -197,7 +195,7 @@ read_pst <- function(file) {
     }
   }
 
-  # Parse ++ options
+  # Parse PEST++ ++ options ----------------------------------------------
   pp_lines <- lines[grepl("^\\+\\+", lines)]
   if (length(pp_lines) > 0) {
     pp_opts <- list()
@@ -251,14 +249,16 @@ read_pst <- function(file) {
 #' @seealso [read_pst()]
 #' @export
 write_pst <- function(pst, file) {
+  # Validate inputs ------------------------------------------------------
   if (!inherits(pst, "pesto_pst")) {
-    stop("pst must be a pesto_pst object", call. = FALSE)
+    stop("`pst` must be a `pesto_pst` object.", call. = FALSE)
   }
+  .assert_character_scalar(file, "file")
 
   lines <- character()
   lines <- c(lines, "pcf")
 
-  # Control data
+  # Control data ---------------------------------------------------------
   cd <- pst$control_data
   lines <- c(lines, "* control data")
   lines <- c(lines, paste(cd$rstfle, cd$pestmode))
@@ -270,7 +270,7 @@ write_pst <- function(pst, file) {
   lines <- c(lines, "30 0.01 4 4 0.01 4")
   lines <- c(lines, "1 1 1")
 
-  # Parameter groups
+  # Parameter groups -----------------------------------------------------
   if (!is.null(pst$parameter_groups)) {
     lines <- c(lines, "* parameter groups")
     for (i in seq_len(nrow(pst$parameter_groups))) {
@@ -279,7 +279,7 @@ write_pst <- function(pst, file) {
     }
   }
 
-  # Parameter data
+  # Parameter data -------------------------------------------------------
   if (!is.null(pst$parameters)) {
     lines <- c(lines, "* parameter data")
     for (i in seq_len(nrow(pst$parameters))) {
@@ -294,7 +294,7 @@ write_pst <- function(pst, file) {
     }
   }
 
-  # Observation groups
+  # Observation groups ---------------------------------------------------
   if (!is.null(pst$observation_groups)) {
     lines <- c(lines, "* observation groups")
     for (i in seq_len(nrow(pst$observation_groups))) {
@@ -302,7 +302,7 @@ write_pst <- function(pst, file) {
     }
   }
 
-  # Observation data
+  # Observation data -----------------------------------------------------
   if (!is.null(pst$observations)) {
     lines <- c(lines, "* observation data")
     for (i in seq_len(nrow(pst$observations))) {
@@ -311,11 +311,11 @@ write_pst <- function(pst, file) {
     }
   }
 
-  # Model command
+  # Model command --------------------------------------------------------
   lines <- c(lines, "* model command line")
   lines <- c(lines, pst$model_command)
 
-  # I/O files
+  # Template / instruction file pairs ------------------------------------
   lines <- c(lines, "* model input/output")
   if (!is.null(pst$io_files)) {
     for (i in seq_len(nrow(pst$io_files))) {
@@ -323,7 +323,7 @@ write_pst <- function(pst, file) {
     }
   }
 
-  # ++ options
+  # PEST++ ++ options ----------------------------------------------------
   if (!is.null(pst$pestpp_options)) {
     for (nm in names(pst$pestpp_options)) {
       lines <- c(lines, paste0("++", nm, "(", pst$pestpp_options[[nm]], ")"))

@@ -199,9 +199,7 @@ write_manifest <- S7::new_generic("write_manifest", "manifest")
 S7::method(write_manifest, pesto_ensemble_manifest) <-
   function(manifest, file,
            format = c("rds", "both", "csv_unverified")) {
-    if (!is.character(file) || length(file) != 1L) {
-      stop("`file` must be a single path string.", call. = FALSE)
-    }
+    .assert_character_scalar(file, "file")
     # Accept the legacy 0.3.1 spelling for one minor cycle.
     if (length(format) == 1L && identical(format, "csv")) {
       warning(
@@ -215,7 +213,10 @@ S7::method(write_manifest, pesto_ensemble_manifest) <-
     format <- match.arg(format)
     dir <- dirname(file)
     if (!dir.exists(dir)) {
-      stop("Directory does not exist: ", dir, call. = FALSE)
+      stop(
+        sprintf("Directory does not exist: %s", dir),
+        call. = FALSE
+      )
     }
     base <- tools::file_path_sans_ext(basename(file))
 
@@ -291,9 +292,7 @@ S7::method(write_manifest, pesto_ensemble_manifest) <-
 #' @return A `pesto_ensemble_manifest`.
 #' @export
 read_manifest <- function(file) {
-  if (!file.exists(file)) {
-    stop("Manifest file not found: ", file, call. = FALSE)
-  }
+  .assert_path_exists(file, "file")
   yaml_list <- yaml::read_yaml(file)
   dir <- dirname(normalizePath(file))
   read_one <- function(rel_path) {
@@ -305,8 +304,12 @@ read_manifest <- function(file) {
       utils::read.csv(full, stringsAsFactors = FALSE,
                       check.names = FALSE)
     } else {
-      stop("Unsupported sidecar extension '.", ext, "' in manifest YAML",
-           call. = FALSE)
+      stop(
+        sprintf(
+          "Unsupported sidecar extension '.%s' in manifest YAML.", ext
+        ),
+        call. = FALSE
+      )
     }
   }
   params  <- read_one(yaml_list$artefacts$params)
@@ -399,18 +402,26 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
                                   fidelity = NULL,
                                   apsim_version = NA_character_) {
 
-  weights_vec <- if (!is.null(x$weights)) {
-    x$weights
-  } else {
-    stop("Callback result is missing the `weights` slot; rerun under ",
-         "PESTO >= 0.2.0.", call. = FALSE)
+  if (is.null(x$weights)) {
+    stop(
+      paste0(
+        "Callback result is missing the `weights` slot. ",
+        "Rerun under PESTO >= 0.2.0."
+      ),
+      call. = FALSE
+    )
   }
-  obs_target_vec <- if (!is.null(x$obs_target)) {
-    x$obs_target
-  } else {
-    stop("Callback result is missing the `obs_target` slot; rerun under ",
-         "PESTO >= 0.2.0.", call. = FALSE)
+  if (is.null(x$obs_target)) {
+    stop(
+      paste0(
+        "Callback result is missing the `obs_target` slot. ",
+        "Rerun under PESTO >= 0.2.0."
+      ),
+      call. = FALSE
+    )
   }
+  weights_vec    <- x$weights
+  obs_target_vec <- x$obs_target
 
   lambdas <- vapply(
     x$iterations,
