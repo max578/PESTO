@@ -145,7 +145,7 @@ missing report variable) are caught by the adapter and emerge as `NA`
 rows.
 [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)’s
 `on_failure = "na"` (default) carries those realisations forward
-unchanged so the ensemble survives partial failures;
+unchanged so the ensemble survives partial failures. Setting
 `on_failure = "stop"` aborts as soon as one row is missing.
 
 ### Concurrency
@@ -199,7 +199,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.4.0
+#> [1] PESTO_0.4.1
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       

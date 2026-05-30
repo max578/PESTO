@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,37 @@
       <small>Source: <a href="https://github.com/max578/PESTO/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.1" id="pesto-041">PESTO 0.4.1<a class="anchor" aria-label="anchor" href="#pesto-041"></a></h2>
+<div class="section level3">
+<h3 id="aagi-guidance-uplift-0-4-1">AAGI guidance uplift<a class="anchor" aria-label="anchor" href="#aagi-guidance-uplift-0-4-1"></a></h3>
+<p>A code-aesthetics and review-readability patch on top of <code>0.4.0</code>. No runtime behaviour changes; no exported-API changes; no shipped-data changes. The aim is to lift every source surface to the bar set out in <code>r_style.md</code> ahead of any AAGI-AUS push.</p>
+<div class="section level4">
+<h4 id="validation-delegation-r_stylemd-invariant-0-4-1">Validation delegation (r_style.md invariant 9)<a class="anchor" aria-label="anchor" href="#validation-delegation-r_stylemd-invariant-0-4-1"></a></h4>
+<ul><li>
+<code>R/internal_validation.R</code> introduces the shared primitive validators (<code>.assert_positive_scalar()</code>, <code>.assert_nonneg_scalar()</code>, <code>.assert_character_scalar()</code>, <code>.assert_logical_scalar()</code>, <code>.assert_path_exists()</code>, <code>.assert_matrix()</code>, <code>.assert_numeric_vector()</code>, <code>.assert_function()</code>, <code>.assert_data_frame()</code>, <code>.assert_choice()</code>, <code>.assert_same_ncol()</code>, <code>.assert_same_nrow()</code>, <code>.assert_required_cols()</code>). All <code>@noRd <a href="https://github.com/keywords" class="external-link">@keywords</a> internal</code>; every helper signals failure via <code>stop(call. = FALSE, ...)</code> with a backticked argument name.</li>
+<li>Public functions in <code>apsim_callback.R</code>, <code>pesto_reference_ies.R</code>, <code>pesto_run.R</code> (<code>pesto_ies_callback</code>), <code>pst_io.R</code>, <code>scenario.R</code>, <code>surrogate.R</code>, <code>manifest.R</code>, <code>ensemble_io.R</code>, <code>plot.R</code>, and <code>check_surrogate_regime.R</code> now open with <code>.check_*</code> / <code>.assert_*</code> calls instead of inline <code>if (!is.x) stop(...)</code> walls.</li>
+<li>Error messages backtick the offending argument name throughout (Sparks convention).</li>
+</ul></div>
+<div class="section level4">
+<h4 id="section-banners-r_stylemd-invariant-0-4-1">Section banners (r_style.md invariant 4)<a class="anchor" aria-label="anchor" href="#section-banners-r_stylemd-invariant-0-4-1"></a></h4>
+<ul><li>Long function bodies (<code>pesto_ies_callback</code>, <code>pesto_ies</code>, <code>pesto_glm</code>, <code>pesto_sweep</code>, <code>pesto_sensitivity</code>, <code>read_pst</code>, <code>write_pst</code>, <code>apsim_callback</code>, <code>pesto_reference_ies</code>, <code>.find_pestpp_exe</code>) now carry Sparks-style dash-banner section comments that paragraph the work (validate inputs / resolve paths / iterate / parse outputs / assemble result).</li>
+</ul></div>
+<div class="section level4">
+<h4 id="import-concentration-r_stylemd-invariant-0-4-1">Import concentration (r_style.md invariant 10)<a class="anchor" aria-label="anchor" href="#import-concentration-r_stylemd-invariant-0-4-1"></a></h4>
+<ul><li>
+<code>@importFrom ggplot2</code> annotations consolidated into <code>R/pesto-package.R</code>; the per-function <code>@importFrom</code> annotation on <code><a href="../reference/plot_phi.html">plot_phi()</a></code> has been removed in favour of inline <code>ggplot2::</code> qualification at the call sites.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="vignette-prose-0-4-1">Vignette prose<a class="anchor" aria-label="anchor" href="#vignette-prose-0-4-1"></a></h4>
+<ul><li>Prose semicolons in <code>vignettes/apsim-callback.Rmd</code> and <code>vignettes/ensemble-manifest.Rmd</code> converted to <code>. Capital</code> joins per <code>manuscript_style.md</code> invariant 5.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="readme-0-4-1">README<a class="anchor" aria-label="anchor" href="#readme-0-4-1"></a></h4>
+<ul><li>Added <code>Dependencies</code>, <code>Contributing</code>, and <code>Acknowledgements</code> sections per the AAGI repository-guidelines README contract. Citation block bumped to <code>R package version 0.4.1</code>.</li>
+</ul></div>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.0" id="pesto-040">PESTO 0.4.0<a class="anchor" aria-label="anchor" href="#pesto-040"></a></h2>
 <div class="section level3">

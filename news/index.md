@@ -1,5 +1,63 @@
 # Changelog
 
+## PESTO 0.4.1
+
+### AAGI guidance uplift
+
+A code-aesthetics and review-readability patch on top of `0.4.0`. No
+runtime behaviour changes; no exported-API changes; no shipped-data
+changes. The aim is to lift every source surface to the bar set out in
+`r_style.md` ahead of any AAGI-AUS push.
+
+#### Validation delegation (r_style.md invariant 9)
+
+- `R/internal_validation.R` introduces the shared primitive validators
+  (`.assert_positive_scalar()`, `.assert_nonneg_scalar()`,
+  `.assert_character_scalar()`, `.assert_logical_scalar()`,
+  `.assert_path_exists()`, `.assert_matrix()`,
+  `.assert_numeric_vector()`, `.assert_function()`,
+  `.assert_data_frame()`, `.assert_choice()`, `.assert_same_ncol()`,
+  `.assert_same_nrow()`, `.assert_required_cols()`). All
+  `@noRd `[`@keywords`](https://github.com/keywords)` internal`; every
+  helper signals failure via `stop(call. = FALSE, ...)` with a
+  backticked argument name.
+- Public functions in `apsim_callback.R`, `pesto_reference_ies.R`,
+  `pesto_run.R` (`pesto_ies_callback`), `pst_io.R`, `scenario.R`,
+  `surrogate.R`, `manifest.R`, `ensemble_io.R`, `plot.R`, and
+  `check_surrogate_regime.R` now open with `.check_*` / `.assert_*`
+  calls instead of inline `if (!is.x) stop(...)` walls.
+- Error messages backtick the offending argument name throughout (Sparks
+  convention).
+
+#### Section banners (r_style.md invariant 4)
+
+- Long function bodies (`pesto_ies_callback`, `pesto_ies`, `pesto_glm`,
+  `pesto_sweep`, `pesto_sensitivity`, `read_pst`, `write_pst`,
+  `apsim_callback`, `pesto_reference_ies`, `.find_pestpp_exe`) now carry
+  Sparks-style dash-banner section comments that paragraph the work
+  (validate inputs / resolve paths / iterate / parse outputs / assemble
+  result).
+
+#### Import concentration (r_style.md invariant 10)
+
+- `@importFrom ggplot2` annotations consolidated into
+  `R/pesto-package.R`; the per-function `@importFrom` annotation on
+  [`plot_phi()`](https://max578.github.io/PESTO/reference/plot_phi.md)
+  has been removed in favour of inline `ggplot2::` qualification at the
+  call sites.
+
+#### Vignette prose
+
+- Prose semicolons in `vignettes/apsim-callback.Rmd` and
+  `vignettes/ensemble-manifest.Rmd` converted to `. Capital` joins per
+  `manuscript_style.md` invariant 5.
+
+#### README
+
+- Added `Dependencies`, `Contributing`, and `Acknowledgements` sections
+  per the AAGI repository-guidelines README contract. Citation block
+  bumped to `R package version 0.4.1`.
+
 ## PESTO 0.4.0
 
 ### AAGI recipes uplift and canon channel migration

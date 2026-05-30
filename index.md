@@ -41,11 +41,19 @@ install.packages("PESTO", repos = c(
 
 CRAN submission is in preparation.
 
-### System requirements
+## Dependencies
+
+System requirements:
 
 - R \>= 4.1.0
-- C++17 compiler
-- LAPACK/BLAS (provided by R)
+- C++17 compiler (clang on macOS, g++ on Linux, Rtools on Windows)
+- LAPACK/BLAS (bundled with R)
+
+R-package dependencies are declared in `DESCRIPTION`. Imports: `Rcpp`
+(\>= 1.0.12), `data.table`, `ggplot2`, `S7` (\>= 0.2.0), `yaml` (\>=
+2.3.0), `digest` (\>= 0.6.0). Suggested for vignettes and benchmarks:
+`testthat`, `knitr`, `rmarkdown`, `viridis`, `microbenchmark`, `Matrix`,
+`apsimx` (\>= 2.7.0).
 
 ## Quick Start
 
@@ -110,6 +118,18 @@ approximation.
 - [`vignette("surrogate-ies", package = "PESTO")`](https://max578.github.io/PESTO/articles/surrogate-ies.md)
   – Surrogate-accelerated IES tutorial
 
+## Contributing
+
+Contributions are welcome. Please see
+[`CONTRIBUTING.md`](https://max578.github.io/PESTO/CONTRIBUTING.md) for
+the development workflow, coding style, and the pull-request convention.
+Bug reports and feature requests go through [GitHub
+Issues](https://github.com/max578/PESTO/issues). Security-relevant
+defects should be reported privately per
+[`SECURITY.md`](https://max578.github.io/PESTO/SECURITY.md). All
+participants are expected to abide by the [Code of
+Conduct](https://max578.github.io/PESTO/CODE_OF_CONDUCT.md).
+
 ## Citation
 
 ``` r
@@ -118,7 +138,7 @@ citation("PESTO")
 ```
 
 > Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and
-> Tooling for Optimisation. R package version 0.4.0.
+> Tooling for Optimisation. R package version 0.4.1.
 > <https://github.com/max578/PESTO>
 
 ## Related Projects
@@ -128,6 +148,17 @@ citation("PESTO")
 - [pyEMU](https://github.com/pypest/pyemu) – Python interface for
   PEST/PEST++
 
+## Acknowledgements
+
+PESTO builds on the algorithmic legacy of the
+[PEST++](https://github.com/usgs/pestpp) project (US Geological Survey)
+and the underlying PEST framework by John Doherty. The package is
+developed at the University of Adelaide; the surrogate-acceleration,
+adaptive-ensemble-sizing, and convergence-aware components are original
+contributions of the author.
+
 ## License
 
-GPL-3
+GPL (\>= 3). See
+[`LICENSE.md`](https://max578.github.io/PESTO/LICENSE.md) for the full
+text.

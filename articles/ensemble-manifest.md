@@ -50,12 +50,12 @@ m <- as_manifest(fit, seed = 20260516L,
                  apsim_version = NA_character_)
 print(m)
 #> <pesto_ensemble_manifest> schema 1.0.0
-#>   run_id        : ies_callback_20260527_224032_c0d2800d
+#>   run_id        : ies_callback_20260530_031616_d187d01c
 #>   method        : ies_callback  (noptmax=4)
 #>   ensemble      : 60 realisations x 3 parameters | 6 observations
 #>   failure rate  : 0.00%
-#>   pesto version : 0.4.0  apsim: NA
-#>   timestamp     : 2026-05-27T22:40:32+0000
+#>   pesto version : 0.4.1  apsim: NA
+#>   timestamp     : 2026-05-30T03:16:16+0000
 #>   data hash     : sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
 ```
 
@@ -64,7 +64,7 @@ Slots are reachable via the standard S7 `@` accessor:
 ``` r
 
 m@run_id
-#> [1] "ies_callback_20260527_224032_c0d2800d"
+#> [1] "ies_callback_20260530_031616_d187d01c"
 m@data_hash
 #> [1] "sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6"
 m@noptmax
@@ -113,7 +113,7 @@ A peek at what the YAML actually looks like (truncated):
 cat(paste(readLines(file.path(dir, "wagga_2026_run01.yaml"))[1:14],
           collapse = "\n"))
 #> schema_version: 1.0.0
-#> run_id: ies_callback_20260527_224032_c0d2800d
+#> run_id: ies_callback_20260530_031616_d187d01c
 #> data_hash: sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
 #> format: rds
 #> integrity: verifiable
@@ -124,8 +124,8 @@ cat(paste(readLines(file.path(dir, "wagga_2026_run01.yaml"))[1:14],
 #> seed: 20260516
 #> fidelity: ~
 #> apsim_version: ~
-#> pesto_version: 0.4.0
-#> timestamp: 2026-05-27T22:40:32+0000
+#> pesto_version: 0.4.1
+#> timestamp: 2026-05-30T03:16:16+0000
 ```
 
 ### Inspection CSVs (optional)
@@ -157,10 +157,11 @@ basename(paths2)
 A `format = "csv_unverified"` mode (renamed from `"csv"` in PESTO 0.3.2)
 is available for one-way exports to non-R analysts where round-trip
 integrity is not required. The YAML carries `integrity: not_verifiable`
-so downstream tools can branch on the weaker contract;
+so downstream tools can branch on the weaker contract. The
 [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
-returns `ok = NA` rather than a spurious `FALSE` because CSV formatter
-precision loss (~1 ULP at IEEE 754 epsilon) is enough to flip the hash:
+function returns `ok = NA` rather than a spurious `FALSE` because CSV
+formatter precision loss (~1 ULP at IEEE 754 epsilon) is enough to flip
+the hash:
 
 ``` r
 
@@ -174,7 +175,7 @@ verify_manifest(m_csv)$ok      # NA -- see $message for why
 
 If you need both human inspection AND verifiable integrity, use
 `format = "both"`. The `csv_unverified` mode is deliberately named to
-flag the weaker contract at every call-site; it is for export, not for
+flag the weaker contract at every call-site. It is for export, not for
 storage you intend to re-load and trust.
 
 ## Tamper-detection
@@ -204,7 +205,7 @@ fail fast and report the divergence cleanly.
 The manifest is the single object that `kernR` (HSIC identifiability,
 DR-DATE counterfactuals, MMD posterior-predictive checks) and `proxymix`
 (GMM density-ratio bridges) consume. By dispatching on the S7 class,
-those packages never see PESTO-internal list shapes; they read
+those packages never see PESTO-internal list shapes. They read
 `m@params`, `m@outputs`, `m@weights`, `m@obs_target` through the
 contract and let
 [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
@@ -241,7 +242,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.4.0
+#> [1] PESTO_0.4.1
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       

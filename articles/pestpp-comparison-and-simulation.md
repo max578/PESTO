@@ -71,7 +71,7 @@ cat("pestpp-ies on PATH:   ", pestpp_available, "\n",
 
 print(pesto_version())
 #> $pesto_version
-#> [1] "0.4.0"
+#> [1] "0.4.1"
 #> 
 #> $pestpp_version
 #> [1] "not found"
@@ -255,7 +255,7 @@ rmse_pesto_A    <- sqrt(mean((post_mean_pesto - theta_true_A)^2))
 
 cat(sprintf("PESTO native IES: %d iterations in %.2fs;  posterior RMSE = %.4f\n",
             n_iter_A, runtime_pesto_A, rmse_pesto_A))
-#> PESTO native IES: 6 iterations in 0.04s;  posterior RMSE = 0.3548
+#> PESTO native IES: 6 iterations in 0.06s;  posterior RMSE = 0.3548
 ```
 
 ### Pure-R textbook reference (always shipped)
@@ -376,7 +376,7 @@ knitr::kable(runtime_dt, caption = "Scenario A: runtime and accuracy.")
 
 | Implementation          | Iterations | Realisations | Wallclock_s | PosteriorRMSE |
 |:------------------------|-----------:|-------------:|------------:|--------------:|
-| PESTO native (R + Rcpp) |          6 |           40 |        0.04 |        0.3548 |
+| PESTO native (R + Rcpp) |          6 |           40 |        0.06 |        0.3548 |
 | pestpp-ies (binary)     |          6 |           40 |          NA |        0.3548 |
 
 Scenario A: runtime and accuracy. {.table}
@@ -654,7 +654,7 @@ mda_upgrade <- ensemble_solution_mda(
 )
 cat(sprintf("Scenario B: %d iter, %d real, %d par, %d obs in %.2fs\n",
             n_iter_B, n_real_B, n_par_B, n_obs_B, runtime_B))
-#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.58s
+#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.70s
 cat(sprintf("Phi reduction: %.2e -> %.2e  (factor %.1f)\n",
             phi_B[1L], phi_B[length(phi_B)], phi_B[1L] / phi_B[length(phi_B)]))
 #> Phi reduction: 1.69e+03 -> 3.51e+02  (factor 4.8)
@@ -784,11 +784,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 
 | rank | rSVD_ms | LAPACK_ms | speedup_rSVD |
 |-----:|--------:|----------:|-------------:|
-|    5 |   2.336 |    32.701 |        14.00 |
-|   20 |   5.097 |    32.144 |         6.31 |
-|   50 |   8.350 |    32.184 |         3.85 |
-|  100 |  28.867 |    32.248 |         1.12 |
-|  180 |  61.754 |    32.194 |         0.52 |
+|    5 |   2.955 |    42.159 |        14.27 |
+|   20 |   6.452 |    42.066 |         6.52 |
+|   50 |  10.691 |    41.955 |         3.92 |
+|  100 |  36.668 |    42.369 |         1.16 |
+|  180 |  74.068 |    41.891 |         0.57 |
 
 rSVD vs LAPACK on a 400 x 200 matrix as k varies. {.table}
 
@@ -801,7 +801,7 @@ auto_res <- adaptive_svd(A_bench, k = 20L, method = "auto")
 acc_res  <- accelerate_svd(A_bench, thin = TRUE)
 cat("auto chose:    ", auto_res$method_used,
     " in ", round(auto_res$time_ms, 2), "ms\n", sep = "")
-#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.06ms
+#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 6.46ms
 cat("LAPACK direct: ", round(length(acc_res$d), 0),
     " singular values returned\n", sep = "")
 #> LAPACK direct: 200 singular values returned
@@ -974,7 +974,7 @@ cat(sprintf("RFF train MSE %.4g; RFF pred RMSE %.4f; GP pred RMSE %.4g\n",
             rff_mod$train_mse,
             sqrt(mean((rff_pred$mean - Y_rff)^2)),
             sqrt(mean((gp_pred$mean  - Y_rff)^2))))
-#> RFF train MSE 1.676e-08; RFF pred RMSE 0.0001; GP pred RMSE 0.1021
+#> RFF train MSE 1.325e-08; RFF pred RMSE 0.0001; GP pred RMSE 0.1003
 ```
 
 ### Aggregate diagnostics
@@ -998,10 +998,10 @@ knitr::kable(sim_summary, caption = "Scenario C: aggregate diagnostics.")
 
 | Metric                        | Value |
 |:------------------------------|------:|
-| Median phi reduction (1 iter) | 12.72 |
+| Median phi reduction (1 iter) | 12.12 |
 | Mean surrogate savings (%)    |  0.00 |
 | Mean adaptive size            | 39.00 |
-| Median GPU-path time (ms)     |  0.20 |
+| Median GPU-path time (ms)     |  0.27 |
 | Replicates                    | 50.00 |
 
 Scenario C: aggregate diagnostics. {.table}
@@ -1225,7 +1225,7 @@ if (length(unknown_in_use) > 0L) {
 .vig_t1 <- proc.time()["elapsed"]
 cat(sprintf("Vignette wall-clock: %.1f s\n",
             as.numeric(.vig_t1 - .vig_t0)))
-#> Vignette wall-clock: 10.3 s
+#> Vignette wall-clock: 12.6 s
 ```
 
 ``` r
@@ -1253,7 +1253,7 @@ sessionInfo()
 #> 
 #> other attached packages:
 #> [1] viridis_0.6.5     viridisLite_0.4.3 ggplot2_4.0.3     data.table_1.18.4
-#> [5] PESTO_0.4.0      
+#> [5] PESTO_0.4.1      
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] microbenchmark_1.5.0 vctrs_0.7.3          cli_3.6.6           

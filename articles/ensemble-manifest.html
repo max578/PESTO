@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -111,17 +111,17 @@ guarantees, on every run.</p>
 <span>                 apsim_version <span class="op">=</span> <span class="cn">NA_character_</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;pesto_ensemble_manifest&gt; schema 1.0.0</span></span>
-<span><span class="co">#&gt;   run_id        : ies_callback_20260527_224032_c0d2800d</span></span>
+<span><span class="co">#&gt;   run_id        : ies_callback_20260530_031616_d187d01c</span></span>
 <span><span class="co">#&gt;   method        : ies_callback  (noptmax=4)</span></span>
 <span><span class="co">#&gt;   ensemble      : 60 realisations x 3 parameters | 6 observations</span></span>
 <span><span class="co">#&gt;   failure rate  : 0.00%</span></span>
-<span><span class="co">#&gt;   pesto version : 0.4.0  apsim: NA</span></span>
-<span><span class="co">#&gt;   timestamp     : 2026-05-27T22:40:32+0000</span></span>
+<span><span class="co">#&gt;   pesto version : 0.4.1  apsim: NA</span></span>
+<span><span class="co">#&gt;   timestamp     : 2026-05-30T03:16:16+0000</span></span>
 <span><span class="co">#&gt;   data hash     : sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6</span></span></code></pre></div>
 <p>Slots are reachable via the standard S7 <code>@</code> accessor:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span><span class="op">@</span><span class="va">run_id</span></span>
-<span><span class="co">#&gt; [1] "ies_callback_20260527_224032_c0d2800d"</span></span>
+<span><span class="co">#&gt; [1] "ies_callback_20260530_031616_d187d01c"</span></span>
 <span><span class="va">m</span><span class="op">@</span><span class="va">data_hash</span></span>
 <span><span class="co">#&gt; [1] "sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6"</span></span>
 <span><span class="va">m</span><span class="op">@</span><span class="va">noptmax</span></span>
@@ -160,7 +160,7 @@ otherwise trip on formatter precision loss:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">14</span><span class="op">]</span>,</span>
 <span>          collapse <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; schema_version: 1.0.0</span></span>
-<span><span class="co">#&gt; run_id: ies_callback_20260527_224032_c0d2800d</span></span>
+<span><span class="co">#&gt; run_id: ies_callback_20260530_031616_d187d01c</span></span>
 <span><span class="co">#&gt; data_hash: sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6</span></span>
 <span><span class="co">#&gt; format: rds</span></span>
 <span><span class="co">#&gt; integrity: verifiable</span></span>
@@ -171,8 +171,8 @@ otherwise trip on formatter precision loss:</p>
 <span><span class="co">#&gt; seed: 20260516</span></span>
 <span><span class="co">#&gt; fidelity: ~</span></span>
 <span><span class="co">#&gt; apsim_version: ~</span></span>
-<span><span class="co">#&gt; pesto_version: 0.4.0</span></span>
-<span><span class="co">#&gt; timestamp: 2026-05-27T22:40:32+0000</span></span></code></pre></div>
+<span><span class="co">#&gt; pesto_version: 0.4.1</span></span>
+<span><span class="co">#&gt; timestamp: 2026-05-30T03:16:16+0000</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="inspection-csvs-optional">Inspection CSVs (optional)<a class="anchor" aria-label="anchor" href="#inspection-csvs-optional"></a>
 </h3>
@@ -200,10 +200,10 @@ can ignore them:</p>
 <code>"csv"</code> in PESTO 0.3.2) is available for one-way exports to
 non-R analysts where round-trip integrity is not required. The YAML
 carries <code>integrity: not_verifiable</code> so downstream tools can
-branch on the weaker contract; <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> returns
-<code>ok = NA</code> rather than a spurious <code>FALSE</code> because
-CSV formatter precision loss (~1 ULP at IEEE 754 epsilon) is enough to
-flip the hash:</p>
+branch on the weaker contract. The <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code>
+function returns <code>ok = NA</code> rather than a spurious
+<code>FALSE</code> because CSV formatter precision loss (~1 ULP at IEEE
+754 epsilon) is enough to flip the hash:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dir3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"pesto_manifest_unverified_"</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">dir3</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/write_manifest.html">write_manifest</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir3</span>, <span class="st">"snapshot.yaml"</span><span class="op">)</span>,</span>
@@ -213,7 +213,7 @@ flip the hash:</p>
 <span><span class="co">#&gt; [1] NA</span></span></code></pre></div>
 <p>If you need both human inspection AND verifiable integrity, use
 <code>format = "both"</code>. The <code>csv_unverified</code> mode is
-deliberately named to flag the weaker contract at every call-site; it is
+deliberately named to flag the weaker contract at every call-site. It is
 for export, not for storage you intend to re-load and trust.</p>
 </div>
 </div>
@@ -243,7 +243,7 @@ cleanly.</p>
 identifiability, DR-DATE counterfactuals, MMD posterior-predictive
 checks) and <code>proxymix</code> (GMM density-ratio bridges) consume.
 By dispatching on the S7 class, those packages never see PESTO-internal
-list shapes; they read <code>m@params</code>, <code>m@outputs</code>,
+list shapes. They read <code>m@params</code>, <code>m@outputs</code>,
 <code>m@weights</code>, <code>m@obs_target</code> through the contract
 and let <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> gate on integrity.</p>
 <p>The companion jstyle <code>outputs_manifest.yaml</code> (the
@@ -277,7 +277,7 @@ manifest tree is end-to-end hash-verifiable.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] PESTO_0.4.0</span></span>
+<span><span class="co">#&gt; [1] PESTO_0.4.1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       </span></span>

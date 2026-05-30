@@ -11,14 +11,14 @@ Source:
 [`inst/CITATION`](https://github.com/max578/PESTO/blob/main/inst/CITATION)
 
 Moldovan M (2026). *PESTO: Parameter Estimation, Surrogates, and Tooling
-for Optimisation*. R package version 0.4.0,
+for Optimisation*. R package version 0.4.1,
 <https://github.com/max578/PESTO>.
 
     @Manual{,
       title = {PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation},
       author = {Max Moldovan},
       year = {2026},
-      note = {R package version 0.4.0},
+      note = {R package version 0.4.1},
       url = {https://github.com/max578/PESTO},
     }
 
