@@ -120,7 +120,7 @@ Contributions are welcome. Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for t
 citation("PESTO")
 ```
 
-> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.4.1. https://github.com/max578/PESTO
+> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.5.0. https://github.com/max578/PESTO
 
 ## Related Projects
 

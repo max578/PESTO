@@ -1,4 +1,4 @@
-# PESTO 0.4.1.9000 (development)
+# PESTO 0.5.0
 
 ## Forward-model contract + first-class multi-fidelity bridge
 
