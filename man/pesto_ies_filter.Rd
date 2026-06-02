@@ -16,6 +16,8 @@ pesto_ies_filter(
   parcov = NULL,
   eigthresh = 1e-06,
   use_approx = TRUE,
+  inflation = NULL,
+  localisation = NULL,
   on_failure = c("na", "stop"),
   verbose = TRUE
 )
@@ -60,6 +62,14 @@ column-wise variance (non-positive entries replaced with \code{1}).}
 
 \item{use_approx}{Logical. If \code{TRUE} (default) skip the prior-scaling
 correction, matching the \code{pestpp-ies} default.}
+
+\item{inflation}{A \code{\link[=pesto_inflation]{pesto_inflation()}} specification, or \code{NULL} (default).
+Applied within each window's inner update to counteract ensemble
+under-dispersion. See \code{\link[=pesto_ies_callback]{pesto_ies_callback()}}.}
+
+\item{localisation}{A \code{\link[=pesto_localisation]{pesto_localisation()}} specification, or \code{NULL}
+(default). Tapers the per-window Kalman gain to suppress spurious
+finite-sample correlations. See \code{\link[=pesto_ies_callback]{pesto_ies_callback()}}.}
 
 \item{on_failure}{Character. \code{"na"} (default) tolerates failed
 realisations; \code{"stop"} aborts on any failure.}

@@ -476,6 +476,17 @@ pesto_sensitivity <- function(pst_file,
 #' @param eigthresh Numeric. SVD eigenvalue truncation threshold (default 1e-6).
 #' @param use_approx Logical. If TRUE (default), skip the prior-scaling
 #'   correction (upgrade_2); matches the typical `pestpp-ies` default.
+#' @param inflation A [pesto_inflation()] specification, or `NULL` (default)
+#'   for no covariance inflation. Inflation counteracts ensemble
+#'   under-dispersion -- the progressive collapse of posterior spread a
+#'   finite-ensemble smoother suffers. `NULL` leaves the update identical to
+#'   the un-inflated smoother.
+#' @param localisation A [pesto_localisation()] specification, or `NULL`
+#'   (default) for no localisation. Localisation tapers the Kalman gain to
+#'   suppress spurious finite-sample parameter-observation correlations; the
+#'   active path uses [ensemble_solution_localised()] (approximate / upgrade_1
+#'   form), so a non-`NULL` `localisation` with `use_approx = FALSE` warns and
+#'   drops the null-space correction.
 #' @param on_failure Character. `"na"` (default) carries failed realisations
 #'   forward unchanged and proceeds; `"stop"` aborts on any failure.
 #' @param verbose Logical. Print per-iteration phi summaries.
@@ -485,8 +496,12 @@ pesto_sensitivity <- function(pst_file,
 #'     \item{phi}{data.table of per-realisation phi by iteration.}
 #'     \item{par_ensemble}{Final parameter ensemble (data.table).}
 #'     \item{obs_ensemble}{Final simulated-observation ensemble (data.table).}
-#'     \item{iterations}{List of per-iteration metadata (lambda, mean phi,
-#'       failure count).}
+#'     \item{iterations}{List of per-iteration metadata: `lambda`, `mean_phi`,
+#'       `n_failures`, and the dispersion diagnostics `spread_ess` /
+#'       `spread_ess_ratio` ([ensemble_spread_ess()]), plus
+#'       `inflation_method` / `inflation_factor` / `retention` and
+#'       `localisation` / `loc_threshold` / `loc_frac_active` when those
+#'       countermeasures are active.}
 #'     \item{runtime_seconds}{Total wall-clock runtime.}
 #'     \item{n_forward_evals}{Total number of realisation-level forward
 #'       evaluations across all iterations (including the final refresh).}
@@ -529,12 +544,16 @@ pesto_ies_callback <- function(forward_model,
                                parcov = NULL,
                                eigthresh = 1e-6,
                                use_approx = TRUE,
+                               inflation = NULL,
+                               localisation = NULL,
                                on_failure = c("na", "stop"),
                                verbose = TRUE) {
 
   # Validate inputs -----------------------------------------------------
   on_failure <- match.arg(on_failure)
   .check_pesto_ies_callback_inputs(forward_model, noptmax, eigthresh)
+  .check_inflation(inflation)
+  .check_localisation(localisation)
   noptmax <- as.integer(noptmax)
 
   # Coerce prior ensemble -----------------------------------------------
@@ -666,14 +685,25 @@ pesto_ies_callback <- function(forward_model,
     obs_ok <- obs_mat[ok, , drop = FALSE]
     nreal_ok <- nrow(par_ok)
 
-    par_mean_iter <- colMeans(par_ok)
-    obs_mean_iter <- colMeans(obs_ok)
-    par_diff  <- t(sweep(par_ok, 2L, par_mean_iter, "-"))       # npar x nreal_ok
-    obs_diff  <- t(sweep(obs_ok, 2L, obs_mean_iter, "-"))       # nobs x nreal_ok
-    obs_resid <- matrix(obs_vec, nrow = nobs, ncol = nreal_ok) - t(obs_ok)
-    par_resid <- t(sweep(par_ok, 2L, par_prior_mean, "-"))      # npar x nreal_ok
-
-    phi_vec <- compute_phi(obs_resid, weights)
+    # Shared GLM update core: forms anomalies/residuals, applies the (optional)
+    # localised gain, the (optional) inflation, and the spread-ESS diagnostic.
+    # The C++ kernels return the *negative-direction* step (Chen-Oliver 2013);
+    # `.ies_apply_update()` applies it by subtraction so phi descends.
+    step <- .ies_apply_update(
+      par_ok       = par_ok,
+      obs_ok       = obs_ok,
+      obs_vec      = obs_vec,
+      weights      = weights,
+      parcov_inv   = parcov_inv,
+      prior_mean   = par_prior_mean,
+      lambda       = lambda_seq[k],
+      eigthresh    = eigthresh,
+      use_approx   = use_approx,
+      iter         = k,
+      inflation    = inflation,
+      localisation = localisation
+    )
+    phi_vec <- step$phi
     phi_history[[k]] <- data.table::data.table(
       iteration   = k,
       realisation = which(ok),
@@ -681,39 +711,22 @@ pesto_ies_callback <- function(forward_model,
     )
     if (verbose) {
       message(sprintf(
-        "[pesto_ies_callback] iter %d/%d: phi mean=%.4g min=%.4g max=%.4g (lambda=%.3g, nreal_ok=%d/%d)",
+        paste0("[pesto_ies_callback] iter %d/%d: phi mean=%.4g min=%.4g ",
+               "max=%.4g (lambda=%.3g, nreal_ok=%d/%d, ess_ratio=%.3f)"),
         k, noptmax, mean(phi_vec), min(phi_vec), max(phi_vec),
-        lambda_seq[k], nreal_ok, nreal
+        lambda_seq[k], nreal_ok, nreal, step$diag$spread_ess_ratio
       ))
     }
 
-    Am_k <- matrix(0.0, nrow = npar, ncol = max(nreal_ok - 1L, 1L))
+    par_mat[ok, ] <- step$par_ok_new
 
-    upgrade <- ensemble_solution(
-      par_diff          = par_diff,
-      obs_diff          = obs_diff,
-      obs_resid         = obs_resid,
-      par_resid         = par_resid,
-      weights           = weights,
-      parcov_inv        = parcov_inv,
-      Am                = Am_k,
-      cur_lam           = lambda_seq[k],
-      eigthresh         = eigthresh,
-      use_approx        = use_approx,
-      use_prior_scaling = FALSE,
-      iter              = as.integer(k),
-      reg_factor        = -1.0
-    )
-    # upgrade: nreal_ok x npar. The C++ kernel returns the *negative-direction*
-    # step (the Chen-Oliver 2013 GLM update formula carries an explicit leading
-    # minus sign); apply by subtraction so phi descends.
-    par_ok_new <- par_ok - upgrade
-    par_mat[ok, ] <- par_ok_new
-
-    iter_meta[[k]] <- list(
-      lambda     = lambda_seq[k],
-      mean_phi   = mean(phi_vec),
-      n_failures = nreal - nreal_ok
+    iter_meta[[k]] <- c(
+      list(
+        lambda     = lambda_seq[k],
+        mean_phi   = mean(phi_vec),
+        n_failures = nreal - nreal_ok
+      ),
+      step$diag
     )
 
     if (k < noptmax) {

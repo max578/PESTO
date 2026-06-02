@@ -126,6 +126,62 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ensemble_spread_ess
+Rcpp::List ensemble_spread_ess(const Eigen::MatrixXd& par_diff);
+RcppExport SEXP _PESTO_ensemble_spread_ess(SEXP par_diffSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type par_diff(par_diffSEXP);
+    rcpp_result_gen = Rcpp::wrap(ensemble_spread_ess(par_diff));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gaspari_cohn
+Eigen::MatrixXd gaspari_cohn(const Eigen::MatrixXd& distances, double radius);
+RcppExport SEXP _PESTO_gaspari_cohn(SEXP distancesSEXP, SEXP radiusSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type distances(distancesSEXP);
+    Rcpp::traits::input_parameter< double >::type radius(radiusSEXP);
+    rcpp_result_gen = Rcpp::wrap(gaspari_cohn(distances, radius));
+    return rcpp_result_gen;
+END_RCPP
+}
+// correlation_localisation
+Rcpp::List correlation_localisation(const Eigen::MatrixXd& par_diff, const Eigen::MatrixXd& obs_diff, double threshold, std::string taper, int n_shuffle, double quantile);
+RcppExport SEXP _PESTO_correlation_localisation(SEXP par_diffSEXP, SEXP obs_diffSEXP, SEXP thresholdSEXP, SEXP taperSEXP, SEXP n_shuffleSEXP, SEXP quantileSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type par_diff(par_diffSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type obs_diff(obs_diffSEXP);
+    Rcpp::traits::input_parameter< double >::type threshold(thresholdSEXP);
+    Rcpp::traits::input_parameter< std::string >::type taper(taperSEXP);
+    Rcpp::traits::input_parameter< int >::type n_shuffle(n_shuffleSEXP);
+    Rcpp::traits::input_parameter< double >::type quantile(quantileSEXP);
+    rcpp_result_gen = Rcpp::wrap(correlation_localisation(par_diff, obs_diff, threshold, taper, n_shuffle, quantile));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ensemble_solution_localised
+Eigen::MatrixXd ensemble_solution_localised(Eigen::MatrixXd par_diff, Eigen::MatrixXd obs_diff, Eigen::MatrixXd obs_resid, Eigen::VectorXd weights, Eigen::MatrixXd rho, double cur_lam, double eigthresh);
+RcppExport SEXP _PESTO_ensemble_solution_localised(SEXP par_diffSEXP, SEXP obs_diffSEXP, SEXP obs_residSEXP, SEXP weightsSEXP, SEXP rhoSEXP, SEXP cur_lamSEXP, SEXP eigthreshSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type par_diff(par_diffSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_diff(obs_diffSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_resid(obs_residSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< double >::type cur_lam(cur_lamSEXP);
+    Rcpp::traits::input_parameter< double >::type eigthresh(eigthreshSEXP);
+    rcpp_result_gen = Rcpp::wrap(ensemble_solution_localised(par_diff, obs_diff, obs_resid, weights, rho, cur_lam, eigthresh));
+    return rcpp_result_gen;
+END_RCPP
+}
 // train_gp_surrogate
 Rcpp::List train_gp_surrogate(const Eigen::MatrixXd& X_train, const Eigen::MatrixXd& Y_train, double length_scale, double signal_var, double noise_var);
 RcppExport SEXP _PESTO_train_gp_surrogate(SEXP X_trainSEXP, SEXP Y_trainSEXP, SEXP length_scaleSEXP, SEXP signal_varSEXP, SEXP noise_varSEXP) {
@@ -222,6 +278,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PESTO_accelerate_svd", (DL_FUNC) &_PESTO_accelerate_svd, 2},
     {"_PESTO_adaptive_svd", (DL_FUNC) &_PESTO_adaptive_svd, 3},
     {"_PESTO_ensemble_solution_gpu", (DL_FUNC) &_PESTO_ensemble_solution_gpu, 15},
+    {"_PESTO_ensemble_spread_ess", (DL_FUNC) &_PESTO_ensemble_spread_ess, 1},
+    {"_PESTO_gaspari_cohn", (DL_FUNC) &_PESTO_gaspari_cohn, 2},
+    {"_PESTO_correlation_localisation", (DL_FUNC) &_PESTO_correlation_localisation, 6},
+    {"_PESTO_ensemble_solution_localised", (DL_FUNC) &_PESTO_ensemble_solution_localised, 7},
     {"_PESTO_train_gp_surrogate", (DL_FUNC) &_PESTO_train_gp_surrogate, 5},
     {"_PESTO_predict_gp_surrogate", (DL_FUNC) &_PESTO_predict_gp_surrogate, 2},
     {"_PESTO_surrogate_ensemble_update", (DL_FUNC) &_PESTO_surrogate_ensemble_update, 8},

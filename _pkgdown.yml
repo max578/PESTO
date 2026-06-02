@@ -33,7 +33,20 @@ reference:
   desc: Driver and APSIM adapter for forward-model callable IES, bypassing the .pst file cycle.
   contents:
   - pesto_ies_callback
+  - pesto_ies_filter
   - apsim_callback
+
+- title: Inflation and localisation
+  desc: Finite-ensemble pathology countermeasures -- covariance inflation against
+    under-dispersion, localisation against spurious correlations, and the spread-ESS
+    collapse diagnostic.
+  contents:
+  - pesto_inflation
+  - pesto_localisation
+  - ensemble_spread_ess
+  - correlation_localisation
+  - gaspari_cohn
+  - ensemble_solution_localised
 
 - title: Reference IES (pure R)
   desc: Textbook Chen & Oliver (2013) reference implementation used as the
@@ -89,6 +102,7 @@ articles:
   contents:
   - pestpp-comparison-and-simulation
   - surrogate-ies
+  - inflation-localisation
 
 - title: In-process IES and ensemble manifest
   contents:

@@ -68,6 +68,12 @@
 #' @param eigthresh Numeric. SVD eigenvalue truncation (default `1e-6`).
 #' @param use_approx Logical. If `TRUE` (default) skip the prior-scaling
 #'   correction, matching the `pestpp-ies` default.
+#' @param inflation A [pesto_inflation()] specification, or `NULL` (default).
+#'   Applied within each window's inner update to counteract ensemble
+#'   under-dispersion. See [pesto_ies_callback()].
+#' @param localisation A [pesto_localisation()] specification, or `NULL`
+#'   (default). Tapers the per-window Kalman gain to suppress spurious
+#'   finite-sample correlations. See [pesto_ies_callback()].
 #' @param on_failure Character. `"na"` (default) tolerates failed
 #'   realisations; `"stop"` aborts on any failure.
 #' @param verbose Logical. Print a per-window phi summary.
@@ -125,12 +131,16 @@ pesto_ies_filter <- function(forward_model,
                              parcov = NULL,
                              eigthresh = 1e-6,
                              use_approx = TRUE,
+                             inflation = NULL,
+                             localisation = NULL,
                              on_failure = c("na", "stop"),
                              verbose = TRUE) {
 
   # Validate inputs -----------------------------------------------------
   on_failure <- match.arg(on_failure)
   .check_pesto_ies_callback_inputs(forward_model, 1L, eigthresh)
+  .check_inflation(inflation)
+  .check_localisation(localisation)
 
   # Coerce prior ensemble -----------------------------------------------
   if (data.table::is.data.table(prior_ensemble) ||
@@ -242,8 +252,9 @@ pesto_ies_filter <- function(forward_model,
     # to this window (recomputed once, held across its inner iterations).
     prior_mean_k <- colMeans(par_mat)
 
-    last_phi <- NULL
-    last_ok  <- NULL
+    last_phi  <- NULL
+    last_ok   <- NULL
+    last_diag <- NULL
     for (j in seq_len(inner_seq[k])) {
       blk <- .ies_glm_block(
         par_mat       = par_mat,
@@ -255,11 +266,14 @@ pesto_ies_filter <- function(forward_model,
         lambda        = lambda_seq[k],
         eigthresh     = eigthresh,
         use_approx    = use_approx,
-        window        = k
+        window        = k,
+        inflation     = inflation,
+        localisation  = localisation
       )
-      par_mat  <- blk$par_mat
-      last_phi <- blk$phi
-      last_ok  <- blk$ok
+      par_mat   <- blk$par_mat
+      last_phi  <- blk$phi
+      last_ok   <- blk$ok
+      last_diag <- blk$diag
       if (j < inner_seq[k]) {
         obs_mat <- eval_at(par_mat, lvl_for(k))
         total_evals    <- total_evals + nreal
@@ -274,14 +288,17 @@ pesto_ies_filter <- function(forward_model,
     )
     par_mean_k <- colMeans(par_mat)
     par_sd_k   <- apply(par_mat, 2L, stats::sd)
-    win_meta[[k]] <- list(
-      window      = k,
-      obs_indices = idx,
-      lambda      = lambda_seq[k],
-      mean_phi    = mean(last_phi),
-      par_mean    = stats::setNames(par_mean_k, par_names_local),
-      par_sd      = stats::setNames(par_sd_k, par_names_local),
-      n_failures  = nreal - length(last_ok)
+    win_meta[[k]] <- c(
+      list(
+        window      = k,
+        obs_indices = idx,
+        lambda      = lambda_seq[k],
+        mean_phi    = mean(last_phi),
+        par_mean    = stats::setNames(par_mean_k, par_names_local),
+        par_sd      = stats::setNames(par_sd_k, par_names_local),
+        n_failures  = nreal - length(last_ok)
+      ),
+      if (is.null(last_diag)) list() else last_diag
     )
     if (verbose) {
       message(sprintf(
@@ -340,9 +357,16 @@ pesto_ies_filter <- function(forward_model,
     failure_rate    = total_failures / total_evals,
     fidelity        = fidelity_record,
     # Assimilation inputs preserved for as_manifest(). `iterations` is the
-    # manifest-facing per-step record; for the filter, one entry per window.
-    iterations      = lapply(win_meta,
-                             function(w) list(lambda = w$lambda)),
+    # manifest-facing per-step record; for the filter, one entry per window,
+    # carrying the dispersion / countermeasure diagnostics when present.
+    iterations      = lapply(win_meta, function(w) {
+      w[intersect(
+        c("lambda", "spread_ess", "spread_ess_ratio", "inflation_method",
+          "inflation_factor", "retention", "localisation", "loc_threshold",
+          "loc_frac_active"),
+        names(w)
+      )]
+    }),
     obs_target      = stats::setNames(obs_vec, obs_names_local),
     obs_sd          = stats::setNames(obs_sd_vec, obs_names_local),
     weights         = stats::setNames(weights, obs_names_local)
@@ -352,12 +376,15 @@ pesto_ies_filter <- function(forward_model,
 }
 
 
-# Single-window IES GLM update on an observation block. Mirrors the inner
-# math of pesto_ies_callback() but on a column subset and against a
-# window-local prior mean. Returns the updated ensemble + block phi.
+# Single-window IES GLM update on an observation block. Delegates the update
+# math (anomalies, localised / standard solve, inflation, spread-ESS) to the
+# shared `.ies_apply_update()` core, restricted to this window's column subset
+# and against a window-local prior mean. Returns the updated ensemble, block
+# phi, the complete-case indices, and the step diagnostics.
 .ies_glm_block <- function(par_mat, obs_block, obs_vec_block,
                            weights_block, parcov_inv, prior_mean,
-                           lambda, eigthresh, use_approx, window) {
+                           lambda, eigthresh, use_approx, window,
+                           inflation = NULL, localisation = NULL) {
   ok <- stats::complete.cases(obs_block)
   if (sum(ok) < 2L) {
     stop(
@@ -371,41 +398,26 @@ pesto_ies_filter <- function(forward_model,
       call. = FALSE
     )
   }
-  par_ok   <- par_mat[ok, , drop = FALSE]
-  obs_ok   <- obs_block[ok, , drop = FALSE]
-  nreal_ok <- nrow(par_ok)
-  npar     <- ncol(par_ok)
-  nobs_b   <- ncol(obs_ok)
+  par_ok <- par_mat[ok, , drop = FALSE]
+  obs_ok <- obs_block[ok, , drop = FALSE]
 
-  par_mean  <- colMeans(par_ok)
-  obs_mean  <- colMeans(obs_ok)
-  par_diff  <- t(sweep(par_ok, 2L, par_mean, "-"))
-  obs_diff  <- t(sweep(obs_ok, 2L, obs_mean, "-"))
-  obs_resid <- matrix(obs_vec_block, nrow = nobs_b, ncol = nreal_ok) -
-    t(obs_ok)
-  par_resid <- t(sweep(par_ok, 2L, prior_mean, "-"))
-
-  phi_vec <- compute_phi(obs_resid, weights_block)
-  Am_k    <- matrix(0.0, nrow = npar, ncol = max(nreal_ok - 1L, 1L))
-
-  upgrade <- ensemble_solution(
-    par_diff          = par_diff,
-    obs_diff          = obs_diff,
-    obs_resid         = obs_resid,
-    par_resid         = par_resid,
-    weights           = weights_block,
-    parcov_inv        = parcov_inv,
-    Am                = Am_k,
-    cur_lam           = lambda,
-    eigthresh         = eigthresh,
-    use_approx        = use_approx,
-    use_prior_scaling = FALSE,
-    iter              = as.integer(window),
-    reg_factor        = -1.0
+  step <- .ies_apply_update(
+    par_ok       = par_ok,
+    obs_ok       = obs_ok,
+    obs_vec      = obs_vec_block,
+    weights      = weights_block,
+    parcov_inv   = parcov_inv,
+    prior_mean   = prior_mean,
+    lambda       = lambda,
+    eigthresh    = eigthresh,
+    use_approx   = use_approx,
+    iter         = window,
+    inflation    = inflation,
+    localisation = localisation
   )
-  par_mat[ok, ] <- par_ok - upgrade
-  list(par_mat = par_mat, phi = phi_vec, ok = which(ok),
-       nreal_ok = nreal_ok)
+  par_mat[ok, ] <- step$par_ok_new
+  list(par_mat = par_mat, phi = step$phi, ok = which(ok),
+       nreal_ok = nrow(par_ok), diag = step$diag)
 }
 
 

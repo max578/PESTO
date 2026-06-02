@@ -1,3 +1,54 @@
+# PESTO 0.6.0
+
+## Covariance inflation and localisation against ensemble collapse
+
+Adds two opt-in countermeasures to the finite-ensemble pathologies that
+make an iterative ensemble smoother over-confident: covariance inflation
+(against under-dispersion / ensemble collapse) and covariance
+localisation (against spurious finite-sample parameter-observation
+correlations). Both default to off; a `NULL` specification leaves
+`pesto_ies_callback()` and `pesto_ies_filter()` byte-identical to the
+previous release.
+
+### New exports
+
+* `pesto_inflation()` -- inflation specification with four methods:
+  `"rtps"` (relaxation to prior spread, Whitaker & Hamill 2012; the
+  per-parameter, spectrally-aware workhorse), `"adaptive"` (global
+  inflation targeting a spread-retention floor), `"multiplicative"`
+  (fixed factor), and `"none"`.
+* `pesto_localisation()` -- localisation specification: `"correlation"`
+  (automatic, coordinate-free, Luo & Bhakta 2020 -- the recommended
+  default for parameter problems with no spatial metric) or `"distance"`
+  (classical Gaspari-Cohn taper of a parameter-to-observation distance
+  matrix).
+* `ensemble_spread_ess()` -- the collapse *diagnostic*: the spectral
+  participation ratio of the parameter anomaly covariance, i.e. the
+  effective number of variance-carrying directions. Recorded on every
+  iteration regardless of method.
+* `correlation_localisation()`, `gaspari_cohn()`,
+  `ensemble_solution_localised()` -- the C++ kernels backing the above.
+  `ensemble_solution_localised()` is the explicit-gain GLM update that
+  hosts the Schur-product localisation the SVD kernel cannot; with no
+  taper it reproduces `ensemble_solution()` (approximate form) to
+  truncation tolerance.
+
+### Behaviour
+
+* `pesto_ies_callback()` and `pesto_ies_filter()` gain `inflation` and
+  `localisation` arguments (both `NULL` by default) and now record the
+  spread-ESS and (when active) inflation / localisation diagnostics in
+  their per-step metadata, which flow into the ensemble manifest.
+* Localisation uses the approximate (upgrade_1) update; combining a
+  non-`NULL` `localisation` with `use_approx = FALSE` warns and drops the
+  null-space correction.
+
+Note on terminology: the spectral spread-ESS is scale-invariant, so it is
+used as the collapse *diagnostic*, while the `"adaptive"` inflation
+targets a variance-*magnitude* retention floor; `"rtps"` is the method
+that reshapes the spectrum. See the *Countering Ensemble Collapse:
+Inflation and Localisation* vignette.
+
 # PESTO 0.5.0
 
 ## Forward-model contract + first-class multi-fidelity bridge

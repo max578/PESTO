@@ -246,6 +246,202 @@ ensemble_solution_gpu <- function(par_diff, obs_diff, obs_resid, par_resid, weig
     .Call(`_PESTO_ensemble_solution_gpu`, par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh, use_approx, use_prior_scaling, iter, reg_factor, svd_method, target_rank)
 }
 
+#' Spectral Spread Effective Sample Size of a Parameter Ensemble
+#'
+#' Diagnoses ensemble collapse (under-dispersion) by the participation
+#' ratio of the parameter-anomaly covariance eigenspectrum. Given the
+#' parameter anomalies \eqn{\Delta\Theta} (deviations from the ensemble
+#' mean, \code{npar x nreal}), the anomaly covariance is
+#' \eqn{C = \Delta\Theta \Delta\Theta^{T} / (N - 1)} with eigenvalues
+#' \eqn{\lambda_i = s_i^2 / (N - 1)}, where \eqn{s_i} are the singular
+#' values of \eqn{\Delta\Theta}.
+#'
+#' The spectral spread-ESS is the participation ratio
+#' \deqn{\mathrm{ESS} = \frac{(\sum_i \lambda_i)^2}{\sum_i \lambda_i^2}
+#'                    = \frac{(\sum_i s_i^2)^2}{\sum_i s_i^4},}
+#' the effective number of directions carrying variance. It is bounded in
+#' \eqn{[1, r_{\max}]} with \eqn{r_{\max} = \min(\mathrm{npar}, N - 1)}:
+#' equal to \eqn{r_{\max}} when variance is spread isotropically across all
+#' modes, and approaching 1 when the ensemble collapses onto a single
+#' direction. Because the ratio is invariant to a global rescaling of the
+#' anomalies, it isolates the *shape* of the collapse (directional
+#' degeneracy) from its *magnitude*; magnitude is tracked separately by the
+#' R-side spread-retention ratio.
+#'
+#' @param par_diff Matrix (npar x nreal). Parameter anomalies (deviations
+#'   from the ensemble mean). At least 2 columns are required.
+#' @return A list with components \code{ess} (the spectral spread-ESS),
+#'   \code{r_max} (the maximum attainable value
+#'   \eqn{\min(\mathrm{npar}, N - 1)}), and \code{ess_ratio}
+#'   (\code{ess / r_max}, in \eqn{(0, 1]}).
+#' @references
+#' Bretherton, C.S., Widmann, M., Dymnikov, V.P., Wallace, J.M. & Blade, I.
+#' (1999). The effective number of spatial degrees of freedom of a
+#' time-varying field. \emph{Journal of Climate}, 12(7), 1990--2009.
+#' @examples
+#' set.seed(1L)
+#' # Healthy isotropic spread -> ESS near r_max
+#' good <- matrix(rnorm(6L * 40L), 6L, 40L)
+#' ensemble_spread_ess(good)$ess_ratio
+#' # Collapsed onto one direction -> ESS near 1
+#' v <- rnorm(6L)
+#' bad <- outer(v, rnorm(40L)) + matrix(rnorm(6L * 40L, sd = 1e-3), 6L, 40L)
+#' ensemble_spread_ess(bad)$ess_ratio
+#' @export
+ensemble_spread_ess <- function(par_diff) {
+    .Call(`_PESTO_ensemble_spread_ess`, par_diff)
+}
+
+#' Gaspari-Cohn Localisation Taper
+#'
+#' Evaluates the Gaspari & Cohn (1999) fifth-order piecewise-rational
+#' compactly-supported correlation function on a matrix of distances. This
+#' is the classical distance-based localisation taper: a smooth bump that
+#' equals 1 at zero distance, decays to 0 at twice the localisation radius,
+#' and is identically 0 beyond. Used to taper the Kalman gain when the
+#' parameters and observations carry a spatial (or otherwise metric)
+#' coordinate.
+#'
+#' With \eqn{z = d / c} (distance over localisation radius \eqn{c}):
+#' \deqn{G(z) = \begin{cases}
+#'   -\tfrac{1}{4}z^5 + \tfrac{1}{2}z^4 + \tfrac{5}{8}z^3 - \tfrac{5}{3}z^2 + 1
+#'     & 0 \le z \le 1 \\
+#'   \tfrac{1}{12}z^5 - \tfrac{1}{2}z^4 + \tfrac{5}{8}z^3 + \tfrac{5}{3}z^2
+#'     - 5z + 4 - \tfrac{2}{3}z^{-1} & 1 < z \le 2 \\
+#'   0 & z > 2.
+#' \end{cases}}
+#'
+#' @param distances Matrix (npar x nobs). Non-negative parameter-to-
+#'   observation distances.
+#' @param radius Numeric scalar (> 0). Localisation radius \eqn{c}; the
+#'   taper reaches 0 at distance \eqn{2c}.
+#' @return Matrix (npar x nobs) of taper weights in \eqn{[0, 1]}.
+#' @references
+#' Gaspari, G. & Cohn, S.E. (1999). Construction of correlation functions
+#' in two and three dimensions. \emph{Quarterly Journal of the Royal
+#' Meteorological Society}, 125(554), 723--757.
+#' @examples
+#' d <- matrix(c(0, 0.5, 1, 1.5, 2, 3), nrow = 2L)
+#' gaspari_cohn(d, radius = 1.0)
+#' @export
+gaspari_cohn <- function(distances, radius) {
+    .Call(`_PESTO_gaspari_cohn`, distances, radius)
+}
+
+#' Correlation-Based Automatic Localisation Taper
+#'
+#' Builds an \code{npar x nobs} localisation taper directly from the
+#' ensemble, with no parameter / observation coordinates required. This is
+#' the iterative-ensemble-smoother-native localisation of Luo & Bhakta
+#' (2020): spurious sample correlations between a parameter and an
+#' observation (an artefact of finite ensemble size) are damped, while
+#' genuine correlations that stand above an estimated noise floor are
+#' retained.
+#'
+#' The sample correlation \eqn{\rho_{ij}} between parameter-anomaly row
+#' \eqn{i} and observation-anomaly row \eqn{j} is compared against a noise
+#' floor \eqn{\theta}. When \code{threshold < 0} the floor is estimated by
+#' destroying the parameter-observation link --- the realisation order of
+#' the observation anomalies is randomly permuted, independently per
+#' replicate, and the floor is taken as a high quantile (default 0.95) of
+#' the resulting spurious \eqn{|\rho|} values. The permutation uses R's RNG,
+#' so the estimate is reproducible under \code{set.seed()}.
+#'
+#' Two tapers are offered. \code{"hard"} keeps correlations above the floor
+#' unchanged (weight 1) and zeroes the rest. \code{"soft"} applies a smooth,
+#' monotone ramp \eqn{w_{ij} = \mathrm{clip}((|\rho_{ij}| - \theta) /
+#' (1 - \theta), 0, 1)}, which downweights near-floor correlations rather
+#' than thresholding them sharply.
+#'
+#' @param par_diff Matrix (npar x nreal). Parameter anomalies.
+#' @param obs_diff Matrix (nobs x nreal). Observation anomalies.
+#' @param threshold Numeric. Noise floor on \eqn{|\rho|}. Negative
+#'   (default \code{-1}) triggers automatic estimation by permutation.
+#' @param taper Character. \code{"hard"} (indicator) or \code{"soft"}
+#'   (linear ramp above the floor).
+#' @param n_shuffle Integer. Number of permutation replicates for the
+#'   automatic floor (default 1; each replicate yields \code{npar * nobs}
+#'   spurious samples). Ignored when \code{threshold >= 0}.
+#' @param quantile Numeric in (0, 1). Quantile of the spurious-correlation
+#'   distribution used as the floor (default 0.95). Ignored when
+#'   \code{threshold >= 0}.
+#' @return A list with \code{rho} (the npar x nobs taper), \code{threshold}
+#'   (the floor used), \code{n_active} (count of entries with non-zero
+#'   weight), and \code{frac_active} (that count over \code{npar * nobs}).
+#' @references
+#' Luo, X. & Bhakta, T. (2020). Automatic and adaptive localization for
+#' ensemble-based history matching. \emph{Journal of Petroleum Science and
+#' Engineering}, 184, 106559.
+#' @examples
+#' set.seed(1L)
+#' npar <- 8L; nobs <- 5L; nreal <- 40L
+#' pd <- matrix(rnorm(npar * nreal), npar, nreal)
+#' # Make parameter 1 genuinely correlated with observation 1.
+#' od <- matrix(rnorm(nobs * nreal), nobs, nreal)
+#' od[1L, ] <- od[1L, ] + 2 * pd[1L, ]
+#' loc <- correlation_localisation(pd, od)
+#' loc$threshold
+#' loc$rho[1L, 1L]
+#' @export
+correlation_localisation <- function(par_diff, obs_diff, threshold = -1.0, taper = "hard", n_shuffle = 1L, quantile = 0.95) {
+    .Call(`_PESTO_correlation_localisation`, par_diff, obs_diff, threshold, taper, n_shuffle, quantile)
+}
+
+#' Localised Ensemble Solution Kernel (explicit-gain GLM form)
+#'
+#' Computes the IES Gauss-Levenberg-Marquardt update with state-space
+#' covariance localisation applied as a Schur (elementwise) product on the
+#' explicit Kalman gain. The standard SVD kernel [ensemble_solution()]
+#' works in the reduced observation-anomaly subspace and never forms the
+#' \code{npar x nobs} gain, so it cannot host localisation; this kernel
+#' reconstructs the gain
+#' \deqn{K = \Delta\Theta\, V\, \mathrm{diag}(s)\,
+#'          \mathrm{diag}((s^2 + (\lambda+1))^{-1})\, U^{T},}
+#' (with \eqn{U s V^{T}} the thin SVD of the weight-scaled observation
+#' anomalies) tapers it as \eqn{K \circ \rho}, and applies it to the
+#' weighted residuals.
+#'
+#' When \eqn{\rho \equiv 1} the result is identical (to truncation
+#' tolerance) to [ensemble_solution()] with \code{use_approx = TRUE}; the
+#' prior-scaling null-space correction (\code{upgrade_2}) is not part of the
+#' localised path. The returned matrix follows the same sign convention as
+#' [ensemble_solution()] --- it is the negative-direction step, applied to
+#' the ensemble by subtraction (\code{par_new = par_old - upgrade}).
+#'
+#' @param par_diff Matrix (npar x nreal). Parameter anomalies.
+#' @param obs_diff Matrix (nobs x nreal). Observation anomalies.
+#' @param obs_resid Matrix (nobs x nreal). Observation residuals
+#'   (sim - obs); see [ensemble_solution()] for the sign rationale.
+#' @param weights Numeric vector (nobs). Observation weights
+#'   (1 / sqrt(variance)).
+#' @param rho Matrix (npar x nobs). Localisation taper in \eqn{[0, 1]},
+#'   e.g. from [correlation_localisation()] or [gaspari_cohn()].
+#' @param cur_lam Numeric. Current Marquardt lambda.
+#' @param eigthresh Numeric. Eigenvalue truncation threshold (0-1).
+#' @return Matrix (nreal x npar). Negative-direction parameter upgrade,
+#'   applied by subtraction.
+#' @references
+#' Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
+#' iterative ensemble smoother for efficient history matching and
+#' uncertainty quantification. \emph{Computational Geosciences}, 17(4),
+#' 689--703.
+#' @examples
+#' set.seed(1L)
+#' npar <- 4L; nreal <- 20L; nobs <- 6L
+#' par_diff  <- matrix(rnorm(npar * nreal), npar, nreal)
+#' obs_diff  <- matrix(rnorm(nobs * nreal), nobs, nreal)
+#' obs_resid <- matrix(rnorm(nobs * nreal, sd = 0.5), nobs, nreal)
+#' weights   <- rep(1, nobs)
+#' rho       <- matrix(1, npar, nobs)          # no localisation
+#' upg <- ensemble_solution_localised(
+#'   par_diff, obs_diff, obs_resid, weights, rho, cur_lam = 1.0
+#' )
+#' dim(upg)
+#' @export
+ensemble_solution_localised <- function(par_diff, obs_diff, obs_resid, weights, rho, cur_lam, eigthresh = 1e-6) {
+    .Call(`_PESTO_ensemble_solution_localised`, par_diff, obs_diff, obs_resid, weights, rho, cur_lam, eigthresh)
+}
+
 #' Train a Gaussian Process Surrogate
 #'
 #' Trains a GP surrogate model from parameter-observation pairs.

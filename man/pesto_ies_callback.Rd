@@ -15,6 +15,8 @@ pesto_ies_callback(
   parcov = NULL,
   eigthresh = 1e-06,
   use_approx = TRUE,
+  inflation = NULL,
+  localisation = NULL,
   on_failure = c("na", "stop"),
   verbose = TRUE
 )
@@ -61,6 +63,19 @@ parameter covariance. Defaults to the column-wise variance of
 \item{use_approx}{Logical. If TRUE (default), skip the prior-scaling
 correction (upgrade_2); matches the typical \code{pestpp-ies} default.}
 
+\item{inflation}{A \code{\link[=pesto_inflation]{pesto_inflation()}} specification, or \code{NULL} (default)
+for no covariance inflation. Inflation counteracts ensemble
+under-dispersion -- the progressive collapse of posterior spread a
+finite-ensemble smoother suffers. \code{NULL} leaves the update identical to
+the un-inflated smoother.}
+
+\item{localisation}{A \code{\link[=pesto_localisation]{pesto_localisation()}} specification, or \code{NULL}
+(default) for no localisation. Localisation tapers the Kalman gain to
+suppress spurious finite-sample parameter-observation correlations; the
+active path uses \code{\link[=ensemble_solution_localised]{ensemble_solution_localised()}} (approximate / upgrade_1
+form), so a non-\code{NULL} \code{localisation} with \code{use_approx = FALSE} warns and
+drops the null-space correction.}
+
 \item{on_failure}{Character. \code{"na"} (default) carries failed realisations
 forward unchanged and proceeds; \code{"stop"} aborts on any failure.}
 
@@ -73,8 +88,12 @@ with components:
 \item{phi}{data.table of per-realisation phi by iteration.}
 \item{par_ensemble}{Final parameter ensemble (data.table).}
 \item{obs_ensemble}{Final simulated-observation ensemble (data.table).}
-\item{iterations}{List of per-iteration metadata (lambda, mean phi,
-failure count).}
+\item{iterations}{List of per-iteration metadata: \code{lambda}, \code{mean_phi},
+\code{n_failures}, and the dispersion diagnostics \code{spread_ess} /
+\code{spread_ess_ratio} (\code{\link[=ensemble_spread_ess]{ensemble_spread_ess()}}), plus
+\code{inflation_method} / \code{inflation_factor} / \code{retention} and
+\code{localisation} / \code{loc_threshold} / \code{loc_frac_active} when those
+countermeasures are active.}
 \item{runtime_seconds}{Total wall-clock runtime.}
 \item{n_forward_evals}{Total number of realisation-level forward
 evaluations across all iterations (including the final refresh).}
