@@ -79,6 +79,10 @@ failure count).}
 \item{n_forward_evals}{Total number of realisation-level forward
 evaluations across all iterations (including the final refresh).}
 \item{failure_rate}{Fraction of forward evaluations that returned NA.}
+\item{fidelity}{For a \code{\link[=pesto_multifidelity_model]{pesto_multifidelity_model()}} run, a provenance
+list \code{list(type, schedule, final_level, n_levels, costs)} recording the
+realised per-iteration fidelity schedule; \code{NULL} for a single-fidelity
+run. Consumed by \code{\link[=as_manifest]{as_manifest()}} to populate the manifest contract.}
 }
 }
 \description{

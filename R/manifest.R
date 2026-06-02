@@ -29,8 +29,10 @@
 #'   unrecorded).
 #' @param data_hash Character. `sha256:...` checksum over
 #'   `(params, outputs, weights, obs_target, seed)`.
-#' @param fidelity Named numeric vector or `NULL`. Per-member fidelity
-#'   tag for multi-fidelity runs.
+#' @param fidelity Structured provenance list or `NULL`. For a
+#'   multi-fidelity run [pesto_ies_callback()] records
+#'   `list(type, schedule, final_level, n_levels, costs)`; `NULL` for a
+#'   single-fidelity run. A legacy named-numeric tag is still accepted.
 #' @param apsim_version Character. APSIM version string
 #'   (`NA_character_` when forward model is non-APSIM).
 #' @param pesto_version Character. PESTO package version that produced
@@ -146,7 +148,9 @@ pesto_ensemble_manifest <- S7::new_class(
 #' @param ... Method-specific arguments. For
 #'   `pesto_ies_callback_result`: `run_id` (character, defaults to a
 #'   timestamp+hash slug), `seed` (integer, defaults to `NA_integer_`),
-#'   `fidelity` (named numeric or `NULL`), `apsim_version` (character,
+#'   `fidelity` (structured provenance list or `NULL`; defaults to the
+#'   record captured by [pesto_ies_callback()] for a multi-fidelity run),
+#'   `apsim_version` (character,
 #'   defaults to `NA_character_`).
 #' @return A `pesto_ensemble_manifest` S7 object.
 #' @export
@@ -453,7 +457,10 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
     obs_target      = obs_target_vec,
     seed            = as.integer(seed),
     data_hash       = hash,
-    fidelity        = fidelity,
+    # An explicit `fidelity =` wins; otherwise inherit the provenance
+    # the callback driver recorded for a multi-fidelity run (NULL for a
+    # single-fidelity run).
+    fidelity        = fidelity %||% x$fidelity,
     apsim_version   = as.character(apsim_version),
     pesto_version   = as.character(utils::packageVersion("PESTO")),
     timestamp       = Sys.time(),
@@ -538,8 +545,7 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
     seed            = if (is.null(yl$seed)) NA_integer_
                       else as.integer(yl$seed),
     data_hash       = yl$data_hash,
-    fidelity        = if (is.null(yl$fidelity)) NULL
-                      else as.numeric(unlist(yl$fidelity)),
+    fidelity        = .read_fidelity_record(yl$fidelity),
     apsim_version   = if (is.null(yl$apsim_version)) NA_character_
                       else as.character(yl$apsim_version),
     pesto_version   = as.character(yl$pesto_version),
@@ -557,6 +563,24 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
       if (identical(f, "csv")) "csv_unverified" else f
     }
   )
+}
+
+# Reconstruct the fidelity slot from its YAML form. A structured
+# multi-fidelity provenance record (carrying a `type` field) round-trips
+# faithfully with field types restored; any legacy atomic representation
+# falls back to a flat numeric vector. NULL stays NULL.
+.read_fidelity_record <- function(f) {
+  if (is.null(f)) return(NULL)
+  if (is.list(f) && !is.null(f$type)) {
+    return(list(
+      type        = as.character(f$type),
+      schedule    = as.integer(unlist(f$schedule)),
+      final_level = as.integer(f$final_level),
+      n_levels    = as.integer(f$n_levels),
+      costs       = as.numeric(unlist(f$costs))
+    ))
+  }
+  as.numeric(unlist(f))
 }
 
 # Local `%||%`. The same helper lives in apsim_callback.R; both are

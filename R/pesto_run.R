@@ -491,6 +491,10 @@ pesto_sensitivity <- function(pst_file,
 #'     \item{n_forward_evals}{Total number of realisation-level forward
 #'       evaluations across all iterations (including the final refresh).}
 #'     \item{failure_rate}{Fraction of forward evaluations that returned NA.}
+#'     \item{fidelity}{For a [pesto_multifidelity_model()] run, a provenance
+#'       list `list(type, schedule, final_level, n_levels, costs)` recording the
+#'       realised per-iteration fidelity schedule; `NULL` for a single-fidelity
+#'       run. Consumed by [as_manifest()] to populate the manifest contract.}
 #'   }
 #' @references
 #' Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
@@ -738,6 +742,21 @@ pesto_ies_callback <- function(forward_model,
   obs_dt[, real_name := paste0("real_", seq_len(nreal))]
   data.table::setcolorder(obs_dt, c("real_name", obs_names_local))
 
+  # Fidelity provenance: a structured record for a multi-fidelity run
+  # (so `as_manifest()` can close the C2 lineage), NULL for a plain
+  # single-fidelity run (manifests stay byte-identical to before).
+  fidelity_record <- if (is_mf) {
+    list(
+      type        = "multifidelity",
+      schedule    = as.integer(fid_sched),
+      final_level = as.integer(top_level),
+      n_levels    = as.integer(n_levels),
+      costs       = as.numeric(eval_model@costs)
+    )
+  } else {
+    NULL
+  }
+
   output <- list(
     phi             = data.table::rbindlist(phi_history),
     par_ensemble    = par_dt,
@@ -746,6 +765,7 @@ pesto_ies_callback <- function(forward_model,
     runtime_seconds = runtime,
     n_forward_evals = total_evals,
     failure_rate    = total_failures / total_evals,
+    fidelity        = fidelity_record,
     # Assimilation inputs preserved so downstream code (e.g. A5
     # manifest emitter) can reconstruct the full run context.
     obs_target      = stats::setNames(obs_vec, obs_names_local),

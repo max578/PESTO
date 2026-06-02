@@ -13,7 +13,9 @@ registered against this generic).}
 \item{...}{Method-specific arguments. For
 \code{pesto_ies_callback_result}: \code{run_id} (character, defaults to a
 timestamp+hash slug), \code{seed} (integer, defaults to \code{NA_integer_}),
-\code{fidelity} (named numeric or \code{NULL}), \code{apsim_version} (character,
+\code{fidelity} (structured provenance list or \code{NULL}; defaults to the
+record captured by \code{\link[=pesto_ies_callback]{pesto_ies_callback()}} for a multi-fidelity run),
+\code{apsim_version} (character,
 defaults to \code{NA_character_}).}
 }
 \value{

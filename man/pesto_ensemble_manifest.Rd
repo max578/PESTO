@@ -26,8 +26,10 @@ unrecorded).}
 \item{data_hash}{Character. \code{sha256:...} checksum over
 \verb{(params, outputs, weights, obs_target, seed)}.}
 
-\item{fidelity}{Named numeric vector or \code{NULL}. Per-member fidelity
-tag for multi-fidelity runs.}
+\item{fidelity}{Structured provenance list or \code{NULL}. For a
+multi-fidelity run \code{\link[=pesto_ies_callback]{pesto_ies_callback()}} records
+\code{list(type, schedule, final_level, n_levels, costs)}; \code{NULL} for a
+single-fidelity run. A legacy named-numeric tag is still accepted.}
 
 \item{apsim_version}{Character. APSIM version string
 (\code{NA_character_} when forward model is non-APSIM).}

@@ -36,6 +36,16 @@ accepts a bare `function(theta) -> obs`.
   `pesto_multifidelity_model`): the fidelity level evaluated at each
   iteration, supporting cheap-early / expensive-late ramping. The final
   ensemble refresh always uses the highest fidelity.
+* Fidelity provenance now closes the manifest (C2) lineage: a
+  multi-fidelity `pesto_ies_callback()` run records its realised schedule
+  in the result (`$fidelity = list(type, schedule, final_level, n_levels,
+  costs)`), `as_manifest()` inherits it into the `pesto_ensemble_manifest`
+  `fidelity` slot unless overridden, and `write_manifest()` /
+  `read_manifest()` round-trip the structured record faithfully (it is
+  outside the integrity hash, so it does not affect `verify_manifest()`).
+  Single-fidelity runs record `NULL`, so their manifests are unchanged.
+  The manifest `fidelity` slot is now documented as a structured
+  provenance list (legacy named-numeric tags are still accepted on read).
 * Parallel, fault-tolerant ensemble evaluation: a `pesto_forward_model`
   with `parallel = "multicore"` dispatches realisations across forked
   workers via `parallel::mclapply()` with L'Ecuyer streams (reproducible
