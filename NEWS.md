@@ -1,3 +1,58 @@
+# PESTO 0.4.1.9000 (development)
+
+## Forward-model contract + first-class multi-fidelity bridge
+
+Promotes the two-adapter forward-model contract from an implicit
+convention to a typed, enforceable object, and makes the multi-fidelity
+`(cheap, expensive)` bridge first-class (APSIM-bridge invariants 1 and
+3). No breaking changes to existing calls: `pesto_ies_callback()` still
+accepts a bare `function(theta) -> obs`.
+
+### New exports
+
+* `pesto_forward_model()` — an S7 class wrapping a forward callable with
+  its output dimensionality, expected parameter names, failure policy
+  (`on_failure`, `max_fail_frac`), evaluation strategy (serial /
+  `"multicore"` / custom `map_fn`), and a `fidelity` tag. This is the
+  single contract both the native-callback and `.pst`-file adapter modes
+  honour.
+* `pesto_evaluate()` — generic that runs a forward model (or a
+  multi-fidelity model at a chosen `level`) and returns a
+  shape-guaranteed `nreal x nobs` matrix with `"n_failures"` /
+  `"fail_idx"` attributes.
+* `as_forward_model()` — coerces a bare function (or passes through an
+  existing object) into the contract; used internally so bare functions
+  keep working unchanged.
+* `pesto_multifidelity_model()` — an ordered stack of fidelity levels
+  (cheapest first) plus relative `costs`; the first-class form of the
+  bridge's fidelity vector.
+* `mf_control_variate()` — the affine (Kennedy-O'Hagan AR(1))
+  control-variate primitive that debiases a cheap level against a sparse
+  expensive sample; the plug-in point for surrogate cascades.
+
+### Behaviour
+
+* `pesto_ies_callback()` gains `fidelity_schedule` (consulted only for a
+  `pesto_multifidelity_model`): the fidelity level evaluated at each
+  iteration, supporting cheap-early / expensive-late ramping. The final
+  ensemble refresh always uses the highest fidelity.
+* Parallel, fault-tolerant ensemble evaluation: a `pesto_forward_model`
+  with `parallel = "multicore"` dispatches realisations across forked
+  workers via `parallel::mclapply()` with L'Ecuyer streams (reproducible
+  under `RNGkind("L'Ecuyer-CMRG")`); serial bulk evaluation is unchanged
+  and remains the default.
+* `apsim_callback()` now writes each realisation to a unique per-run
+  file, making the closure safe to drive in parallel (wrap it in a
+  `pesto_forward_model(parallel = "multicore")`).
+* The internal bulk-then-per-row evaluation helper (`.eval_forward_safe`)
+  was retired in favour of the shared engine behind `pesto_evaluate()`;
+  the on-error abort message changed from `` `forward_model` failed `` to
+  `forward model failed`.
+
+### Dependencies
+
+* `parallel` (a base R package) added to `Imports`.
+
 # PESTO 0.4.1
 
 ## AAGI guidance uplift

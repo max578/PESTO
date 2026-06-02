@@ -22,7 +22,7 @@ PESTO is a high-performance R package for model-independent parameter estimation
 
 ## Installation
 
-The canonical home for PESTO is [`AAGI-AUS/PESTO`](https://github.com/AAGI-AUS/PESTO). The current development tree and pre-built binaries are mirrored under the author's GitHub account while the AAGI-AUS release channel is being finalised.
+The canonical home for PESTO is [`max578/PESTO`](https://github.com/max578/PESTO), published through the author's personal CRAN-track channel and the `max578.r-universe.dev` registry. The `AAGI-AUS/PESTO` remote is retained as a read-only mirror.
 
 From GitHub (development version):
 
@@ -112,7 +112,7 @@ Randomised SVD: **35x** faster than full LAPACK at 2000x1000 for rank-20 approxi
 
 ## Contributing
 
-Contributions are welcome. Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for the development workflow, coding style, and the pull-request convention. Bug reports and feature requests go through [GitHub Issues](https://github.com/AAGI-AUS/PESTO/issues). Security-relevant defects should be reported privately per [`SECURITY.md`](SECURITY.md). All participants are expected to abide by the [Code of Conduct](CODE_OF_CONDUCT.md).
+Contributions are welcome. Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for the development workflow, coding style, and the pull-request convention. Bug reports and feature requests go through [GitHub Issues](https://github.com/max578/PESTO/issues). Security-relevant defects should be reported privately per [`SECURITY.md`](SECURITY.md). All participants are expected to abide by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Citation
 
@@ -120,7 +120,7 @@ Contributions are welcome. Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for t
 citation("PESTO")
 ```
 
-> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.4.1. https://github.com/AAGI-AUS/PESTO
+> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.4.1. https://github.com/max578/PESTO
 
 ## Related Projects
 

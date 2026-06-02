@@ -10,8 +10,8 @@ authors:
     orcid: "https://orcid.org/0000-0001-9680-8474"
     affiliation: "University of Adelaide"
 license: GPL-3.0-or-later
-repository-code: "https://github.com/AAGI-AUS/PESTO"
-url: "https://github.com/AAGI-AUS/PESTO"
+repository-code: "https://github.com/max578/PESTO"
+url: "https://github.com/max578/PESTO"
 version: 0.4.1
 date-released: "2026-05-28"
 keywords:

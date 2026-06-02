@@ -87,9 +87,16 @@ per-parameter writer.
 
 \section{Concurrency}{
 
-Phase-1 D4 runs realisations \strong{serially}. Parallel execution via
-\code{future} or \code{mirai} is a planned follow-up; \code{apsimx}'s thread-safety
-under ensemble load has not been verified.
+The returned closure evaluates whatever block of realisations it is
+handed and writes each to a \strong{unique} per-realisation file under
+\code{workdir}, so it is safe to drive in parallel. To run an ensemble
+concurrently, wrap the closure in a \code{\link[=pesto_forward_model]{pesto_forward_model()}} with
+\code{parallel = "multicore"} (or a custom \code{map_fn}); the PESTO evaluation
+engine then dispatches realisations across forked workers, each
+invoking APSIM on its own input file. Called directly (the bulk
+path), realisations run serially. \code{apsimx}'s own thread-safety under
+heavy ensemble load has not been independently verified, so start
+with a modest \code{n_cores}.
 }
 
 \examples{

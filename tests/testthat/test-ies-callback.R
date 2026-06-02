@@ -105,7 +105,7 @@ test_that("on_failure='stop' aborts when forward_model errors", {
       on_failure     = "stop",
       verbose        = FALSE
     ),
-    regexp = "`forward_model` failed"
+    regexp = "forward model failed"
   )
 })
 

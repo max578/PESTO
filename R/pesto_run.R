@@ -435,10 +435,27 @@ pesto_sensitivity <- function(pst_file,
 #' with `lambda = 1`, the GLM update reduces phi reliably (see vignette
 #' `apsim-callback`).
 #'
-#' @param forward_model A function with signature `function(theta) -> obs`,
-#'   where `theta` is an `nreal x npar` numeric matrix and `obs` is an
-#'   `nreal x nobs` numeric matrix. Failed realisations may return rows of
-#'   `NA`; the driver tolerates them (see `on_failure`).
+#' @section Multi-fidelity:
+#' When `forward_model` is a [pesto_multifidelity_model()], `fidelity_schedule`
+#' selects which fidelity level each iteration evaluates -- a recycled / padded
+#' integer vector, one entry per iteration (default: the highest fidelity every
+#' iteration, i.e. exactly the single-fidelity behaviour). This supports
+#' fidelity ramping (cheap early iterations, expensive late ones); the final
+#' ensemble refresh always uses the highest fidelity so the returned posterior
+#' is at full resolution. The control-variate combiner [mf_control_variate()]
+#' is the plug-in point for bias-corrected surrogate cascades.
+#'
+#' @param forward_model One of: a function with signature
+#'   `function(theta) -> obs` (where `theta` is an `nreal x npar` numeric
+#'   matrix and `obs` an `nreal x nobs` numeric matrix); a
+#'   [pesto_forward_model()] (the typed contract object, e.g. one carrying a
+#'   `parallel = "multicore"` evaluation strategy); or a
+#'   [pesto_multifidelity_model()] (then see `fidelity_schedule`). A bare
+#'   function is auto-wrapped via [as_forward_model()] with this call's
+#'   `on_failure`. Failed realisations may return rows of `NA`; the driver
+#'   tolerates them (see `on_failure`). To run realisations in parallel, pass a
+#'   `pesto_forward_model` built with `parallel = "multicore"` rather than a
+#'   bare function.
 #' @param prior_ensemble Matrix or data.table, `nreal x npar`. Columns are
 #'   parameters; an optional `real_name` column is preserved if present.
 #'   Column names supply parameter names.
@@ -449,6 +466,10 @@ pesto_sensitivity <- function(pst_file,
 #' @param lambda Numeric scalar or vector. Marquardt lambda per iteration.
 #'   A scalar is recycled; a vector shorter than `noptmax` is right-padded
 #'   with its last value (default 1.0).
+#' @param fidelity_schedule Integer vector or `NULL`. Only consulted when
+#'   `forward_model` is a [pesto_multifidelity_model()]: the fidelity level to
+#'   evaluate at each iteration (recycled / right-padded to `noptmax`). `NULL`
+#'   (default) uses the highest fidelity every iteration. Ignored otherwise.
 #' @param parcov Numeric vector of length `npar`, the diagonal of the prior
 #'   parameter covariance. Defaults to the column-wise variance of
 #'   `prior_ensemble`; zero or negative entries are replaced with 1.0.
@@ -500,6 +521,7 @@ pesto_ies_callback <- function(forward_model,
                                obs_sd,
                                noptmax = 4L,
                                lambda = 1.0,
+                               fidelity_schedule = NULL,
                                parcov = NULL,
                                eigthresh = 1e-6,
                                use_approx = TRUE,
@@ -581,6 +603,33 @@ pesto_ies_callback <- function(forward_model,
   }
   lambda_seq <- lambda_seq[seq_len(noptmax)]
 
+  # Forward-model evaluation contract -----------------------------------
+  # Accept a bare function, a typed pesto_forward_model, or a
+  # multi-fidelity container. The schedule is only meaningful for the
+  # latter; eval_at()/lvl_for() hide the dispatch from the loop below.
+  is_mf <- S7::S7_inherits(forward_model, pesto_multifidelity_model)
+  if (is_mf) {
+    n_levels   <- length(forward_model@levels)
+    fid_sched  <- .resolve_fidelity_schedule(fidelity_schedule,
+                                             n_levels, noptmax)
+    top_level  <- n_levels - 1L
+    eval_model <- forward_model
+  } else {
+    fid_sched  <- NULL
+    top_level  <- 0L
+    eval_model <- .fm_with_nobs(
+      as_forward_model(forward_model, on_failure = on_failure), nobs
+    )
+  }
+  lvl_for <- function(k) if (is_mf) fid_sched[k] else 0L
+  eval_at <- function(pm, level) {
+    if (is_mf) {
+      pesto_evaluate(eval_model, pm, level = level)
+    } else {
+      pesto_evaluate(eval_model, pm)
+    }
+  }
+
   # IES iteration loop --------------------------------------------------
   par_prior_mean <- colMeans(par_mat)
 
@@ -591,8 +640,7 @@ pesto_ies_callback <- function(forward_model,
 
   t0 <- proc.time()["elapsed"]
 
-  obs_mat <- .eval_forward_safe(forward_model, par_mat, nreal, nobs,
-                                on_failure, verbose)
+  obs_mat <- eval_at(par_mat, lvl_for(1L))
   total_evals    <- total_evals + nreal
   total_failures <- total_failures + attr(obs_mat, "n_failures")
 
@@ -665,16 +713,16 @@ pesto_ies_callback <- function(forward_model,
     )
 
     if (k < noptmax) {
-      obs_mat <- .eval_forward_safe(forward_model, par_mat, nreal, nobs,
-                                    on_failure, verbose)
+      obs_mat <- eval_at(par_mat, lvl_for(k + 1L))
       total_evals    <- total_evals + nreal
       total_failures <- total_failures + attr(obs_mat, "n_failures")
     }
   }
 
   # Final refresh and assemble result -----------------------------------
-  obs_mat_final <- .eval_forward_safe(forward_model, par_mat, nreal, nobs,
-                                      on_failure, verbose)
+  # Always refresh at the highest fidelity so the returned ensemble is
+  # at full resolution, regardless of the iteration schedule.
+  obs_mat_final <- eval_at(par_mat, top_level)
   total_evals    <- total_evals + nreal
   total_failures <- total_failures + attr(obs_mat_final, "n_failures")
 
@@ -706,70 +754,6 @@ pesto_ies_callback <- function(forward_model,
   )
   class(output) <- c("pesto_ies_callback_result", "pesto_ies_result")
   output
-}
-
-# Internal: evaluate forward_model with bulk-then-per-row fallback.
-# Returns an nreal x nobs matrix with attribute "n_failures".
-.eval_forward_safe <- function(f, par_mat, nreal, nobs, on_failure, verbose) {
-  bulk <- tryCatch(
-    {
-      r <- f(par_mat)
-      if (!is.matrix(r)) r <- as.matrix(r)
-      if (!identical(dim(r), c(nreal, nobs))) {
-        stop(
-          sprintf(
-            "`forward_model` returned shape %dx%d. Expected %dx%d.",
-            nrow(r), ncol(r), nreal, nobs
-          ),
-          call. = FALSE
-        )
-      }
-      storage.mode(r) <- "double"
-      r
-    },
-    error = function(e) {
-      if (on_failure == "stop") {
-        stop(
-          sprintf("`forward_model` failed: %s", conditionMessage(e)),
-          call. = FALSE
-        )
-      }
-      if (verbose) {
-        message(
-          "forward_model bulk-call failed (", conditionMessage(e),
-          "); retrying per realisation."
-        )
-      }
-      out <- matrix(NA_real_, nrow = nreal, ncol = nobs)
-      for (i in seq_len(nreal)) {
-        ri <- tryCatch(
-          {
-            x <- f(par_mat[i, , drop = FALSE])
-            if (!is.matrix(x)) x <- matrix(as.numeric(x), nrow = 1L)
-            x[1L, ]
-          },
-          error = function(e2) rep(NA_real_, nobs)
-        )
-        if (length(ri) == nobs) out[i, ] <- as.numeric(ri)
-      }
-      out
-    }
-  )
-  n_fail <- sum(!stats::complete.cases(bulk))
-  if (on_failure == "stop" && n_fail > 0L) {
-    stop(
-      sprintf(
-        paste0(
-          "`forward_model` returned NA for %d of %d realisations ",
-          "(on_failure = \"stop\")."
-        ),
-        n_fail, nreal
-      ),
-      call. = FALSE
-    )
-  }
-  attr(bulk, "n_failures") <- n_fail
-  bulk
 }
 
 #' Get PESTO package version information
@@ -815,7 +799,18 @@ pesto_version <- function() {
 #' @keywords internal
 .check_pesto_ies_callback_inputs <- function(forward_model, noptmax,
                                              eigthresh) {
-  .assert_function(forward_model, "forward_model")
+  ok_model <- is.function(forward_model) ||
+    S7::S7_inherits(forward_model, pesto_forward_model) ||
+    S7::S7_inherits(forward_model, pesto_multifidelity_model)
+  if (!ok_model) {
+    stop(
+      paste0(
+        "`forward_model` must be a function, a `pesto_forward_model`, ",
+        "or a `pesto_multifidelity_model`."
+      ),
+      call. = FALSE
+    )
+  }
   noptmax_int <- suppressWarnings(as.integer(noptmax))
   if (length(noptmax_int) != 1L || is.na(noptmax_int) ||
       noptmax_int < 1L) {

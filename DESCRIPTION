@@ -1,7 +1,7 @@
 Package: PESTO
 Type: Package
 Title: Parameter Estimation, Surrogates, and Tooling for Optimisation
-Version: 0.4.1
+Version: 0.4.1.9000
 Authors@R: c(
     person("Max", "Moldovan",
            role = c("aut", "cre", "cph"),
@@ -19,9 +19,9 @@ Description: High-performance parameter estimation, uncertainty quantification,
     large-scale environmental, hydrological, and agricultural models with
     support for highly-parameterised problems (>100,000 parameters).
 License: GPL (>= 3)
-URL: https://github.com/AAGI-AUS/PESTO,
-    https://aagi-aus.github.io/PESTO
-BugReports: https://github.com/AAGI-AUS/PESTO/issues
+URL: https://github.com/max578/PESTO,
+    https://max578.github.io/PESTO
+BugReports: https://github.com/max578/PESTO/issues
 Encoding: UTF-8
 Language: en-AU
 Roxygen: list(markdown = TRUE)
@@ -33,6 +33,7 @@ Imports:
     Rcpp (>= 1.0.12),
     data.table,
     ggplot2,
+    parallel,
     S7 (>= 0.2.0),
     yaml (>= 2.3.0),
     digest (>= 0.6.0)

@@ -87,4 +87,4 @@ The Apple Silicon toolchain currently lacks `libgcov`, so
 PEST++ upstream lives at <https://github.com/usgs/pestpp>; PESTO is
 not a fork — it is a separate R-native re-engineering. Issues
 specific to PESTO go to
-<https://github.com/AAGI-AUS/PESTO/issues>.
+<https://github.com/max578/PESTO/issues>.

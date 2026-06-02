@@ -11,6 +11,7 @@ pesto_ies_callback(
   obs_sd,
   noptmax = 4L,
   lambda = 1,
+  fidelity_schedule = NULL,
   parcov = NULL,
   eigthresh = 1e-06,
   use_approx = TRUE,
@@ -19,10 +20,17 @@ pesto_ies_callback(
 )
 }
 \arguments{
-\item{forward_model}{A function with signature \verb{function(theta) -> obs},
-where \code{theta} is an \verb{nreal x npar} numeric matrix and \code{obs} is an
-\verb{nreal x nobs} numeric matrix. Failed realisations may return rows of
-\code{NA}; the driver tolerates them (see \code{on_failure}).}
+\item{forward_model}{One of: a function with signature
+\verb{function(theta) -> obs} (where \code{theta} is an \verb{nreal x npar} numeric
+matrix and \code{obs} an \verb{nreal x nobs} numeric matrix); a
+\code{\link[=pesto_forward_model]{pesto_forward_model()}} (the typed contract object, e.g. one carrying a
+\code{parallel = "multicore"} evaluation strategy); or a
+\code{\link[=pesto_multifidelity_model]{pesto_multifidelity_model()}} (then see \code{fidelity_schedule}). A bare
+function is auto-wrapped via \code{\link[=as_forward_model]{as_forward_model()}} with this call's
+\code{on_failure}. Failed realisations may return rows of \code{NA}; the driver
+tolerates them (see \code{on_failure}). To run realisations in parallel, pass a
+\code{pesto_forward_model} built with \code{parallel = "multicore"} rather than a
+bare function.}
 
 \item{prior_ensemble}{Matrix or data.table, \verb{nreal x npar}. Columns are
 parameters; an optional \code{real_name} column is preserved if present.
@@ -38,6 +46,11 @@ standard deviation(s); the IES weights are \code{1/obs_sd}.}
 \item{lambda}{Numeric scalar or vector. Marquardt lambda per iteration.
 A scalar is recycled; a vector shorter than \code{noptmax} is right-padded
 with its last value (default 1.0).}
+
+\item{fidelity_schedule}{Integer vector or \code{NULL}. Only consulted when
+\code{forward_model} is a \code{\link[=pesto_multifidelity_model]{pesto_multifidelity_model()}}: the fidelity level to
+evaluate at each iteration (recycled / right-padded to \code{noptmax}). \code{NULL}
+(default) uses the highest fidelity every iteration. Ignored otherwise.}
 
 \item{parcov}{Numeric vector of length \code{npar}, the diagonal of the prior
 parameter covariance. Defaults to the column-wise variance of
@@ -94,6 +107,18 @@ Phase-2 enhancement; for the common case of a well-behaved forward model
 with \code{lambda = 1}, the GLM update reduces phi reliably (see vignette
 \code{apsim-callback}).
 }
+\section{Multi-fidelity}{
+
+When \code{forward_model} is a \code{\link[=pesto_multifidelity_model]{pesto_multifidelity_model()}}, \code{fidelity_schedule}
+selects which fidelity level each iteration evaluates -- a recycled / padded
+integer vector, one entry per iteration (default: the highest fidelity every
+iteration, i.e. exactly the single-fidelity behaviour). This supports
+fidelity ramping (cheap early iterations, expensive late ones); the final
+ensemble refresh always uses the highest fidelity so the returned posterior
+is at full resolution. The control-variate combiner \code{\link[=mf_control_variate]{mf_control_variate()}}
+is the plug-in point for bias-corrected surrogate cascades.
+}
+
 \examples{
 # Linear-Gaussian recovery toy
 set.seed(1)

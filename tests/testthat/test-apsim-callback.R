@@ -96,9 +96,9 @@ test_that("apsim_callback closure runs with stub writer + runner", {
   expect_true(is.matrix(out))
   expect_equal(dim(out), c(2L, 2L))
   expect_true(all(is.finite(out)))
-  # Per-realisation files were created
-  expect_true(file.exists(file.path(workdir, "real_00001.apsimx")))
-  expect_true(file.exists(file.path(workdir, "real_00002.apsimx")))
+  # One unique per-realisation file per row (parallel-safe naming).
+  run_files <- list.files(workdir, pattern = "^real_\\d{5}_.*\\.apsimx$")
+  expect_length(run_files, 2L)
 })
 
 test_that("apsim_callback rejects theta missing required parameters", {

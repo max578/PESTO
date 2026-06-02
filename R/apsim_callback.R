@@ -32,9 +32,16 @@
 #' per-parameter writer.
 #'
 #' @section Concurrency:
-#' Phase-1 D4 runs realisations **serially**. Parallel execution via
-#' `future` or `mirai` is a planned follow-up; `apsimx`'s thread-safety
-#' under ensemble load has not been verified.
+#' The returned closure evaluates whatever block of realisations it is
+#' handed and writes each to a **unique** per-realisation file under
+#' `workdir`, so it is safe to drive in parallel. To run an ensemble
+#' concurrently, wrap the closure in a [pesto_forward_model()] with
+#' `parallel = "multicore"` (or a custom `map_fn`); the PESTO evaluation
+#' engine then dispatches realisations across forked workers, each
+#' invoking APSIM on its own input file. Called directly (the bulk
+#' path), realisations run serially. `apsimx`'s own thread-safety under
+#' heavy ensemble load has not been independently verified, so start
+#' with a modest `n_cores`.
 #'
 #' @param template Character. Path to a working `.apsimx` (Next Gen) or
 #'   `.apsim` (Classic) template file. Per-realisation copies are made
@@ -150,7 +157,14 @@ apsim_callback <- function(template,
     # Per-realisation evaluation loop ------------------------------------
     obs_list <- vector("list", nreal)
     for (i in seq_len(nreal)) {
-      run_file <- file.path(workdir, sprintf("real_%05d.%s", i, ext))
+      # Unique per-realisation file: keeps a human-readable `real_<i>_`
+      # prefix but appends a tempfile token so concurrent workers (which
+      # each see a single-row block, i.e. i == 1) never collide.
+      run_file <- tempfile(
+        pattern = sprintf("real_%05d_", i),
+        tmpdir  = workdir,
+        fileext = paste0(".", ext)
+      )
       file.copy(template, run_file, overwrite = TRUE)
       src_dir  <- dirname(run_file)
       run_base <- basename(run_file)
