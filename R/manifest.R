@@ -123,9 +123,10 @@ pesto_ensemble_manifest <- S7::new_class(
       errs <- c(errs, "`data_hash` must be a single string")
     }
     if (length(self@method) != 1L ||
-        !self@method %in% c("ies_callback", "ies_pst", "mda", "surrogate")) {
+        !self@method %in% c("ies_callback", "ies_filter", "ies_pst",
+                            "mda", "surrogate")) {
       errs <- c(errs, paste0("`method` must be one of ies_callback, ",
-                             "ies_pst, mda, surrogate"))
+                             "ies_filter, ies_pst, mda, surrogate"))
     }
     if (length(self@format) != 1L ||
         !self@format %in% c("rds", "both", "csv_unverified")) {
@@ -162,7 +163,18 @@ S7::method(as_manifest,
            fidelity = NULL, apsim_version = NA_character_, ...) {
     .as_manifest_callback(x, run_id = run_id, seed = seed,
                           fidelity = fidelity,
-                          apsim_version = apsim_version)
+                          apsim_version = apsim_version,
+                          method = "ies_callback")
+  }
+
+S7::method(as_manifest,
+           S7::new_S3_class("pesto_ies_filter_result")) <-
+  function(x, run_id = NULL, seed = NA_integer_,
+           fidelity = NULL, apsim_version = NA_character_, ...) {
+    .as_manifest_callback(x, run_id = run_id, seed = seed,
+                          fidelity = fidelity,
+                          apsim_version = apsim_version,
+                          method = "ies_filter")
   }
 
 #' Write a manifest to YAML + sidecar data files
@@ -404,7 +416,8 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
 .as_manifest_callback <- function(x, run_id = NULL,
                                   seed = NA_integer_,
                                   fidelity = NULL,
-                                  apsim_version = NA_character_) {
+                                  apsim_version = NA_character_,
+                                  method = "ies_callback") {
 
   if (is.null(x$weights)) {
     stop(
@@ -435,7 +448,8 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
 
   if (is.null(run_id)) {
     run_id <- sprintf(
-      "ies_callback_%s_%s",
+      "%s_%s_%s",
+      method,
       format(Sys.time(), "%Y%m%d_%H%M%S"),
       substr(digest::digest(x, algo = "xxhash32"), 1L, 8L)
     )
@@ -464,7 +478,7 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
     apsim_version   = as.character(apsim_version),
     pesto_version   = as.character(utils::packageVersion("PESTO")),
     timestamp       = Sys.time(),
-    method          = "ies_callback",
+    method          = method,
     noptmax         = length(x$iterations),
     lambda_schedule = lambdas,
     failure_rate    = if (is.null(x$failure_rate)) 0 else x$failure_rate

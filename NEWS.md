@@ -30,6 +30,24 @@ accepts a bare `function(theta) -> obs`.
   control-variate primitive that debiases a cheap level against a sparse
   expensive sample; the plug-in point for surrogate cascades.
 
+### Sequential (filter-mode) IES
+
+* New `pesto_ies_filter()` — a filtering counterpart to the batch smoother
+  `pesto_ies_callback()`. It assimilates time-ordered observation
+  `windows` one after another against a static parameter ensemble, the
+  posterior of each window becoming the prior of the next, so a tightening
+  parameter posterior is available after every window (the in-season
+  assimilation case). It reuses the forward-model contract (parallel- and
+  multi-fidelity-ready via a per-window `fidelity_schedule`) and the C++
+  `ensemble_solution()` kernel; `window_noptmax > 1` gives an iterated
+  filter per window. The result records a per-window history including the
+  per-parameter ensemble standard deviation (the tightening trace).
+* Filter results (`pesto_ies_filter_result`) flow into the manifest
+  contract: `as_manifest()` tags them `method = "ies_filter"` (added to the
+  `pesto_ensemble_manifest` validator) and carries their fidelity
+  provenance, so a filtered ensemble is a first-class scenario for the
+  downstream `kernR` consumers.
+
 ### Behaviour
 
 * `pesto_ies_callback()` gains `fidelity_schedule` (consulted only for a

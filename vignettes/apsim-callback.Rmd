@@ -278,6 +278,49 @@ cat(sprintf("mean |cheap - corrected| over the ensemble: %.4f\n",
             mean(abs(low_all - corrected))))
 ```
 
+## Sequential (filter-mode) assimilation
+
+`pesto_ies_callback()` is a *smoother*: it assimilates every observation in
+one batch. For an in-season setting -- where a growing season's
+observations arrive over time and you want an updated parameter posterior
+*as the season progresses*, not only at harvest -- `pesto_ies_filter()` is
+the *filter*. It assimilates time-ordered observation **windows** one after
+another against the same static calibration parameters; each window's
+posterior becomes the next window's prior, so information accrues and the
+posterior tightens window by window.
+
+```{r}
+# Reuse the synthetic problem above; split the nobs observations into
+# three temporal windows (e.g. early / mid / late season).
+windows <- list(1:3, 4:6, 7:8)
+
+fit_seq <- pesto_ies_filter(
+  forward_model  = forward,
+  prior_ensemble = prior,
+  obs            = y,
+  obs_sd         = sigma,
+  windows        = windows,
+  verbose        = FALSE
+)
+
+# The per-window history carries the per-parameter ensemble sd; its mean
+# should fall window over window as more of the season is assimilated.
+sd_trace <- vapply(fit_seq$windows, function(w) mean(w$par_sd), numeric(1))
+data.frame(
+  window      = seq_along(sd_trace),
+  obs_assim   = vapply(fit_seq$windows, function(w) length(w$obs_indices),
+                       integer(1)),
+  mean_par_sd = round(sd_trace, 4)
+)
+```
+
+The posterior at the final window matches what the batch smoother would
+recover, but you also have the intermediate posteriors -- the value of the
+filter is the *trajectory*, not just the endpoint. A multi-fidelity stack
+plugs in through `fidelity_schedule` (one level per window: run cheap early,
+sharpen late), and the result wraps into the same manifest contract via
+`as_manifest()` (tagged `method = "ies_filter"`).
+
 ## When to prefer `pesto_ies()` instead
 
 Use the classic `.pst` path when:
