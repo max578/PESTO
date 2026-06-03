@@ -199,8 +199,8 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
   print(bench)
 }
 #> Unit: microseconds
-#>       expr     min       lq     mean   median      uq     max neval
-#>  PESTO_cpp 428.901 431.8365 440.9011 439.0945 444.149 605.891   100
+#>       expr     min      lq     mean   median       uq     max neval
+#>  PESTO_cpp 469.848 472.186 480.9139 479.9525 483.5875 611.728   100
 ```
 
 ## Computing Phi (Objective Function)
@@ -287,7 +287,7 @@ res_auto <- adaptive_svd(A, k = 20L, method = "auto")
 cat("Method:", res_auto$method_used, "\n")
 #> Method: rsvd (Halko-Martinsson-Tropp)
 cat("Time:", round(res_auto$time_ms, 2), "ms\n")
-#> Time: 17.35 ms
+#> Time: 18.65 ms
 cat("Singular values (top 5):", round(res_auto$d[1:5], 3), "\n")
 #> Singular values (top 5): 50.643 50.283 49.956 49.689 49.454
 
@@ -325,9 +325,9 @@ result <- ensemble_solution_gpu(
 cat("SVD method:", result$svd_method, "\n")
 #> SVD method: LAPACK (platform-optimised)
 cat("SVD time:", round(result$svd_time_ms, 2), "ms\n")
-#> SVD time: 2.15 ms
+#> SVD time: 2.14 ms
 cat("Total time:", round(result$total_time_ms, 2), "ms\n")
-#> Total time: 2.58 ms
+#> Total time: 2.62 ms
 cat("Singular values used:", result$singular_values_used, "\n")
 #> Singular values used: 50
 ```

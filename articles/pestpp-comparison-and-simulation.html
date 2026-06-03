@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,7 +134,7 @@ with no external binary dependency.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="fu"><a href="../reference/pesto_version.html">pesto_version</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $pesto_version</span></span>
-<span><span class="co">#&gt; [1] "0.6.0"</span></span>
+<span><span class="co">#&gt; [1] "0.6.0.9000"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $pestpp_version</span></span>
 <span><span class="co">#&gt; [1] "not found"</span></span>
@@ -944,32 +944,32 @@ the dense LAPACK algorithm reclaims the lead.</p>
 <tbody>
 <tr class="odd">
 <td align="right">5</td>
-<td align="right">2.674</td>
-<td align="right">39.453</td>
-<td align="right">14.75</td>
+<td align="right">2.875</td>
+<td align="right">41.369</td>
+<td align="right">14.39</td>
 </tr>
 <tr class="even">
 <td align="right">20</td>
-<td align="right">5.845</td>
-<td align="right">39.258</td>
-<td align="right">6.72</td>
+<td align="right">6.191</td>
+<td align="right">41.423</td>
+<td align="right">6.69</td>
 </tr>
 <tr class="odd">
 <td align="right">50</td>
-<td align="right">10.308</td>
-<td align="right">39.301</td>
-<td align="right">3.81</td>
+<td align="right">10.805</td>
+<td align="right">41.355</td>
+<td align="right">3.83</td>
 </tr>
 <tr class="even">
 <td align="right">100</td>
-<td align="right">34.447</td>
-<td align="right">39.270</td>
-<td align="right">1.14</td>
+<td align="right">37.405</td>
+<td align="right">41.254</td>
+<td align="right">1.10</td>
 </tr>
 <tr class="odd">
 <td align="right">180</td>
-<td align="right">70.108</td>
-<td align="right">39.329</td>
+<td align="right">74.160</td>
+<td align="right">41.609</td>
 <td align="right">0.56</td>
 </tr>
 </tbody>
@@ -981,7 +981,7 @@ dispatch can be audited:</p>
 <span><span class="va">acc_res</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accelerate_svd.html">accelerate_svd</a></span><span class="op">(</span><span class="va">A_bench</span>, thin <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"auto chose:    "</span>, <span class="va">auto_res</span><span class="op">$</span><span class="va">method_used</span>,</span>
 <span>    <span class="st">" in "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">auto_res</span><span class="op">$</span><span class="va">time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span>
-<span><span class="co">#&gt; auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.83ms</span></span>
+<span><span class="co">#&gt; auto chose:    rsvd (Halko-Martinsson-Tropp) in 6.13ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"LAPACK direct: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">acc_res</span><span class="op">$</span><span class="va">d</span><span class="op">)</span>, <span class="fl">0</span><span class="op">)</span>,</span>
 <span>    <span class="st">" singular values returned\n"</span>, sep <span class="op">=</span> <span class="st">""</span><span class="op">)</span></span>
 <span><span class="co">#&gt; LAPACK direct: 200 singular values returned</span></span>
@@ -1202,7 +1202,7 @@ adaptive-sizing exports.</p>
 </tr>
 <tr class="even">
 <td align="left">Median GPU-path time (ms)</td>
-<td align="right">0.24</td>
+<td align="right">0.26</td>
 </tr>
 <tr class="odd">
 <td align="left">Replicates</td>
@@ -1428,7 +1428,7 @@ documented signature.</p>
 <code class="sourceCode R"><span><span class="va">.vig_t1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/proc.time.html" class="external-link">proc.time</a></span><span class="op">(</span><span class="op">)</span><span class="op">[</span><span class="st">"elapsed"</span><span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Vignette wall-clock: %.1f s\n"</span>,</span>
 <span>            <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">.vig_t1</span> <span class="op">-</span> <span class="va">.vig_t0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Vignette wall-clock: 12.2 s</span></span></code></pre></div>
+<span><span class="co">#&gt; Vignette wall-clock: 12.0 s</span></span></code></pre></div>
 <div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.6.0 (2026-04-24)</span></span>
@@ -1453,7 +1453,7 @@ documented signature.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
 <span><span class="co">#&gt; [1] viridis_0.6.5     viridisLite_0.4.3 ggplot2_4.0.3     data.table_1.18.4</span></span>
-<span><span class="co">#&gt; [5] PESTO_0.6.0      </span></span>
+<span><span class="co">#&gt; [5] PESTO_0.6.0.9000 </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] microbenchmark_1.5.0 vctrs_0.7.3          cli_3.6.6           </span></span>

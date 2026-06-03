@@ -50,12 +50,12 @@ m <- as_manifest(fit, seed = 20260516L,
                  apsim_version = NA_character_)
 print(m)
 #> <pesto_ensemble_manifest> schema 1.0.0
-#>   run_id        : ies_callback_20260603_000445_a0e19c00
+#>   run_id        : ies_callback_20260603_002930_a0e19c00
 #>   method        : ies_callback  (noptmax=4)
 #>   ensemble      : 60 realisations x 3 parameters | 6 observations
 #>   failure rate  : 0.00%
-#>   pesto version : 0.6.0  apsim: NA
-#>   timestamp     : 2026-06-03T00:04:45+0000
+#>   pesto version : 0.6.0.9000  apsim: NA
+#>   timestamp     : 2026-06-03T00:29:30+0000
 #>   data hash     : sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
 ```
 
@@ -64,7 +64,7 @@ Slots are reachable via the standard S7 `@` accessor:
 ``` r
 
 m@run_id
-#> [1] "ies_callback_20260603_000445_a0e19c00"
+#> [1] "ies_callback_20260603_002930_a0e19c00"
 m@data_hash
 #> [1] "sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6"
 m@noptmax
@@ -113,7 +113,7 @@ A peek at what the YAML actually looks like (truncated):
 cat(paste(readLines(file.path(dir, "wagga_2026_run01.yaml"))[1:14],
           collapse = "\n"))
 #> schema_version: 1.0.0
-#> run_id: ies_callback_20260603_000445_a0e19c00
+#> run_id: ies_callback_20260603_002930_a0e19c00
 #> data_hash: sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
 #> format: rds
 #> integrity: verifiable
@@ -124,8 +124,8 @@ cat(paste(readLines(file.path(dir, "wagga_2026_run01.yaml"))[1:14],
 #> seed: 20260516
 #> fidelity: ~
 #> apsim_version: ~
-#> pesto_version: 0.6.0
-#> timestamp: 2026-06-03T00:04:45+0000
+#> pesto_version: 0.6.0.9000
+#> timestamp: 2026-06-03T00:29:30+0000
 ```
 
 ### Inspection CSVs (optional)
@@ -242,7 +242,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.6.0
+#> [1] PESTO_0.6.0.9000
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       

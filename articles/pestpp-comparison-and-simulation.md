@@ -71,7 +71,7 @@ cat("pestpp-ies on PATH:   ", pestpp_available, "\n",
 
 print(pesto_version())
 #> $pesto_version
-#> [1] "0.6.0"
+#> [1] "0.6.0.9000"
 #> 
 #> $pestpp_version
 #> [1] "not found"
@@ -784,11 +784,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 
 | rank | rSVD_ms | LAPACK_ms | speedup_rSVD |
 |-----:|--------:|----------:|-------------:|
-|    5 |   2.674 |    39.453 |        14.75 |
-|   20 |   5.845 |    39.258 |         6.72 |
-|   50 |  10.308 |    39.301 |         3.81 |
-|  100 |  34.447 |    39.270 |         1.14 |
-|  180 |  70.108 |    39.329 |         0.56 |
+|    5 |   2.875 |    41.369 |        14.39 |
+|   20 |   6.191 |    41.423 |         6.69 |
+|   50 |  10.805 |    41.355 |         3.83 |
+|  100 |  37.405 |    41.254 |         1.10 |
+|  180 |  74.160 |    41.609 |         0.56 |
 
 rSVD vs LAPACK on a 400 x 200 matrix as k varies. {.table}
 
@@ -801,7 +801,7 @@ auto_res <- adaptive_svd(A_bench, k = 20L, method = "auto")
 acc_res  <- accelerate_svd(A_bench, thin = TRUE)
 cat("auto chose:    ", auto_res$method_used,
     " in ", round(auto_res$time_ms, 2), "ms\n", sep = "")
-#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.83ms
+#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 6.13ms
 cat("LAPACK direct: ", round(length(acc_res$d), 0),
     " singular values returned\n", sep = "")
 #> LAPACK direct: 200 singular values returned
@@ -1001,7 +1001,7 @@ knitr::kable(sim_summary, caption = "Scenario C: aggregate diagnostics.")
 | Median phi reduction (1 iter) | 12.12 |
 | Mean surrogate savings (%)    |  0.00 |
 | Mean adaptive size            | 39.00 |
-| Median GPU-path time (ms)     |  0.24 |
+| Median GPU-path time (ms)     |  0.26 |
 | Replicates                    | 50.00 |
 
 Scenario C: aggregate diagnostics. {.table}
@@ -1225,7 +1225,7 @@ if (length(unknown_in_use) > 0L) {
 .vig_t1 <- proc.time()["elapsed"]
 cat(sprintf("Vignette wall-clock: %.1f s\n",
             as.numeric(.vig_t1 - .vig_t0)))
-#> Vignette wall-clock: 12.2 s
+#> Vignette wall-clock: 12.0 s
 ```
 
 ``` r
@@ -1253,7 +1253,7 @@ sessionInfo()
 #> 
 #> other attached packages:
 #> [1] viridis_0.6.5     viridisLite_0.4.3 ggplot2_4.0.3     data.table_1.18.4
-#> [5] PESTO_0.6.0      
+#> [5] PESTO_0.6.0.9000 
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] microbenchmark_1.5.0 vctrs_0.7.3          cli_3.6.6           
