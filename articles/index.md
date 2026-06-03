@@ -11,6 +11,8 @@
   Study](https://max578.github.io/PESTO/articles/pestpp-comparison-and-simulation.md):
 - [Surrogate-Accelerated Iterative Ensemble
   Smoother](https://max578.github.io/PESTO/articles/surrogate-ies.md):
+- [Countering Ensemble Collapse: Inflation and
+  Localisation](https://max578.github.io/PESTO/articles/inflation-localisation.md):
 
 ### In-process IES and ensemble manifest
 

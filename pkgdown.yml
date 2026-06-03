@@ -5,9 +5,10 @@ articles:
   apsim-callback: apsim-callback.html
   ensemble-manifest: ensemble-manifest.html
   getting-started: getting-started.html
+  inflation-localisation: inflation-localisation.html
   pestpp-comparison-and-simulation: pestpp-comparison-and-simulation.html
   surrogate-ies: surrogate-ies.html
-last_built: 2026-05-30T03:15Z
+last_built: 2026-06-03T00:04Z
 urls:
   reference: https://max578.github.io/PESTO/reference
   article: https://max578.github.io/PESTO/articles

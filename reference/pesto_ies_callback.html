@@ -11,7 +11,7 @@ Each iteration:"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,9 +56,12 @@ Each iteration:</p>
 <span>  <span class="va">obs_sd</span>,</span>
 <span>  noptmax <span class="op">=</span> <span class="fl">4L</span>,</span>
 <span>  lambda <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  fidelity_schedule <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  parcov <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  eigthresh <span class="op">=</span> <span class="fl">1e-06</span>,</span>
 <span>  use_approx <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  inflation <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  localisation <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  on_failure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"na"</span>, <span class="st">"stop"</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -69,10 +72,17 @@ Each iteration:</p>
 
 
 <dl><dt id="arg-forward-model">forward_model<a class="anchor" aria-label="anchor" href="#arg-forward-model"></a></dt>
-<dd><p>A function with signature <code>function(theta) -&gt; obs</code>,
-where <code>theta</code> is an <code>nreal x npar</code> numeric matrix and <code>obs</code> is an
-<code>nreal x nobs</code> numeric matrix. Failed realisations may return rows of
-<code>NA</code>; the driver tolerates them (see <code>on_failure</code>).</p></dd>
+<dd><p>One of: a function with signature
+<code>function(theta) -&gt; obs</code> (where <code>theta</code> is an <code>nreal x npar</code> numeric
+matrix and <code>obs</code> an <code>nreal x nobs</code> numeric matrix); a
+<code><a href="pesto_forward_model.html">pesto_forward_model()</a></code> (the typed contract object, e.g. one carrying a
+<code>parallel = "multicore"</code> evaluation strategy); or a
+<code><a href="pesto_multifidelity_model.html">pesto_multifidelity_model()</a></code> (then see <code>fidelity_schedule</code>). A bare
+function is auto-wrapped via <code><a href="as_forward_model.html">as_forward_model()</a></code> with this call's
+<code>on_failure</code>. Failed realisations may return rows of <code>NA</code>; the driver
+tolerates them (see <code>on_failure</code>). To run realisations in parallel, pass a
+<code>pesto_forward_model</code> built with <code>parallel = "multicore"</code> rather than a
+bare function.</p></dd>
 
 
 <dt id="arg-prior-ensemble">prior_ensemble<a class="anchor" aria-label="anchor" href="#arg-prior-ensemble"></a></dt>
@@ -100,6 +110,13 @@ A scalar is recycled; a vector shorter than <code>noptmax</code> is right-padded
 with its last value (default 1.0).</p></dd>
 
 
+<dt id="arg-fidelity-schedule">fidelity_schedule<a class="anchor" aria-label="anchor" href="#arg-fidelity-schedule"></a></dt>
+<dd><p>Integer vector or <code>NULL</code>. Only consulted when
+<code>forward_model</code> is a <code><a href="pesto_multifidelity_model.html">pesto_multifidelity_model()</a></code>: the fidelity level to
+evaluate at each iteration (recycled / right-padded to <code>noptmax</code>). <code>NULL</code>
+(default) uses the highest fidelity every iteration. Ignored otherwise.</p></dd>
+
+
 <dt id="arg-parcov">parcov<a class="anchor" aria-label="anchor" href="#arg-parcov"></a></dt>
 <dd><p>Numeric vector of length <code>npar</code>, the diagonal of the prior
 parameter covariance. Defaults to the column-wise variance of
@@ -113,6 +130,23 @@ parameter covariance. Defaults to the column-wise variance of
 <dt id="arg-use-approx">use_approx<a class="anchor" aria-label="anchor" href="#arg-use-approx"></a></dt>
 <dd><p>Logical. If TRUE (default), skip the prior-scaling
 correction (upgrade_2); matches the typical <code>pestpp-ies</code> default.</p></dd>
+
+
+<dt id="arg-inflation">inflation<a class="anchor" aria-label="anchor" href="#arg-inflation"></a></dt>
+<dd><p>A <code><a href="pesto_inflation.html">pesto_inflation()</a></code> specification, or <code>NULL</code> (default)
+for no covariance inflation. Inflation counteracts ensemble
+under-dispersion – the progressive collapse of posterior spread a
+finite-ensemble smoother suffers. <code>NULL</code> leaves the update identical to
+the un-inflated smoother.</p></dd>
+
+
+<dt id="arg-localisation">localisation<a class="anchor" aria-label="anchor" href="#arg-localisation"></a></dt>
+<dd><p>A <code><a href="pesto_localisation.html">pesto_localisation()</a></code> specification, or <code>NULL</code>
+(default) for no localisation. Localisation tapers the Kalman gain to
+suppress spurious finite-sample parameter-observation correlations; the
+active path uses <code><a href="ensemble_solution_localised.html">ensemble_solution_localised()</a></code> (approximate / upgrade_1
+form), so a non-<code>NULL</code> <code>localisation</code> with <code>use_approx = FALSE</code> warns and
+drops the null-space correction.</p></dd>
 
 
 <dt id="arg-on-failure">on_failure<a class="anchor" aria-label="anchor" href="#arg-on-failure"></a></dt>
@@ -137,8 +171,12 @@ with components:</p><dl><dt>phi</dt>
 <dd><p>Final simulated-observation ensemble (data.table).</p></dd>
 
 <dt>iterations</dt>
-<dd><p>List of per-iteration metadata (lambda, mean phi,
-failure count).</p></dd>
+<dd><p>List of per-iteration metadata: <code>lambda</code>, <code>mean_phi</code>,
+<code>n_failures</code>, and the dispersion diagnostics <code>spread_ess</code> /
+<code>spread_ess_ratio</code> (<code><a href="ensemble_spread_ess.html">ensemble_spread_ess()</a></code>), plus
+<code>inflation_method</code> / <code>inflation_factor</code> / <code>retention</code> and
+<code>localisation</code> / <code>loc_threshold</code> / <code>loc_frac_active</code> when those
+countermeasures are active.</p></dd>
 
 <dt>runtime_seconds</dt>
 <dd><p>Total wall-clock runtime.</p></dd>
@@ -149,6 +187,12 @@ evaluations across all iterations (including the final refresh).</p></dd>
 
 <dt>failure_rate</dt>
 <dd><p>Fraction of forward evaluations that returned NA.</p></dd>
+
+<dt>fidelity</dt>
+<dd><p>For a <code><a href="pesto_multifidelity_model.html">pesto_multifidelity_model()</a></code> run, a provenance
+list <code>list(type, schedule, final_level, n_levels, costs)</code> recording the
+realised per-iteration fidelity schedule; <code>NULL</code> for a single-fidelity
+run. Consumed by <code><a href="as_manifest.html">as_manifest()</a></code> to populate the manifest contract.</p></dd>
 
 
 </dl></div>
@@ -170,6 +214,19 @@ A line-search over <code>ies_lambda_mults</code> matching <code>pestpp-ies</code
 Phase-2 enhancement; for the common case of a well-behaved forward model
 with <code>lambda = 1</code>, the GLM update reduces phi reliably (see vignette
 <code>apsim-callback</code>).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="multi-fidelity">Multi-fidelity<a class="anchor" aria-label="anchor" href="#multi-fidelity"></a></h2>
+
+
+<p>When <code>forward_model</code> is a <code><a href="pesto_multifidelity_model.html">pesto_multifidelity_model()</a></code>, <code>fidelity_schedule</code>
+selects which fidelity level each iteration evaluates – a recycled / padded
+integer vector, one entry per iteration (default: the highest fidelity every
+iteration, i.e. exactly the single-fidelity behaviour). This supports
+fidelity ramping (cheap early iterations, expensive late ones); the final
+ensemble refresh always uses the highest fidelity so the returned posterior
+is at full resolution. The control-variate combiner <code><a href="mf_control_variate.html">mf_control_variate()</a></code>
+is the plug-in point for bias-corrected surrogate cascades.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

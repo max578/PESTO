@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,6 +37,71 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="pesto-060">PESTO 0.6.0<a class="anchor" aria-label="anchor" href="#pesto-060"></a></h2>
+<div class="section level3">
+<h3 id="covariance-inflation-and-localisation-against-ensemble-collapse-0-6-0">Covariance inflation and localisation against ensemble collapse<a class="anchor" aria-label="anchor" href="#covariance-inflation-and-localisation-against-ensemble-collapse-0-6-0"></a></h3>
+<p>Adds two opt-in countermeasures to the finite-ensemble pathologies that make an iterative ensemble smoother over-confident: covariance inflation (against under-dispersion / ensemble collapse) and covariance localisation (against spurious finite-sample parameter-observation correlations). Both default to off; a <code>NULL</code> specification leaves <code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> and <code><a href="../reference/pesto_ies_filter.html">pesto_ies_filter()</a></code> byte-identical to the previous release.</p>
+<div class="section level4">
+<h4 id="new-exports-0-6-0">New exports<a class="anchor" aria-label="anchor" href="#new-exports-0-6-0"></a></h4>
+<ul><li>
+<code><a href="../reference/pesto_inflation.html">pesto_inflation()</a></code> – inflation specification with four methods: <code>"rtps"</code> (relaxation to prior spread, Whitaker &amp; Hamill 2012; the per-parameter, spectrally-aware workhorse), <code>"adaptive"</code> (global inflation targeting a spread-retention floor), <code>"multiplicative"</code> (fixed factor), and <code>"none"</code>.</li>
+<li>
+<code><a href="../reference/pesto_localisation.html">pesto_localisation()</a></code> – localisation specification: <code>"correlation"</code> (automatic, coordinate-free, Luo &amp; Bhakta 2020 – the recommended default for parameter problems with no spatial metric) or <code>"distance"</code> (classical Gaspari-Cohn taper of a parameter-to-observation distance matrix).</li>
+<li>
+<code><a href="../reference/ensemble_spread_ess.html">ensemble_spread_ess()</a></code> – the collapse <em>diagnostic</em>: the spectral participation ratio of the parameter anomaly covariance, i.e. the effective number of variance-carrying directions. Recorded on every iteration regardless of method.</li>
+<li>
+<code><a href="../reference/correlation_localisation.html">correlation_localisation()</a></code>, <code><a href="../reference/gaspari_cohn.html">gaspari_cohn()</a></code>, <code><a href="../reference/ensemble_solution_localised.html">ensemble_solution_localised()</a></code> – the C++ kernels backing the above. <code><a href="../reference/ensemble_solution_localised.html">ensemble_solution_localised()</a></code> is the explicit-gain GLM update that hosts the Schur-product localisation the SVD kernel cannot; with no taper it reproduces <code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code> (approximate form) to truncation tolerance.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="behaviour-0-6-0">Behaviour<a class="anchor" aria-label="anchor" href="#behaviour-0-6-0"></a></h4>
+<ul><li>
+<code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> and <code><a href="../reference/pesto_ies_filter.html">pesto_ies_filter()</a></code> gain <code>inflation</code> and <code>localisation</code> arguments (both <code>NULL</code> by default) and now record the spread-ESS and (when active) inflation / localisation diagnostics in their per-step metadata, which flow into the ensemble manifest.</li>
+<li>Localisation uses the approximate (upgrade_1) update; combining a non-<code>NULL</code> <code>localisation</code> with <code>use_approx = FALSE</code> warns and drops the null-space correction.</li>
+</ul><p>Note on terminology: the spectral spread-ESS is scale-invariant, so it is used as the collapse <em>diagnostic</em>, while the <code>"adaptive"</code> inflation targets a variance-<em>magnitude</em> retention floor; <code>"rtps"</code> is the method that reshapes the spectrum. See the <em>Countering Ensemble Collapse: Inflation and Localisation</em> vignette.</p>
+</div>
+</div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="pesto-050">PESTO 0.5.0<a class="anchor" aria-label="anchor" href="#pesto-050"></a></h2>
+<div class="section level3">
+<h3 id="forward-model-contract--first-class-multi-fidelity-bridge-0-5-0">Forward-model contract + first-class multi-fidelity bridge<a class="anchor" aria-label="anchor" href="#forward-model-contract--first-class-multi-fidelity-bridge-0-5-0"></a></h3>
+<p>Promotes the two-adapter forward-model contract from an implicit convention to a typed, enforceable object, and makes the multi-fidelity <code>(cheap, expensive)</code> bridge first-class (APSIM-bridge invariants 1 and 3). No breaking changes to existing calls: <code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> still accepts a bare <code>function(theta) -&gt; obs</code>.</p>
+<div class="section level4">
+<h4 id="new-exports-0-5-0">New exports<a class="anchor" aria-label="anchor" href="#new-exports-0-5-0"></a></h4>
+<ul><li>
+<code><a href="../reference/pesto_forward_model.html">pesto_forward_model()</a></code> — an S7 class wrapping a forward callable with its output dimensionality, expected parameter names, failure policy (<code>on_failure</code>, <code>max_fail_frac</code>), evaluation strategy (serial / <code>"multicore"</code> / custom <code>map_fn</code>), and a <code>fidelity</code> tag. This is the single contract both the native-callback and <code>.pst</code>-file adapter modes honour.</li>
+<li>
+<code><a href="../reference/pesto_evaluate.html">pesto_evaluate()</a></code> — generic that runs a forward model (or a multi-fidelity model at a chosen <code>level</code>) and returns a shape-guaranteed <code>nreal x nobs</code> matrix with <code>"n_failures"</code> / <code>"fail_idx"</code> attributes.</li>
+<li>
+<code><a href="../reference/as_forward_model.html">as_forward_model()</a></code> — coerces a bare function (or passes through an existing object) into the contract; used internally so bare functions keep working unchanged.</li>
+<li>
+<code><a href="../reference/pesto_multifidelity_model.html">pesto_multifidelity_model()</a></code> — an ordered stack of fidelity levels (cheapest first) plus relative <code>costs</code>; the first-class form of the bridge’s fidelity vector.</li>
+<li>
+<code><a href="../reference/mf_control_variate.html">mf_control_variate()</a></code> — the affine (Kennedy-O’Hagan AR(1)) control-variate primitive that debiases a cheap level against a sparse expensive sample; the plug-in point for surrogate cascades.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="sequential-filter-mode-ies-0-5-0">Sequential (filter-mode) IES<a class="anchor" aria-label="anchor" href="#sequential-filter-mode-ies-0-5-0"></a></h4>
+<ul><li>New <code><a href="../reference/pesto_ies_filter.html">pesto_ies_filter()</a></code> — a filtering counterpart to the batch smoother <code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code>. It assimilates time-ordered observation <code>windows</code> one after another against a static parameter ensemble, the posterior of each window becoming the prior of the next, so a tightening parameter posterior is available after every window (the in-season assimilation case). It reuses the forward-model contract (parallel- and multi-fidelity-ready via a per-window <code>fidelity_schedule</code>) and the C++ <code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code> kernel; <code>window_noptmax &gt; 1</code> gives an iterated filter per window. The result records a per-window history including the per-parameter ensemble standard deviation (the tightening trace).</li>
+<li>Filter results (<code>pesto_ies_filter_result</code>) flow into the manifest contract: <code><a href="../reference/as_manifest.html">as_manifest()</a></code> tags them <code>method = "ies_filter"</code> (added to the <code>pesto_ensemble_manifest</code> validator) and carries their fidelity provenance, so a filtered ensemble is a first-class scenario for the downstream <code>kernR</code> consumers.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="behaviour-0-5-0">Behaviour<a class="anchor" aria-label="anchor" href="#behaviour-0-5-0"></a></h4>
+<ul><li>
+<code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> gains <code>fidelity_schedule</code> (consulted only for a <code>pesto_multifidelity_model</code>): the fidelity level evaluated at each iteration, supporting cheap-early / expensive-late ramping. The final ensemble refresh always uses the highest fidelity.</li>
+<li>Fidelity provenance now closes the manifest (C2) lineage: a multi-fidelity <code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> run records its realised schedule in the result (<code>$fidelity = list(type, schedule, final_level, n_levels, costs)</code>), <code><a href="../reference/as_manifest.html">as_manifest()</a></code> inherits it into the <code>pesto_ensemble_manifest</code> <code>fidelity</code> slot unless overridden, and <code><a href="../reference/write_manifest.html">write_manifest()</a></code> / <code><a href="../reference/read_manifest.html">read_manifest()</a></code> round-trip the structured record faithfully (it is outside the integrity hash, so it does not affect <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code>). Single-fidelity runs record <code>NULL</code>, so their manifests are unchanged. The manifest <code>fidelity</code> slot is now documented as a structured provenance list (legacy named-numeric tags are still accepted on read).</li>
+<li>Parallel, fault-tolerant ensemble evaluation: a <code>pesto_forward_model</code> with <code>parallel = "multicore"</code> dispatches realisations across forked workers via <code><a href="https://rdrr.io/r/parallel/mclapply.html" class="external-link">parallel::mclapply()</a></code> with L’Ecuyer streams (reproducible under <code>RNGkind("L'Ecuyer-CMRG")</code>); serial bulk evaluation is unchanged and remains the default.</li>
+<li>
+<code><a href="../reference/apsim_callback.html">apsim_callback()</a></code> now writes each realisation to a unique per-run file, making the closure safe to drive in parallel (wrap it in a <code>pesto_forward_model(parallel = "multicore")</code>).</li>
+<li>The internal bulk-then-per-row evaluation helper (<code>.eval_forward_safe</code>) was retired in favour of the shared engine behind <code><a href="../reference/pesto_evaluate.html">pesto_evaluate()</a></code>; the on-error abort message changed from <code>`forward_model` failed</code> to <code>forward model failed</code>.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="dependencies-0-5-0">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies-0-5-0"></a></h4>
+<ul><li>
+<code>parallel</code> (a base R package) added to <code>Imports</code>.</li>
+</ul></div>
+</div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.4.1" id="pesto-041">PESTO 0.4.1<a class="anchor" aria-label="anchor" href="#pesto-041"></a></h2>
 <div class="section level3">
 <h3 id="aagi-guidance-uplift-0-4-1">AAGI guidance uplift<a class="anchor" aria-label="anchor" href="#aagi-guidance-uplift-0-4-1"></a></h3>
@@ -64,6 +129,11 @@
 <div class="section level4">
 <h4 id="readme-0-4-1">README<a class="anchor" aria-label="anchor" href="#readme-0-4-1"></a></h4>
 <ul><li>Added <code>Dependencies</code>, <code>Contributing</code>, and <code>Acknowledgements</code> sections per the AAGI repository-guidelines README contract. Citation block bumped to <code>R package version 0.4.1</code>.</li>
+</ul></div>
+<div class="section level4">
+<h4 id="canonical-metadata-urls-0-4-1">Canonical metadata URLs<a class="anchor" aria-label="anchor" href="#canonical-metadata-urls-0-4-1"></a></h4>
+<ul><li>
+<code>DESCRIPTION URL</code> and <code>BugReports</code>, <code>CITATION.cff</code>, <code>codemeta.json</code>, <code>inst/CITATION</code>, <code>_pkgdown.yml</code>, and the README citation + issues links now point to <code>https://github.com/AAGI-AUS/PESTO</code> (canon checklist item 5). README install instructions and the personal r-universe URL are retained at <code>max578/PESTO</code> and <code>https://max578.r-universe.dev</code> as interim distribution infrastructure until the AAGI-AUS push lands.</li>
 </ul></div>
 </div>
 </div>

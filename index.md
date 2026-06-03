@@ -21,6 +21,11 @@ methodological extensions.
 
 ## Installation
 
+The canonical home for PESTO is
+[`max578/PESTO`](https://github.com/max578/PESTO), published through the
+author’s personal CRAN-track channel and the `max578.r-universe.dev`
+registry. The `AAGI-AUS/PESTO` remote is retained as a read-only mirror.
+
 From GitHub (development version):
 
 ``` r
@@ -138,7 +143,7 @@ citation("PESTO")
 ```
 
 > Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and
-> Tooling for Optimisation. R package version 0.4.1.
+> Tooling for Optimisation. R package version 0.5.0.
 > <https://github.com/max578/PESTO>
 
 ## Related Projects

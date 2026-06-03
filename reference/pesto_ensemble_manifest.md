@@ -49,8 +49,11 @@ independently verifiable (via
 
 - fidelity:
 
-  Named numeric vector or `NULL`. Per-member fidelity tag for
-  multi-fidelity runs.
+  Structured provenance list or `NULL`. For a multi-fidelity run
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+  records `list(type, schedule, final_level, n_levels, costs)`; `NULL`
+  for a single-fidelity run. A legacy named-numeric tag is still
+  accepted.
 
 - apsim_version:
 

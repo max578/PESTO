@@ -1,5 +1,172 @@
 # Changelog
 
+## PESTO 0.6.0
+
+### Covariance inflation and localisation against ensemble collapse
+
+Adds two opt-in countermeasures to the finite-ensemble pathologies that
+make an iterative ensemble smoother over-confident: covariance inflation
+(against under-dispersion / ensemble collapse) and covariance
+localisation (against spurious finite-sample parameter-observation
+correlations). Both default to off; a `NULL` specification leaves
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+and
+[`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md)
+byte-identical to the previous release.
+
+#### New exports
+
+- [`pesto_inflation()`](https://max578.github.io/PESTO/reference/pesto_inflation.md)
+  – inflation specification with four methods: `"rtps"` (relaxation to
+  prior spread, Whitaker & Hamill 2012; the per-parameter,
+  spectrally-aware workhorse), `"adaptive"` (global inflation targeting
+  a spread-retention floor), `"multiplicative"` (fixed factor), and
+  `"none"`.
+- [`pesto_localisation()`](https://max578.github.io/PESTO/reference/pesto_localisation.md)
+  – localisation specification: `"correlation"` (automatic,
+  coordinate-free, Luo & Bhakta 2020 – the recommended default for
+  parameter problems with no spatial metric) or `"distance"` (classical
+  Gaspari-Cohn taper of a parameter-to-observation distance matrix).
+- [`ensemble_spread_ess()`](https://max578.github.io/PESTO/reference/ensemble_spread_ess.md)
+  – the collapse *diagnostic*: the spectral participation ratio of the
+  parameter anomaly covariance, i.e. the effective number of
+  variance-carrying directions. Recorded on every iteration regardless
+  of method.
+- [`correlation_localisation()`](https://max578.github.io/PESTO/reference/correlation_localisation.md),
+  [`gaspari_cohn()`](https://max578.github.io/PESTO/reference/gaspari_cohn.md),
+  [`ensemble_solution_localised()`](https://max578.github.io/PESTO/reference/ensemble_solution_localised.md)
+  – the C++ kernels backing the above.
+  [`ensemble_solution_localised()`](https://max578.github.io/PESTO/reference/ensemble_solution_localised.md)
+  is the explicit-gain GLM update that hosts the Schur-product
+  localisation the SVD kernel cannot; with no taper it reproduces
+  [`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
+  (approximate form) to truncation tolerance.
+
+#### Behaviour
+
+- [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+  and
+  [`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md)
+  gain `inflation` and `localisation` arguments (both `NULL` by default)
+  and now record the spread-ESS and (when active) inflation /
+  localisation diagnostics in their per-step metadata, which flow into
+  the ensemble manifest.
+- Localisation uses the approximate (upgrade_1) update; combining a
+  non-`NULL` `localisation` with `use_approx = FALSE` warns and drops
+  the null-space correction.
+
+Note on terminology: the spectral spread-ESS is scale-invariant, so it
+is used as the collapse *diagnostic*, while the `"adaptive"` inflation
+targets a variance-*magnitude* retention floor; `"rtps"` is the method
+that reshapes the spectrum. See the *Countering Ensemble Collapse:
+Inflation and Localisation* vignette.
+
+## PESTO 0.5.0
+
+### Forward-model contract + first-class multi-fidelity bridge
+
+Promotes the two-adapter forward-model contract from an implicit
+convention to a typed, enforceable object, and makes the multi-fidelity
+`(cheap, expensive)` bridge first-class (APSIM-bridge invariants 1 and
+3). No breaking changes to existing calls:
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+still accepts a bare `function(theta) -> obs`.
+
+#### New exports
+
+- [`pesto_forward_model()`](https://max578.github.io/PESTO/reference/pesto_forward_model.md)
+  — an S7 class wrapping a forward callable with its output
+  dimensionality, expected parameter names, failure policy
+  (`on_failure`, `max_fail_frac`), evaluation strategy (serial /
+  `"multicore"` / custom `map_fn`), and a `fidelity` tag. This is the
+  single contract both the native-callback and `.pst`-file adapter modes
+  honour.
+- [`pesto_evaluate()`](https://max578.github.io/PESTO/reference/pesto_evaluate.md)
+  — generic that runs a forward model (or a multi-fidelity model at a
+  chosen `level`) and returns a shape-guaranteed `nreal x nobs` matrix
+  with `"n_failures"` / `"fail_idx"` attributes.
+- [`as_forward_model()`](https://max578.github.io/PESTO/reference/as_forward_model.md)
+  — coerces a bare function (or passes through an existing object) into
+  the contract; used internally so bare functions keep working
+  unchanged.
+- [`pesto_multifidelity_model()`](https://max578.github.io/PESTO/reference/pesto_multifidelity_model.md)
+  — an ordered stack of fidelity levels (cheapest first) plus relative
+  `costs`; the first-class form of the bridge’s fidelity vector.
+- [`mf_control_variate()`](https://max578.github.io/PESTO/reference/mf_control_variate.md)
+  — the affine (Kennedy-O’Hagan AR(1)) control-variate primitive that
+  debiases a cheap level against a sparse expensive sample; the plug-in
+  point for surrogate cascades.
+
+#### Sequential (filter-mode) IES
+
+- New
+  [`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md)
+  — a filtering counterpart to the batch smoother
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md).
+  It assimilates time-ordered observation `windows` one after another
+  against a static parameter ensemble, the posterior of each window
+  becoming the prior of the next, so a tightening parameter posterior is
+  available after every window (the in-season assimilation case). It
+  reuses the forward-model contract (parallel- and multi-fidelity-ready
+  via a per-window `fidelity_schedule`) and the C++
+  [`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
+  kernel; `window_noptmax > 1` gives an iterated filter per window. The
+  result records a per-window history including the per-parameter
+  ensemble standard deviation (the tightening trace).
+- Filter results (`pesto_ies_filter_result`) flow into the manifest
+  contract:
+  [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
+  tags them `method = "ies_filter"` (added to the
+  `pesto_ensemble_manifest` validator) and carries their fidelity
+  provenance, so a filtered ensemble is a first-class scenario for the
+  downstream `kernR` consumers.
+
+#### Behaviour
+
+- [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+  gains `fidelity_schedule` (consulted only for a
+  `pesto_multifidelity_model`): the fidelity level evaluated at each
+  iteration, supporting cheap-early / expensive-late ramping. The final
+  ensemble refresh always uses the highest fidelity.
+- Fidelity provenance now closes the manifest (C2) lineage: a
+  multi-fidelity
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+  run records its realised schedule in the result
+  (`$fidelity = list(type, schedule, final_level, n_levels, costs)`),
+  [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
+  inherits it into the `pesto_ensemble_manifest` `fidelity` slot unless
+  overridden, and
+  [`write_manifest()`](https://max578.github.io/PESTO/reference/write_manifest.md)
+  /
+  [`read_manifest()`](https://max578.github.io/PESTO/reference/read_manifest.md)
+  round-trip the structured record faithfully (it is outside the
+  integrity hash, so it does not affect
+  [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)).
+  Single-fidelity runs record `NULL`, so their manifests are unchanged.
+  The manifest `fidelity` slot is now documented as a structured
+  provenance list (legacy named-numeric tags are still accepted on
+  read).
+- Parallel, fault-tolerant ensemble evaluation: a `pesto_forward_model`
+  with `parallel = "multicore"` dispatches realisations across forked
+  workers via
+  [`parallel::mclapply()`](https://rdrr.io/r/parallel/mclapply.html)
+  with L’Ecuyer streams (reproducible under `RNGkind("L'Ecuyer-CMRG")`);
+  serial bulk evaluation is unchanged and remains the default.
+- [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
+  now writes each realisation to a unique per-run file, making the
+  closure safe to drive in parallel (wrap it in a
+  `pesto_forward_model(parallel = "multicore")`).
+- The internal bulk-then-per-row evaluation helper
+  (`.eval_forward_safe`) was retired in favour of the shared engine
+  behind
+  [`pesto_evaluate()`](https://max578.github.io/PESTO/reference/pesto_evaluate.md);
+  the on-error abort message changed from `` `forward_model` failed ``
+  to `forward model failed`.
+
+#### Dependencies
+
+- `parallel` (a base R package) added to `Imports`.
+
 ## PESTO 0.4.1
 
 ### AAGI guidance uplift
@@ -57,6 +224,16 @@ changes. The aim is to lift every source surface to the bar set out in
 - Added `Dependencies`, `Contributing`, and `Acknowledgements` sections
   per the AAGI repository-guidelines README contract. Citation block
   bumped to `R package version 0.4.1`.
+
+#### Canonical metadata URLs
+
+- `DESCRIPTION URL` and `BugReports`, `CITATION.cff`, `codemeta.json`,
+  `inst/CITATION`, `_pkgdown.yml`, and the README citation + issues
+  links now point to `https://github.com/AAGI-AUS/PESTO` (canon
+  checklist item 5). README install instructions and the personal
+  r-universe URL are retained at `max578/PESTO` and
+  `https://max578.r-universe.dev` as interim distribution infrastructure
+  until the AAGI-AUS push lands.
 
 ## PESTO 0.4.0
 

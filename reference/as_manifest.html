@@ -13,7 +13,7 @@ into PESTO-specific list internals."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,7 +68,9 @@ registered against this generic).</p></dd>
 <dd><p>Method-specific arguments. For
 <code>pesto_ies_callback_result</code>: <code>run_id</code> (character, defaults to a
 timestamp+hash slug), <code>seed</code> (integer, defaults to <code>NA_integer_</code>),
-<code>fidelity</code> (named numeric or <code>NULL</code>), <code>apsim_version</code> (character,
+<code>fidelity</code> (structured provenance list or <code>NULL</code>; defaults to the
+record captured by <code><a href="pesto_ies_callback.html">pesto_ies_callback()</a></code> for a multi-fidelity run),
+<code>apsim_version</code> (character,
 defaults to <code>NA_character_</code>).</p></dd>
 
 </dl></div>

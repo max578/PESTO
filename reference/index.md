@@ -43,6 +43,29 @@ Convenience wrappers driving PEST++ executables (`pestpp-ies`,
 - [`pesto_version()`](https://max578.github.io/PESTO/reference/pesto_version.md)
   : Get PESTO package version information
 
+## Forward-model contract and multi-fidelity
+
+Typed forward-model object both adapter modes honour, and the
+multi-fidelity (cheap / expensive) bridge with its control-variate
+combiner.
+
+- [`pesto_forward_model()`](https://max578.github.io/PESTO/reference/pesto_forward_model.md)
+  : Forward-Model Contract (S7 class)
+
+- [`as_forward_model()`](https://max578.github.io/PESTO/reference/as_forward_model.md)
+  :
+
+  Coerce an object into a `pesto_forward_model`
+
+- [`pesto_evaluate()`](https://max578.github.io/PESTO/reference/pesto_evaluate.md)
+  : Evaluate a PESTO forward model
+
+- [`pesto_multifidelity_model()`](https://max578.github.io/PESTO/reference/pesto_multifidelity_model.md)
+  : Multi-Fidelity Forward Model (S7 class)
+
+- [`mf_control_variate()`](https://max578.github.io/PESTO/reference/mf_control_variate.md)
+  : Affine control-variate bias correction across fidelities
+
 ## In-process IES via R callback
 
 Driver and APSIM adapter for forward-model callable IES, bypassing the
@@ -50,8 +73,29 @@ Driver and APSIM adapter for forward-model callable IES, bypassing the
 
 - [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
   : Run IES with an In-Process R Callback Forward Model
+- [`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md)
+  : Run a Sequential (Filter-Mode) Iterative Ensemble Smoother
 - [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
   : apsimx Forward-Model Adapter for PESTO IES
+
+## Inflation and localisation
+
+Finite-ensemble pathology countermeasures – covariance inflation against
+under-dispersion, localisation against spurious correlations, and the
+spread-ESS collapse diagnostic.
+
+- [`pesto_inflation()`](https://max578.github.io/PESTO/reference/pesto_inflation.md)
+  : Covariance Inflation Specification for IES
+- [`pesto_localisation()`](https://max578.github.io/PESTO/reference/pesto_localisation.md)
+  : Covariance Localisation Specification for IES
+- [`ensemble_spread_ess()`](https://max578.github.io/PESTO/reference/ensemble_spread_ess.md)
+  : Spectral Spread Effective Sample Size of a Parameter Ensemble
+- [`correlation_localisation()`](https://max578.github.io/PESTO/reference/correlation_localisation.md)
+  : Correlation-Based Automatic Localisation Taper
+- [`gaspari_cohn()`](https://max578.github.io/PESTO/reference/gaspari_cohn.md)
+  : Gaspari-Cohn Localisation Taper
+- [`ensemble_solution_localised()`](https://max578.github.io/PESTO/reference/ensemble_solution_localised.md)
+  : Localised Ensemble Solution Kernel (explicit-gain GLM form)
 
 ## Reference IES (pure R)
 

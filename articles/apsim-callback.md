@@ -16,10 +16,16 @@ model in-process.
 This document shows:
 
 1.  The driver on a synthetic linear-Gaussian problem (recovers truth).
-2.  The shape of the
+2.  The typed forward-model contract
+    ([`pesto_forward_model()`](https://max578.github.io/PESTO/reference/pesto_forward_model.md))
+    shared by both adapter modes, including parallel, fault-tolerant
+    evaluation.
+3.  The shape of the
     [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
     adapter for `apsimx` (run block is disabled – needs APSIM
     installed).
+4.  Multi-fidelity calibration: a cheap surrogate ramped to an expensive
+    model through a `fidelity_schedule`.
 
 ## A synthetic recovery example
 
@@ -97,6 +103,77 @@ plot_phi(fit)
 ![Per-realisation phi decreasing across IES
 iterations](apsim-callback_files/figure-html/unnamed-chunk-5-1.png)
 
+## The forward-model contract
+
+A bare `function(theta) -> obs` is the quickest way in, but it carries
+no metadata: the driver cannot know the output dimension ahead of time,
+cannot run realisations in parallel, and cannot express a failure
+budget.
+[`pesto_forward_model()`](https://max578.github.io/PESTO/reference/pesto_forward_model.md)
+wraps the same callable in a typed contract that does. It is the single
+object both the native-callback driver here and the classic `.pst` path
+([`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md))
+are built to honour, so a forward model travels between modes unchanged.
+
+``` r
+
+fm <- pesto_forward_model(
+  fn          = forward,
+  n_obs       = nobs,
+  param_names = paste0("p", seq_len(npar)),
+  on_failure  = "na"
+)
+
+# A contract object is evaluated directly with pesto_evaluate(); the
+# returned matrix carries the per-realisation failure count.
+sim <- pesto_evaluate(fm, prior)
+cat(sprintf("evaluated %d x %d; failures: %d\n",
+            nrow(sim), ncol(sim), attr(sim, "n_failures")))
+#> evaluated 120 x 8; failures: 0
+
+# Passing the contract object to the driver is equivalent to passing the
+# bare function -- the bare form is auto-wrapped internally.
+fit_typed <- pesto_ies_callback(fm, prior, y, sigma,
+                                noptmax = 6L, verbose = FALSE)
+identical(
+  as.matrix(fit_typed$par_ensemble[, -1L]),
+  as.matrix(fit$par_ensemble[, -1L])
+)
+#> [1] TRUE
+```
+
+### Parallel, fault-tolerant ensembles
+
+For an expensive forward model – an APSIM ensemble especially – the
+realisations within one iteration are embarrassingly parallel. Build the
+contract with `parallel = "multicore"` and the evaluation engine
+dispatches rows across forked workers via
+[`parallel::mclapply()`](https://rdrr.io/r/parallel/mclapply.html). For
+reproducible draws, set an `"L'Ecuyer-CMRG"` RNG first; each realisation
+then receives an independent stream.
+
+``` r
+
+RNGkind("L'Ecuyer-CMRG")
+set.seed(42L)
+
+fm_par <- pesto_forward_model(
+  fn       = forward,
+  n_obs    = nobs,
+  parallel = "multicore",
+  n_cores  = 4L
+)
+fit_par <- pesto_ies_callback(fm_par, prior, y, sigma, noptmax = 6L)
+```
+
+A custom `map_fn` (any `lapply`-shaped function) is the escape hatch for
+cross-platform or cluster backends, for example
+`future.apply::future_lapply` or a `mirai` map. Failures are governed by
+`on_failure` (`"na"` tolerates, `"stop"` aborts) and by `max_fail_frac`,
+which aborts once the fraction of failed realisations in any single
+evaluation exceeds the budget – a guardrail against a silently
+collapsing ensemble.
+
 ## Driving APSIM through `apsim_callback()`
 
 The adapter wraps `apsimx` so each realisation gets its own working copy
@@ -150,13 +227,135 @@ unchanged so the ensemble survives partial failures. Setting
 
 ### Concurrency
 
-Phase-1 D4 runs realisations serially. Parallel evaluation (`future`,
-`mirai`, or `apsimx`’s own job-server modes) is a planned follow-up once
-`apsimx`’s thread-safety under ensemble load has been characterised. For
+The
+[`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
+closure writes each realisation to its own uniquely-named working file,
+so it is safe to evaluate in parallel: wrap it in a
+`pesto_forward_model(parallel = "multicore")` exactly as above and the
+ensemble runs across forked workers, each invoking APSIM on its own
+input. Start with a modest `n_cores` – `apsimx`’s own thread-safety
+under heavy ensemble load has not been independently characterised. For
 pure-R synthetic models the serial loop is already fast enough that the
 overhead is dominated by
 [`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
 itself.
+
+## Multi-fidelity calibration
+
+Process-based crop models expose a cost/accuracy dial: a daily time-step
+with a lite soil profile is cheap; a sub-daily step with the full
+profile is expensive.
+[`pesto_multifidelity_model()`](https://max578.github.io/PESTO/reference/pesto_multifidelity_model.md)
+makes that dial first-class. It bundles an ordered stack of fidelity
+levels – cheapest first – and the IES driver picks a level per iteration
+through a `fidelity_schedule`, so early iterations explore cheaply and
+late iterations sharpen against the expensive truth. The final ensemble
+is always refreshed at the highest fidelity.
+
+``` r
+
+# Cheap level: the linear model with a small systematic bias.
+# Expensive level: the unbiased truth.
+cheap_fn     <- function(theta) theta %*% t(G) + 0.30
+expensive_fn <- forward
+
+mf <- pesto_multifidelity_model(
+  levels = list(
+    pesto_forward_model(fn = cheap_fn,     n_obs = nobs, fidelity = 0L),
+    pesto_forward_model(fn = expensive_fn, n_obs = nobs, fidelity = 1L)
+  ),
+  costs = c(1, 25)   # the expensive level is ~25x dearer per run
+)
+
+# Ramp: two cheap iterations, then four expensive ones.
+fit_mf <- pesto_ies_callback(
+  forward_model     = mf,
+  prior_ensemble    = prior,
+  obs               = y,
+  obs_sd            = sigma,
+  noptmax           = 6L,
+  fidelity_schedule = c(0L, 0L, 1L, 1L, 1L, 1L),
+  verbose           = FALSE
+)
+
+mf_rmse <- sqrt(mean(
+  (colMeans(as.matrix(fit_mf$par_ensemble[, -1L])) - theta_true)^2
+))
+cat(sprintf("multi-fidelity posterior RMSE: %.4f\n", mf_rmse))
+#> multi-fidelity posterior RMSE: 0.2592
+```
+
+When a cheap level is run over the whole ensemble and the expensive
+level over only a subset,
+[`mf_control_variate()`](https://max578.github.io/PESTO/reference/mf_control_variate.md)
+lifts the cheap outputs toward the expensive ones with the
+variance-minimising affine correction – the plug-in primitive for a
+surrogate cascade:
+
+``` r
+
+sub      <- 1:20
+low_all  <- pesto_evaluate(mf, prior, level = 0L)
+low_sub  <- low_all[sub, , drop = FALSE]
+high_sub <- pesto_evaluate(mf, prior[sub, , drop = FALSE], level = 1L)
+
+corrected <- mf_control_variate(low_all, high_sub, low_sub)
+cat(sprintf("mean |cheap - corrected| over the ensemble: %.4f\n",
+            mean(abs(low_all - corrected))))
+#> mean |cheap - corrected| over the ensemble: 0.3000
+```
+
+## Sequential (filter-mode) assimilation
+
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+is a *smoother*: it assimilates every observation in one batch. For an
+in-season setting – where a growing season’s observations arrive over
+time and you want an updated parameter posterior *as the season
+progresses*, not only at harvest –
+[`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md)
+is the *filter*. It assimilates time-ordered observation **windows** one
+after another against the same static calibration parameters; each
+window’s posterior becomes the next window’s prior, so information
+accrues and the posterior tightens window by window.
+
+``` r
+
+# Reuse the synthetic problem above; split the nobs observations into
+# three temporal windows (e.g. early / mid / late season).
+windows <- list(1:3, 4:6, 7:8)
+
+fit_seq <- pesto_ies_filter(
+  forward_model  = forward,
+  prior_ensemble = prior,
+  obs            = y,
+  obs_sd         = sigma,
+  windows        = windows,
+  verbose        = FALSE
+)
+
+# The per-window history carries the per-parameter ensemble sd; its mean
+# should fall window over window as more of the season is assimilated.
+sd_trace <- vapply(fit_seq$windows, function(w) mean(w$par_sd), numeric(1))
+data.frame(
+  window      = seq_along(sd_trace),
+  obs_assim   = vapply(fit_seq$windows, function(w) length(w$obs_indices),
+                       integer(1)),
+  mean_par_sd = round(sd_trace, 4)
+)
+#>   window obs_assim mean_par_sd
+#> 1      1         3      0.4007
+#> 2      2         3      0.0180
+#> 3      3         2      0.0152
+```
+
+The posterior at the final window matches what the batch smoother would
+recover, but you also have the intermediate posteriors – the value of
+the filter is the *trajectory*, not just the endpoint. A multi-fidelity
+stack plugs in through `fidelity_schedule` (one level per window: run
+cheap early, sharpen late), and the result wraps into the same manifest
+contract via
+[`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
+(tagged `method = "ies_filter"`).
 
 ## When to prefer `pesto_ies()` instead
 
@@ -199,11 +398,11 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.4.1
+#> [1] PESTO_0.6.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       
-#>  [5] xfun_0.57          S7_0.2.2           textshaping_1.0.5  jsonlite_2.0.0    
+#>  [5] xfun_0.58          S7_0.2.2           textshaping_1.0.5  jsonlite_2.0.0    
 #>  [9] data.table_1.18.4  labeling_0.4.3     glue_1.8.1         htmltools_0.5.9   
 #> [13] ragg_1.5.2         sass_0.4.10        scales_1.4.0       rmarkdown_2.31    
 #> [17] grid_4.6.0         evaluate_1.0.5     jquerylib_0.1.4    fastmap_1.2.0     

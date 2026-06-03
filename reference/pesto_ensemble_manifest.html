@@ -15,7 +15,7 @@ independently verifiable (via verify_manifest())."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,8 +97,10 @@ unrecorded).</p></dd>
 
 
 <dt id="arg-fidelity">fidelity<a class="anchor" aria-label="anchor" href="#arg-fidelity"></a></dt>
-<dd><p>Named numeric vector or <code>NULL</code>. Per-member fidelity
-tag for multi-fidelity runs.</p></dd>
+<dd><p>Structured provenance list or <code>NULL</code>. For a
+multi-fidelity run <code><a href="pesto_ies_callback.html">pesto_ies_callback()</a></code> records
+<code>list(type, schedule, final_level, n_levels, costs)</code>; <code>NULL</code> for a
+single-fidelity run. A legacy named-numeric tag is still accepted.</p></dd>
 
 
 <dt id="arg-apsim-version">apsim_version<a class="anchor" aria-label="anchor" href="#arg-apsim-version"></a></dt>

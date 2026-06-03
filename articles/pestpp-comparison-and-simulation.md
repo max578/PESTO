@@ -71,7 +71,7 @@ cat("pestpp-ies on PATH:   ", pestpp_available, "\n",
 
 print(pesto_version())
 #> $pesto_version
-#> [1] "0.4.1"
+#> [1] "0.6.0"
 #> 
 #> $pestpp_version
 #> [1] "not found"
@@ -255,7 +255,7 @@ rmse_pesto_A    <- sqrt(mean((post_mean_pesto - theta_true_A)^2))
 
 cat(sprintf("PESTO native IES: %d iterations in %.2fs;  posterior RMSE = %.4f\n",
             n_iter_A, runtime_pesto_A, rmse_pesto_A))
-#> PESTO native IES: 6 iterations in 0.06s;  posterior RMSE = 0.3548
+#> PESTO native IES: 6 iterations in 0.05s;  posterior RMSE = 0.3548
 ```
 
 ### Pure-R textbook reference (always shipped)
@@ -376,7 +376,7 @@ knitr::kable(runtime_dt, caption = "Scenario A: runtime and accuracy.")
 
 | Implementation          | Iterations | Realisations | Wallclock_s | PosteriorRMSE |
 |:------------------------|-----------:|-------------:|------------:|--------------:|
-| PESTO native (R + Rcpp) |          6 |           40 |        0.06 |        0.3548 |
+| PESTO native (R + Rcpp) |          6 |           40 |        0.05 |        0.3548 |
 | pestpp-ies (binary)     |          6 |           40 |          NA |        0.3548 |
 
 Scenario A: runtime and accuracy. {.table}
@@ -654,7 +654,7 @@ mda_upgrade <- ensemble_solution_mda(
 )
 cat(sprintf("Scenario B: %d iter, %d real, %d par, %d obs in %.2fs\n",
             n_iter_B, n_real_B, n_par_B, n_obs_B, runtime_B))
-#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.70s
+#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.66s
 cat(sprintf("Phi reduction: %.2e -> %.2e  (factor %.1f)\n",
             phi_B[1L], phi_B[length(phi_B)], phi_B[1L] / phi_B[length(phi_B)]))
 #> Phi reduction: 1.69e+03 -> 3.51e+02  (factor 4.8)
@@ -784,11 +784,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 
 | rank | rSVD_ms | LAPACK_ms | speedup_rSVD |
 |-----:|--------:|----------:|-------------:|
-|    5 |   2.955 |    42.159 |        14.27 |
-|   20 |   6.452 |    42.066 |         6.52 |
-|   50 |  10.691 |    41.955 |         3.92 |
-|  100 |  36.668 |    42.369 |         1.16 |
-|  180 |  74.068 |    41.891 |         0.57 |
+|    5 |   2.674 |    39.453 |        14.75 |
+|   20 |   5.845 |    39.258 |         6.72 |
+|   50 |  10.308 |    39.301 |         3.81 |
+|  100 |  34.447 |    39.270 |         1.14 |
+|  180 |  70.108 |    39.329 |         0.56 |
 
 rSVD vs LAPACK on a 400 x 200 matrix as k varies. {.table}
 
@@ -801,7 +801,7 @@ auto_res <- adaptive_svd(A_bench, k = 20L, method = "auto")
 acc_res  <- accelerate_svd(A_bench, thin = TRUE)
 cat("auto chose:    ", auto_res$method_used,
     " in ", round(auto_res$time_ms, 2), "ms\n", sep = "")
-#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 6.46ms
+#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.83ms
 cat("LAPACK direct: ", round(length(acc_res$d), 0),
     " singular values returned\n", sep = "")
 #> LAPACK direct: 200 singular values returned
@@ -1001,7 +1001,7 @@ knitr::kable(sim_summary, caption = "Scenario C: aggregate diagnostics.")
 | Median phi reduction (1 iter) | 12.12 |
 | Mean surrogate savings (%)    |  0.00 |
 | Mean adaptive size            | 39.00 |
-| Median GPU-path time (ms)     |  0.27 |
+| Median GPU-path time (ms)     |  0.24 |
 | Replicates                    | 50.00 |
 
 Scenario C: aggregate diagnostics. {.table}
@@ -1199,9 +1199,9 @@ knitr::kable(cov_dt, caption = "Vignette coverage of NAMESPACE exports.")
 
 | metric                             | value |
 |:-----------------------------------|------:|
-| Exports declared                   |  37.0 |
+| Exports declared                   |  49.0 |
 | Exports exercised in this vignette |  28.0 |
-| Coverage (%)                       |  75.7 |
+| Coverage (%)                       |  57.1 |
 
 Vignette coverage of NAMESPACE exports. {.table}
 
@@ -1225,7 +1225,7 @@ if (length(unknown_in_use) > 0L) {
 .vig_t1 <- proc.time()["elapsed"]
 cat(sprintf("Vignette wall-clock: %.1f s\n",
             as.numeric(.vig_t1 - .vig_t0)))
-#> Vignette wall-clock: 12.6 s
+#> Vignette wall-clock: 12.2 s
 ```
 
 ``` r
@@ -1253,11 +1253,11 @@ sessionInfo()
 #> 
 #> other attached packages:
 #> [1] viridis_0.6.5     viridisLite_0.4.3 ggplot2_4.0.3     data.table_1.18.4
-#> [5] PESTO_0.4.1      
+#> [5] PESTO_0.6.0      
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] microbenchmark_1.5.0 vctrs_0.7.3          cli_3.6.6           
-#>  [4] knitr_1.51           rlang_1.2.0          xfun_0.57           
+#>  [4] knitr_1.51           rlang_1.2.0          xfun_0.58           
 #>  [7] S7_0.2.2             textshaping_1.0.5    jsonlite_2.0.0      
 #> [10] labeling_0.4.3       glue_1.8.1           htmltools_0.5.9     
 #> [13] gridExtra_2.3        ragg_1.5.2           sass_0.4.10         

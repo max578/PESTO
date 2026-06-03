@@ -24,8 +24,11 @@ as_manifest(x, ...)
 
   Method-specific arguments. For `pesto_ies_callback_result`: `run_id`
   (character, defaults to a timestamp+hash slug), `seed` (integer,
-  defaults to `NA_integer_`), `fidelity` (named numeric or `NULL`),
-  `apsim_version` (character, defaults to `NA_character_`).
+  defaults to `NA_integer_`), `fidelity` (structured provenance list or
+  `NULL`; defaults to the record captured by
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+  for a multi-fidelity run), `apsim_version` (character, defaults to
+  `NA_character_`).
 
 ## Value
 

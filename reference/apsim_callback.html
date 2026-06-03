@@ -13,7 +13,7 @@ Year-1 §D4 of the UQ ag-stack roadmap (uq_ag_stack_roadmap_v0.md)."></head><bod
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -148,9 +148,16 @@ per-parameter writer.</p>
     <h2 id="concurrency">Concurrency<a class="anchor" aria-label="anchor" href="#concurrency"></a></h2>
 
 
-<p>Phase-1 D4 runs realisations <strong>serially</strong>. Parallel execution via
-<code>future</code> or <code>mirai</code> is a planned follow-up; <code>apsimx</code>'s thread-safety
-under ensemble load has not been verified.</p>
+<p>The returned closure evaluates whatever block of realisations it is
+handed and writes each to a <strong>unique</strong> per-realisation file under
+<code>workdir</code>, so it is safe to drive in parallel. To run an ensemble
+concurrently, wrap the closure in a <code><a href="pesto_forward_model.html">pesto_forward_model()</a></code> with
+<code>parallel = "multicore"</code> (or a custom <code>map_fn</code>); the PESTO evaluation
+engine then dispatches realisations across forked workers, each
+invoking APSIM on its own input file. Called directly (the bulk
+path), realisations run serially. <code>apsimx</code>'s own thread-safety under
+heavy ensemble load has not been independently verified, so start
+with a modest <code>n_cores</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

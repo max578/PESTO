@@ -14,9 +14,12 @@ pesto_ies_callback(
   obs_sd,
   noptmax = 4L,
   lambda = 1,
+  fidelity_schedule = NULL,
   parcov = NULL,
   eigthresh = 1e-06,
   use_approx = TRUE,
+  inflation = NULL,
+  localisation = NULL,
   on_failure = c("na", "stop"),
   verbose = TRUE
 )
@@ -26,10 +29,19 @@ pesto_ies_callback(
 
 - forward_model:
 
-  A function with signature `function(theta) -> obs`, where `theta` is
-  an `nreal x npar` numeric matrix and `obs` is an `nreal x nobs`
-  numeric matrix. Failed realisations may return rows of `NA`; the
-  driver tolerates them (see `on_failure`).
+  One of: a function with signature `function(theta) -> obs` (where
+  `theta` is an `nreal x npar` numeric matrix and `obs` an
+  `nreal x nobs` numeric matrix); a
+  [`pesto_forward_model()`](https://max578.github.io/PESTO/reference/pesto_forward_model.md)
+  (the typed contract object, e.g. one carrying a
+  `parallel = "multicore"` evaluation strategy); or a
+  [`pesto_multifidelity_model()`](https://max578.github.io/PESTO/reference/pesto_multifidelity_model.md)
+  (then see `fidelity_schedule`). A bare function is auto-wrapped via
+  [`as_forward_model()`](https://max578.github.io/PESTO/reference/as_forward_model.md)
+  with this call's `on_failure`. Failed realisations may return rows of
+  `NA`; the driver tolerates them (see `on_failure`). To run
+  realisations in parallel, pass a `pesto_forward_model` built with
+  `parallel = "multicore"` rather than a bare function.
 
 - prior_ensemble:
 
@@ -56,6 +68,14 @@ pesto_ies_callback(
   recycled; a vector shorter than `noptmax` is right-padded with its
   last value (default 1.0).
 
+- fidelity_schedule:
+
+  Integer vector or `NULL`. Only consulted when `forward_model` is a
+  [`pesto_multifidelity_model()`](https://max578.github.io/PESTO/reference/pesto_multifidelity_model.md):
+  the fidelity level to evaluate at each iteration (recycled /
+  right-padded to `noptmax`). `NULL` (default) uses the highest fidelity
+  every iteration. Ignored otherwise.
+
 - parcov:
 
   Numeric vector of length `npar`, the diagonal of the prior parameter
@@ -70,6 +90,26 @@ pesto_ies_callback(
 
   Logical. If TRUE (default), skip the prior-scaling correction
   (upgrade_2); matches the typical `pestpp-ies` default.
+
+- inflation:
+
+  A
+  [`pesto_inflation()`](https://max578.github.io/PESTO/reference/pesto_inflation.md)
+  specification, or `NULL` (default) for no covariance inflation.
+  Inflation counteracts ensemble under-dispersion – the progressive
+  collapse of posterior spread a finite-ensemble smoother suffers.
+  `NULL` leaves the update identical to the un-inflated smoother.
+
+- localisation:
+
+  A
+  [`pesto_localisation()`](https://max578.github.io/PESTO/reference/pesto_localisation.md)
+  specification, or `NULL` (default) for no localisation. Localisation
+  tapers the Kalman gain to suppress spurious finite-sample
+  parameter-observation correlations; the active path uses
+  [`ensemble_solution_localised()`](https://max578.github.io/PESTO/reference/ensemble_solution_localised.md)
+  (approximate / upgrade_1 form), so a non-`NULL` `localisation` with
+  `use_approx = FALSE` warns and drops the null-space correction.
 
 - on_failure:
 
@@ -99,7 +139,12 @@ with components:
 
 - iterations:
 
-  List of per-iteration metadata (lambda, mean phi, failure count).
+  List of per-iteration metadata: `lambda`, `mean_phi`, `n_failures`,
+  and the dispersion diagnostics `spread_ess` / `spread_ess_ratio`
+  ([`ensemble_spread_ess()`](https://max578.github.io/PESTO/reference/ensemble_spread_ess.md)),
+  plus `inflation_method` / `inflation_factor` / `retention` and
+  `localisation` / `loc_threshold` / `loc_frac_active` when those
+  countermeasures are active.
 
 - runtime_seconds:
 
@@ -113,6 +158,17 @@ with components:
 - failure_rate:
 
   Fraction of forward evaluations that returned NA.
+
+- fidelity:
+
+  For a
+  [`pesto_multifidelity_model()`](https://max578.github.io/PESTO/reference/pesto_multifidelity_model.md)
+  run, a provenance list
+  `list(type, schedule, final_level, n_levels, costs)` recording the
+  realised per-iteration fidelity schedule; `NULL` for a single-fidelity
+  run. Consumed by
+  [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
+  to populate the manifest contract.
 
 ## Details
 
@@ -140,6 +196,20 @@ schedule). A line-search over `ies_lambda_mults` matching `pestpp-ies`
 is a planned Phase-2 enhancement; for the common case of a well-behaved
 forward model with `lambda = 1`, the GLM update reduces phi reliably
 (see vignette `apsim-callback`).
+
+## Multi-fidelity
+
+When `forward_model` is a
+[`pesto_multifidelity_model()`](https://max578.github.io/PESTO/reference/pesto_multifidelity_model.md),
+`fidelity_schedule` selects which fidelity level each iteration
+evaluates – a recycled / padded integer vector, one entry per iteration
+(default: the highest fidelity every iteration, i.e. exactly the
+single-fidelity behaviour). This supports fidelity ramping (cheap early
+iterations, expensive late ones); the final ensemble refresh always uses
+the highest fidelity so the returned posterior is at full resolution.
+The control-variate combiner
+[`mf_control_variate()`](https://max578.github.io/PESTO/reference/mf_control_variate.md)
+is the plug-in point for bias-corrected surrogate cascades.
 
 ## References
 

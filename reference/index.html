@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -154,6 +154,50 @@
         </dt>
         <dd>Get PESTO package version information</dd>
       </dl></div><div class="section level2">
+      <h2 id="forward-model-contract-and-multi-fidelity">Forward-model contract and multi-fidelity<a class="anchor" aria-label="anchor" href="#forward-model-contract-and-multi-fidelity"></a></h2>
+
+      <div class="section-desc"><p>Typed forward-model object both adapter modes honour, and the multi-fidelity (cheap / expensive) bridge with its control-variate combiner.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="pesto_forward_model.html">pesto_forward_model()</a></code>
+
+        </dt>
+        <dd>Forward-Model Contract (S7 class)</dd>
+
+        <dt>
+
+          <code><a href="as_forward_model.html">as_forward_model()</a></code>
+
+        </dt>
+        <dd>Coerce an object into a <code>pesto_forward_model</code></dd>
+
+        <dt>
+
+          <code><a href="pesto_evaluate.html">pesto_evaluate()</a></code>
+
+        </dt>
+        <dd>Evaluate a PESTO forward model</dd>
+
+        <dt>
+
+          <code><a href="pesto_multifidelity_model.html">pesto_multifidelity_model()</a></code>
+
+        </dt>
+        <dd>Multi-Fidelity Forward Model (S7 class)</dd>
+
+        <dt>
+
+          <code><a href="mf_control_variate.html">mf_control_variate()</a></code>
+
+        </dt>
+        <dd>Affine control-variate bias correction across fidelities</dd>
+      </dl></div><div class="section level2">
       <h2 id="in-process-ies-via-r-callback">In-process IES via R callback<a class="anchor" aria-label="anchor" href="#in-process-ies-via-r-callback"></a></h2>
 
       <div class="section-desc"><p>Driver and APSIM adapter for forward-model callable IES, bypassing the .pst file cycle.</p></div>
@@ -172,10 +216,68 @@
 
         <dt>
 
+          <code><a href="pesto_ies_filter.html">pesto_ies_filter()</a></code>
+
+        </dt>
+        <dd>Run a Sequential (Filter-Mode) Iterative Ensemble Smoother</dd>
+
+        <dt>
+
           <code><a href="apsim_callback.html">apsim_callback()</a></code>
 
         </dt>
         <dd>apsimx Forward-Model Adapter for PESTO IES</dd>
+      </dl></div><div class="section level2">
+      <h2 id="inflation-and-localisation">Inflation and localisation<a class="anchor" aria-label="anchor" href="#inflation-and-localisation"></a></h2>
+
+      <div class="section-desc"><p>Finite-ensemble pathology countermeasures – covariance inflation against under-dispersion, localisation against spurious correlations, and the spread-ESS collapse diagnostic.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="pesto_inflation.html">pesto_inflation()</a></code>
+
+        </dt>
+        <dd>Covariance Inflation Specification for IES</dd>
+
+        <dt>
+
+          <code><a href="pesto_localisation.html">pesto_localisation()</a></code>
+
+        </dt>
+        <dd>Covariance Localisation Specification for IES</dd>
+
+        <dt>
+
+          <code><a href="ensemble_spread_ess.html">ensemble_spread_ess()</a></code>
+
+        </dt>
+        <dd>Spectral Spread Effective Sample Size of a Parameter Ensemble</dd>
+
+        <dt>
+
+          <code><a href="correlation_localisation.html">correlation_localisation()</a></code>
+
+        </dt>
+        <dd>Correlation-Based Automatic Localisation Taper</dd>
+
+        <dt>
+
+          <code><a href="gaspari_cohn.html">gaspari_cohn()</a></code>
+
+        </dt>
+        <dd>Gaspari-Cohn Localisation Taper</dd>
+
+        <dt>
+
+          <code><a href="ensemble_solution_localised.html">ensemble_solution_localised()</a></code>
+
+        </dt>
+        <dd>Localised Ensemble Solution Kernel (explicit-gain GLM form)</dd>
       </dl></div><div class="section level2">
       <h2 id="reference-ies-pure-r-">Reference IES (pure R)<a class="anchor" aria-label="anchor" href="#reference-ies-pure-r-"></a></h2>
 
