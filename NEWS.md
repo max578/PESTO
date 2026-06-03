@@ -1,3 +1,8 @@
+# PESTO (development version)
+
+* Post-0.6.0 development cycle. Readied as the authoritative ensemble-manifest
+  emitter for orchestra-coordinated runs (no API change).
+
 # PESTO 0.6.0
 
 ## Covariance inflation and localisation against ensemble collapse

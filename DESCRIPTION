@@ -1,7 +1,7 @@
 Package: PESTO
 Type: Package
 Title: Parameter Estimation, Surrogates, and Tooling for Optimisation
-Version: 0.6.0
+Version: 0.6.0.9000
 Authors@R: c(
     person("Max", "Moldovan",
            role = c("aut", "cre", "cph"),
