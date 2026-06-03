@@ -29,6 +29,16 @@ reference:
   - pesto_surrogate_ies
   - pesto_version
 
+- title: Forward-model contract and multi-fidelity
+  desc: Typed forward-model object both adapter modes honour, and the
+    multi-fidelity (cheap / expensive) bridge with its control-variate combiner.
+  contents:
+  - pesto_forward_model
+  - as_forward_model
+  - pesto_evaluate
+  - pesto_multifidelity_model
+  - mf_control_variate
+
 - title: In-process IES via R callback
   desc: Driver and APSIM adapter for forward-model callable IES, bypassing the .pst file cycle.
   contents:
