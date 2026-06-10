@@ -67,7 +67,14 @@
 #' @param verbose Logical. Forward verbose flag into apsimx calls and
 #'   print per-realisation status (default `FALSE`).
 #' @return A closure of signature `function(theta) -> obs` suitable for
-#'   the `forward_model =` argument of [pesto_ies_callback()].
+#'   the `forward_model =` argument of [pesto_ies_callback()]. The closure
+#'   carries an `"apsim_version"` attribute recording the in-use APSIM
+#'   binary version (via `apsimx::apsim_version()`, `NA_character_` if it
+#'   cannot be determined), so a calibrated run can be grounded to the
+#'   exact simulator that produced it. Thread it into the manifest with
+#'   `as_manifest(fit, apsim_version = attr(fm, "apsim_version"))`; kernR
+#'   then refuses to compare two manifests built against incompatible
+#'   APSIM majors.
 #' @seealso [pesto_ies_callback()] for the IES driver; [pesto_ies()]
 #'   for the classic `.pst`-file path.
 #' @export
@@ -124,7 +131,12 @@ apsim_callback <- function(template,
   writer <- param_writer %||% .default_apsim_writer(is_apsimx, verbose)
   runner <- simulation_runner %||% .default_apsim_runner(is_apsimx, verbose)
 
-  function(theta) {
+  # Ground the run to the simulator that produced it: capture the in-use
+  # APSIM binary version once, at construction. Stamped on the returned
+  # closure as an attribute so the caller can thread it into the manifest.
+  apsim_ver <- .capture_apsim_version()
+
+  fm <- function(theta) {
     # Coerce theta and validate parameter columns ------------------------
     if (!is.matrix(theta)) theta <- as.matrix(theta)
     nreal <- nrow(theta)
@@ -231,6 +243,25 @@ apsim_callback <- function(template,
     }
     out_mat
   }
+
+  attr(fm, "apsim_version") <- apsim_ver
+  fm
+}
+
+# Capture the in-use APSIM binary version for run provenance. Defensive:
+# returns NA_character_ when apsimx or a working APSIM install is absent, so
+# a non-APSIM or CI context never errors. The captured string is grounded
+# downstream by kernR's major-version refusal on a manifest pair.
+.capture_apsim_version <- function() {
+  if (!requireNamespace("apsimx", quietly = TRUE)) return(NA_character_)
+  # An absent APSIM binary makes apsim_version() *warn* and return empty; that
+  # "couldn't determine -> NA" outcome is encoded explicitly below, so the
+  # warning is handled-by-design and must not leak to the caller.
+  tryCatch(suppressWarnings({
+    v <- as.character(apsimx::apsim_version(which = "inuse", verbose = FALSE))
+    v <- v[nzchar(v) & !is.na(v)]
+    if (length(v) == 0L) NA_character_ else v[length(v)]
+  }), error = function(e) NA_character_)
 }
 
 # Default editor dispatch. Returns a function(file, src.dir, node, value).

@@ -1,7 +1,27 @@
 # PESTO (development version)
 
 * Post-0.6.0 development cycle. Readied as the authoritative ensemble-manifest
-  emitter for orchestra-coordinated runs (no API change).
+  emitter for orchestra-coordinated runs.
+
+* **Manifest schema `1.1.0`: grounded semantic descriptor (`obs_schema`).**
+  `pesto_ensemble_manifest` gains an optional `obs_schema` slot stating the
+  physical quantity and unit of each output and parameter column (plus optional
+  per-column grounding provenance: `verified_on`, `oracle_kind`,
+  `evidence_path`). Build one with the new exported `pesto_obs_schema()` and pass
+  it through `as_manifest(fit, obs_schema = ...)`. The descriptor turns column
+  meaning from out-of-band roxygen convention into a machine-checkable field, so
+  a downstream consumer can verify two manifests are commensurable by name rather
+  than positionally. The class validator rejects a descriptor naming a column
+  that does not exist in the data. `obs_schema` is provenance metadata and is not
+  folded into `data_hash` (correspondence is grounded by an independent
+  consumer, not by self-hash). Additive and backward-compatible: a `1.0.0`
+  manifest reads back unchanged with `obs_schema = NULL`.
+
+* **`apsim_callback()` stamps the in-use APSIM version.** The returned
+  forward-model closure now carries an `"apsim_version"` attribute (from
+  `apsimx::apsim_version()`, `NA_character_` when undeterminable), so a calibrated
+  run can be grounded to the exact simulator that produced it via
+  `as_manifest(fit, apsim_version = attr(fm, "apsim_version"))`.
 
 # PESTO 0.6.0
 
@@ -432,7 +452,7 @@ canon recipes on the `max578/PESTO` channel.
   `tools/pestpp_benchmark/scenario_a_pestpp_ies.rds` is present and
   `PESTO_PESTPP_BIN` resolves, the vignette extends the agreement
   plot with the live binary's posterior.
-* Hardcoded `/Users/a1222812/...` path replaced with
+* Hardcoded local absolute path replaced with
   `Sys.getenv("PESTO_PESTPP_BIN")` + `Sys.which("pestpp-ies")`
   fallback.
 * New `tools/pestpp_benchmark/run_benchmark.R` regenerates both

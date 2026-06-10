@@ -15,8 +15,10 @@ registered against this generic).}
 timestamp+hash slug), \code{seed} (integer, defaults to \code{NA_integer_}),
 \code{fidelity} (structured provenance list or \code{NULL}; defaults to the
 record captured by \code{\link[=pesto_ies_callback]{pesto_ies_callback()}} for a multi-fidelity run),
-\code{apsim_version} (character,
-defaults to \code{NA_character_}).}
+\code{apsim_version} (character, defaults to \code{NA_character_}; pass
+\code{attr(fm, "apsim_version")} from an \code{\link[=apsim_callback]{apsim_callback()}} forward model
+to ground the run to its simulator), and \code{obs_schema} (a grounded
+semantic descriptor from \code{\link[=pesto_obs_schema]{pesto_obs_schema()}} or \code{NULL}).}
 }
 \value{
 A \code{pesto_ensemble_manifest} S7 object.
