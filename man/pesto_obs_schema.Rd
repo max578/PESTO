@@ -34,6 +34,26 @@ vocabulary: \code{verified_on} (a \code{Date}, or \code{NA} for an unverified fa
 \code{oracle_kind}, and \code{evidence_path}. A column is \emph{grounded} only when
 \code{verified_on} is a non-\code{NA} date.
 }
+\examples{
+# Describe two output columns and one parameter, grounding the yield
+# column against a dated oracle and leaving the rest unverified.
+schema <- pesto_obs_schema(
+  outputs = data.frame(
+    name        = c("yield", "biomass"),
+    quantity    = c("grain yield", "above-ground biomass"),
+    unit        = c("kg/ha", "kg/ha"),
+    verified_on = c(as.Date("2026-06-01"), as.Date(NA)),
+    stringsAsFactors = FALSE
+  ),
+  params = data.frame(
+    name      = "rue",
+    apsim_node = "Wheat.Leaf.Photosynthesis.RUE.FixedValue",
+    unit      = "g/MJ",
+    stringsAsFactors = FALSE
+  )
+)
+str(schema, max.level = 2L)
+}
 \seealso{
 The manifest contract \code{inst/manifest_contract.md} and the
 orchestra provenance vocabulary.

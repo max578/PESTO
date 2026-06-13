@@ -47,6 +47,7 @@ Suggests:
     viridis,
     microbenchmark,
     Matrix,
-    apsimx (>= 2.7.0)
+    apsimx (>= 2.7.0),
+    deSolve (>= 1.30)
 VignetteBuilder: knitr
 Config/testthat/edition: 3
