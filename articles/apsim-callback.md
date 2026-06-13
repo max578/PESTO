@@ -174,6 +174,132 @@ which aborts once the fraction of failed realisations in any single
 evaluation exceeds the budget – a guardrail against a silently
 collapsing ensemble.
 
+## Guard: calibrate to field-realistic uncertainty, not the mean’s standard error
+
+The single most consequential number you hand
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+is `obs_sd` – the observation standard deviation, which sets the IES
+weights $`w = 1/\sigma_{\mathrm{obs}}`$. It is also the easiest to get
+wrong, in a way that fails silently. The failure mode is
+*over-determination*: conditioning the ensemble on a likelihood that is
+far tighter than the data deserve. The smoother then drives every
+realisation onto the same point, the posterior spread collapses, and the
+run reports an answer with a credible interval far too narrow to be
+honest – confidently wrong.
+
+The usual route into this trap is statistical, not a typo. Suppose each
+target observation is itself the mean of $`m`$ field replicates. The
+*replicate* spread – the genuine measurement-plus-process noise a single
+modelled value must match – is $`\sigma`$. The *standard error of that
+mean* is $`\sigma/\sqrt{m}`$, which is smaller by a factor of
+$`\sqrt{m}`$ and shrinks further as you average more plots. Passing the
+standard error as `obs_sd` tells the smoother the data pin the model
+roughly $`\sqrt{m}`$ times more sharply than they really do. The forward
+model cannot be that right, so the ensemble has nowhere to go but onto a
+single collapsed point.
+
+The contrast below runs the same synthetic problem twice. The first call
+passes the field-realistic replicate spread `sigma`; the second passes
+the standard error of a mean over `m = 40` replicates, about eight times
+too small.
+
+``` r
+
+m      <- 40L
+obs_se <- sigma / sqrt(m)   # the standard error of a 40-replicate mean
+
+fit_ok <- pesto_ies_callback(
+  forward, prior, y,
+  obs_sd  = sigma,          # field-realistic replicate spread
+  noptmax = 6L, verbose = FALSE
+)
+
+fit_collapsed <- pesto_ies_callback(
+  forward, prior, y,
+  obs_sd  = obs_se,         # the over-precise likelihood -- the trap
+  noptmax = 6L, verbose = FALSE
+)
+```
+
+The collapse does not announce itself in the posterior *mean*. On this
+linear-Gaussian toy both runs recover the truth to three figures. It
+announces itself in the posterior *spread* and in whether the credible
+interval still covers the truth:
+
+``` r
+
+spread <- function(fit) {
+  mean(apply(as.matrix(fit$par_ensemble[, -1L]), 2L, sd))
+}
+
+coverage_90 <- function(fit, truth) {
+  pe <- as.matrix(fit$par_ensemble[, -1L])
+  lo <- apply(pe, 2L, quantile, 0.05)
+  hi <- apply(pe, 2L, quantile, 0.95)
+  mean(truth >= lo & truth <= hi)   # fraction of params inside the band
+}
+
+data.frame(
+  obs_sd          = c(sigma, obs_se),
+  case            = c("field-realistic", "over-precise (SE of mean)"),
+  mean_post_sd    = c(spread(fit_ok), spread(fit_collapsed)),
+  coverage_90_pct = 100 * c(coverage_90(fit_ok, theta_true),
+                            coverage_90(fit_collapsed, theta_true))
+)
+#>        obs_sd                      case mean_post_sd coverage_90_pct
+#> 1 0.050000000           field-realistic 3.560357e-03              50
+#> 2 0.007905694 over-precise (SE of mean) 9.266982e-05               0
+```
+
+The over-precise run’s posterior spread is a small fraction of the
+honest run’s, and its 90 per-cent credible band has stopped covering the
+truth entirely. The ensemble is confident and wrong.
+
+PESTO records the collapse directly.
+[`ensemble_spread_ess()`](https://max578.github.io/PESTO/reference/ensemble_spread_ess.md)
+– the spectral participation ratio of the parameter anomaly covariance,
+the effective number of variance-carrying directions – is logged on
+every iteration as `spread_ess` and as the ratio `spread_ess_ratio`
+(relative to the ensemble size). A ratio that falls steeply toward zero
+across iterations is the diagnostic signature of an ensemble draining
+its spread:
+
+``` r
+
+ess_ratio <- function(fit) {
+  vapply(fit$iterations, `[[`, numeric(1L), "spread_ess_ratio")
+}
+
+rbind(
+  `field-realistic` = round(ess_ratio(fit_ok), 3),
+  `over-precise`    = round(ess_ratio(fit_collapsed), 3)
+)
+#>                  [,1]  [,2]  [,3]  [,4]  [,5]  [,6]
+#> field-realistic 0.341 0.342 0.342 0.343 0.344 0.345
+#> over-precise    0.340 0.340 0.340 0.340 0.340 0.340
+```
+
+The fix is to set `obs_sd` to the uncertainty the modelled value must
+actually reproduce – the replicate-level measurement-plus-process
+spread, never the standard error of an average:
+
+- Use the replicate standard deviation $`\sigma`$, not
+  $`\sigma/\sqrt{m}`$, when the target is a mean over $`m`$
+  measurements.
+- Fold structural model-discrepancy into `obs_sd` – the forward model is
+  an approximation, and the likelihood should not pretend it matches
+  reality more tightly than the model can.
+- When in genuine doubt, err wide. An over-wide `obs_sd` leaves spread
+  on the table and merely under-uses the data; an over-narrow one
+  destroys the ensemble and reports false confidence.
+
+When over-determination is unavoidable – many observations, few
+realisations – the covariance inflation and localisation countermeasures
+([`vignette("inflation-localisation")`](https://max578.github.io/PESTO/articles/inflation-localisation.md))
+actively replenish the collapsing spread rather than only diagnosing it.
+The honest `obs_sd` is the first line of defence, those countermeasures
+the second.
+
 ## Driving APSIM through `apsim_callback()`
 
 The adapter wraps `apsimx` so each realisation gets its own working copy
@@ -305,6 +431,102 @@ cat(sprintf("mean |cheap - corrected| over the ensemble: %.4f\n",
 #> mean |cheap - corrected| over the ensemble: 0.3000
 ```
 
+## ODE / compartmental forward-model templates
+
+Not every forward model is a simulator behind an executable. A very
+large class – crop growth, epidemic dynamics, nutrient or solute
+transport, pharmacokinetics – is a small system of ordinary differential
+equations integrated forward in time, with the observation vector read
+off the state trajectory. PESTO ships these as ready-to-use templates
+that return the same typed
+[`pesto_forward_model()`](https://max578.github.io/PESTO/reference/pesto_forward_model.md)
+as everything above, so they plug straight into the IES driver, the
+multi-fidelity stack, and the manifest emitter. Integration is a
+self-contained fixed-step RK4 by default (no extra dependency); a
+`solver = "desolve"` path delegates to the `deSolve` package for stiff
+systems.
+
+The generic builder is
+[`ode_forward_model()`](https://max578.github.io/PESTO/reference/ode_forward_model.md):
+supply the derivative function `function(t, y, theta) -> dydt`, the
+initial state, the time grid, and which `theta` columns the model
+consumes. Two specialisations come pre-built.
+[`crop_growth_forward_model()`](https://max578.github.io/PESTO/reference/crop_growth_forward_model.md)
+is the logistic dry-matter accumulation curve
+`dB/dt = r B (1 - B / b_max)` – the canonical sigmoid description of
+seasonal biomass, calibrating `r`, `b_max`, and `b0` against an observed
+biomass-over-time series.
+
+``` r
+
+times <- seq(0, 120, by = 15)
+crop  <- crop_growth_forward_model(times = times)
+
+# Simulate a biomass series at a known parameter, then add field noise.
+theta_crop <- c(r = 0.06, b_max = 1400, b0 = 20)
+biomass    <- as.numeric(pesto_evaluate(
+  crop, matrix(theta_crop, nrow = 1L, dimnames = list(NULL, names(theta_crop)))
+))
+y_crop        <- biomass + rnorm(length(biomass), sd = 20)
+names(y_crop) <- paste0("t", seq_along(y_crop))
+
+# Invert: a broad prior over the three growth parameters.
+prior_crop <- cbind(
+  r     = runif(120L, 0.02, 0.12),
+  b_max = runif(120L, 900, 2000),
+  b0    = runif(120L, 5, 60)
+)
+fit_crop <- pesto_ies_callback(crop, prior_crop, y_crop, obs_sd = 20,
+                               noptmax = 8L, verbose = FALSE)
+post_crop <- colMeans(as.matrix(fit_crop$par_ensemble[, -1L]))[names(theta_crop)]
+rbind(truth = theta_crop, posterior = round(post_crop, 3))
+#>               r    b_max     b0
+#> truth     0.060 1400.000 20.000
+#> posterior 0.063 1371.492 18.251
+```
+
+[`seir_forward_model()`](https://max578.github.io/PESTO/reference/seir_forward_model.md)
+is the closed-population Susceptible-Exposed-Infectious-Recovered
+epidemic model, calibrating the transmission, latency, and recovery
+rates `beta`, `sigma`, and `gamma` against an observed
+infectious-prevalence curve. The reproduction number
+$`R_0 = \beta / \gamma`$ is the recoverable summary an outbreak curve
+identifies most sharply:
+
+``` r
+
+days <- seq(0, 60, by = 5)
+seir <- seir_forward_model(times = days, n_pop = 1000, i0 = 1)
+
+theta_seir <- c(beta = 0.6, sigma = 0.2, gamma = 0.1)
+prevalence <- as.numeric(pesto_evaluate(
+  seir, matrix(theta_seir, nrow = 1L, dimnames = list(NULL, names(theta_seir)))
+))
+y_seir        <- prevalence + rnorm(length(prevalence), sd = 3)
+names(y_seir) <- paste0("d", seq_along(y_seir))
+
+prior_seir <- cbind(
+  beta  = runif(200L, 0.3, 0.9),
+  sigma = runif(200L, 0.1, 0.4),
+  gamma = runif(200L, 0.05, 0.2)
+)
+fit_seir  <- pesto_ies_callback(seir, prior_seir, y_seir, obs_sd = 3,
+                                noptmax = 10L, verbose = FALSE)
+post_seir <- colMeans(as.matrix(fit_seir$par_ensemble[, -1L]))[names(theta_seir)]
+cat(sprintf("R0 truth = %.1f, R0 posterior = %.2f\n",
+            theta_seir[["beta"]] / theta_seir[["gamma"]],
+            post_seir[["beta"]] / post_seir[["gamma"]]))
+#> R0 truth = 6.0, R0 posterior = 5.54
+```
+
+Because both templates return a
+[`pesto_forward_model()`](https://max578.github.io/PESTO/reference/pesto_forward_model.md),
+the cheap-coarse / fine-grid fidelity trick from the previous section
+applies verbatim: build one template at a coarse `n_steps` and one at a
+fine `n_steps`, stack them in a
+[`pesto_multifidelity_model()`](https://max578.github.io/PESTO/reference/pesto_multifidelity_model.md),
+and ramp the integration resolution across IES iterations.
+
 ## Sequential (filter-mode) assimilation
 
 [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
@@ -398,17 +620,17 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.6.0.9000
+#> [1] PESTO_0.7.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       
-#>  [5] xfun_0.58          S7_0.2.2           textshaping_1.0.5  jsonlite_2.0.0    
-#>  [9] data.table_1.18.4  labeling_0.4.3     glue_1.8.1         htmltools_0.5.9   
-#> [13] ragg_1.5.2         sass_0.4.10        scales_1.4.0       rmarkdown_2.31    
-#> [17] grid_4.6.0         evaluate_1.0.5     jquerylib_0.1.4    fastmap_1.2.0     
-#> [21] yaml_2.3.12        lifecycle_1.0.5    compiler_4.6.0     RColorBrewer_1.1-3
-#> [25] fs_2.1.0           Rcpp_1.1.1-1.1     farver_2.1.2       systemfonts_1.3.2 
-#> [29] digest_0.6.39      R6_2.6.1           bslib_0.11.0       withr_3.0.2       
-#> [33] tools_4.6.0        gtable_0.3.6       pkgdown_2.2.0      ggplot2_4.0.3     
-#> [37] cachem_1.1.0       desc_1.4.3
+#>  [5] xfun_0.58          otel_0.2.0         S7_0.2.2           textshaping_1.0.5 
+#>  [9] jsonlite_2.0.0     data.table_1.18.4  labeling_0.4.3     glue_1.8.1        
+#> [13] htmltools_0.5.9    ragg_1.5.2         sass_0.4.10        scales_1.4.0      
+#> [17] rmarkdown_2.31     grid_4.6.0         evaluate_1.0.5     jquerylib_0.1.4   
+#> [21] fastmap_1.2.0      yaml_2.3.12        lifecycle_1.0.5    compiler_4.6.0    
+#> [25] RColorBrewer_1.1-3 fs_2.1.0           Rcpp_1.1.1-1.1     farver_2.1.2      
+#> [29] systemfonts_1.3.2  digest_0.6.39      R6_2.6.1           bslib_0.11.0      
+#> [33] withr_3.0.2        gtable_0.3.6       tools_4.6.0        pkgdown_2.2.0     
+#> [37] ggplot2_4.0.3      cachem_1.1.0       desc_1.4.3
 ```

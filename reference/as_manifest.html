@@ -13,7 +13,7 @@ into PESTO-specific list internals."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -70,8 +70,10 @@ registered against this generic).</p></dd>
 timestamp+hash slug), <code>seed</code> (integer, defaults to <code>NA_integer_</code>),
 <code>fidelity</code> (structured provenance list or <code>NULL</code>; defaults to the
 record captured by <code><a href="pesto_ies_callback.html">pesto_ies_callback()</a></code> for a multi-fidelity run),
-<code>apsim_version</code> (character,
-defaults to <code>NA_character_</code>).</p></dd>
+<code>apsim_version</code> (character, defaults to <code>NA_character_</code>; pass
+<code>attr(fm, "apsim_version")</code> from an <code><a href="apsim_callback.html">apsim_callback()</a></code> forward model
+to ground the run to its simulator), and <code>obs_schema</code> (a grounded
+semantic descriptor from <code><a href="pesto_obs_schema.html">pesto_obs_schema()</a></code> or <code>NULL</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">

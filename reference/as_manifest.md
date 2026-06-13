@@ -28,7 +28,12 @@ as_manifest(x, ...)
   `NULL`; defaults to the record captured by
   [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
   for a multi-fidelity run), `apsim_version` (character, defaults to
-  `NA_character_`).
+  `NA_character_`; pass `attr(fm, "apsim_version")` from an
+  [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
+  forward model to ground the run to its simulator), and `obs_schema` (a
+  grounded semantic descriptor from
+  [`pesto_obs_schema()`](https://max578.github.io/PESTO/reference/pesto_obs_schema.md)
+  or `NULL`).
 
 ## Value
 

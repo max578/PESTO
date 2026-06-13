@@ -1,10 +1,76 @@
 # Changelog
 
-## PESTO (development version)
+## PESTO 0.7.0
 
-- Post-0.6.0 development cycle. Readied as the authoritative
-  ensemble-manifest emitter for orchestra-coordinated runs (no API
-  change).
+The release that readies PESTO as the authoritative ensemble-manifest
+emitter for orchestra-coordinated runs and broadens the forward-model
+surface beyond the `apsimx` simulator to native
+ordinary-differential-equation models.
+
+### New features
+
+- **ODE / compartmental forward-model templates.** New exported builders
+  turn a system of ordinary differential equations into a typed
+  [`pesto_forward_model()`](https://max578.github.io/PESTO/reference/pesto_forward_model.md)
+  that plugs straight into
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md),
+  a
+  [`pesto_multifidelity_model()`](https://max578.github.io/PESTO/reference/pesto_multifidelity_model.md)
+  stack, and the manifest emitter – the ODE analogue of the
+  [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
+  adapter.
+  [`ode_forward_model()`](https://max578.github.io/PESTO/reference/ode_forward_model.md)
+  is the generic builder (supply a `function(t, y, theta)` right-hand
+  side, the initial state, and the time grid);
+  [`crop_growth_forward_model()`](https://max578.github.io/PESTO/reference/crop_growth_forward_model.md)
+  is the logistic dry-matter-accumulation crop template (Goudriaan &
+  Monteith 1990); and
+  [`seir_forward_model()`](https://max578.github.io/PESTO/reference/seir_forward_model.md)
+  is the closed-population SEIR epidemic template (Anderson & May 1991).
+  Integration is a self-contained fixed-step RK4 by default (no new hard
+  dependency); `solver = "desolve"` delegates to the optional `deSolve`
+  package for stiff systems. Each template is exercised by a
+  simulate-forward-then-invert test that recovers the generating
+  parameters.
+
+- **Manifest schema `1.1.0`: grounded semantic descriptor
+  (`obs_schema`).** `pesto_ensemble_manifest` gains an optional
+  `obs_schema` slot stating the physical quantity and unit of each
+  output and parameter column (plus optional per-column grounding
+  provenance: `verified_on`, `oracle_kind`, `evidence_path`). Build one
+  with the new exported
+  [`pesto_obs_schema()`](https://max578.github.io/PESTO/reference/pesto_obs_schema.md)
+  and pass it through `as_manifest(fit, obs_schema = ...)`. The
+  descriptor turns column meaning from out-of-band roxygen convention
+  into a machine-checkable field, so a downstream consumer can verify
+  two manifests are commensurable by name rather than positionally. The
+  class validator rejects a descriptor naming a column that does not
+  exist in the data. `obs_schema` is provenance metadata and is not
+  folded into `data_hash` (correspondence is grounded by an independent
+  consumer, not by self-hash). Additive and backward-compatible: a
+  `1.0.0` manifest reads back unchanged with `obs_schema = NULL`.
+
+- **[`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
+  stamps the in-use APSIM version.** The returned forward-model closure
+  now carries an `"apsim_version"` attribute (from
+  [`apsimx::apsim_version()`](https://rdrr.io/pkg/apsimx/man/apsim_version.html),
+  `NA_character_` when undeterminable), so a calibrated run can be
+  grounded to the exact simulator that produced it via
+  `as_manifest(fit, apsim_version = attr(fm, "apsim_version"))`.
+
+### Minor improvements and fixes
+
+- The *In-Process IES via R Callback* vignette gains an
+  over-determination guard section: it shows how conditioning on a
+  likelihood tighter than the data deserve (passing the standard error
+  of a replicate mean, $`\sigma/\sqrt{m}`$, instead of the
+  field-realistic replicate spread $`\sigma`$) collapses the ensemble
+  and produces a confidently-wrong posterior, and how
+  [`ensemble_spread_ess()`](https://max578.github.io/PESTO/reference/ensemble_spread_ess.md)
+  and credible-interval coverage diagnose it.
+
+- [`pesto_obs_schema()`](https://max578.github.io/PESTO/reference/pesto_obs_schema.md)
+  gains a runnable example.
 
 ## PESTO 0.6.0
 
@@ -493,7 +559,7 @@ canon recipes on the `max578/PESTO` channel.
   `tools/pestpp_benchmark/scenario_a_pestpp_ies.rds` is present and
   `PESTO_PESTPP_BIN` resolves, the vignette extends the agreement plot
   with the live binary’s posterior.
-- Hardcoded `/Users/a1222812/...` path replaced with
+- Hardcoded local absolute path replaced with
   `Sys.getenv("PESTO_PESTPP_BIN")` + `Sys.which("pestpp-ies")` fallback.
 - New `tools/pestpp_benchmark/run_benchmark.R` regenerates both caches
   deterministically. Documented in `CONTRIBUTING.md`.

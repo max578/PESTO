@@ -26,6 +26,7 @@
 <url><loc>https://max578.github.io/PESTO/reference/compute_phi.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/correlation_localisation.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/create_pest_scenario.html</loc></url>
+<url><loc>https://max578.github.io/PESTO/reference/crop_growth_forward_model.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/dot-find_pestpp_exe.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/dot-read_ensemble_binary.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/ensemble_solution.html</loc></url>
@@ -36,6 +37,7 @@
 <url><loc>https://max578.github.io/PESTO/reference/gaspari_cohn.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/index.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/mf_control_variate.html</loc></url>
+<url><loc>https://max578.github.io/PESTO/reference/ode_forward_model.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_ensemble_manifest.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_evaluate.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_forward_model.html</loc></url>
@@ -46,6 +48,7 @@
 <url><loc>https://max578.github.io/PESTO/reference/pesto_inflation.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_localisation.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_multifidelity_model.html</loc></url>
+<url><loc>https://max578.github.io/PESTO/reference/pesto_obs_schema.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_reference_ies.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_sensitivity.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_surrogate_ies.html</loc></url>
@@ -62,6 +65,7 @@
 <url><loc>https://max578.github.io/PESTO/reference/read_manifest.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/read_pst.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/rsvd.html</loc></url>
+<url><loc>https://max578.github.io/PESTO/reference/seir_forward_model.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/surrogate_ensemble_update.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/train_gp_surrogate.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/train_rff_surrogate.html</loc></url>

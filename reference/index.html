@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -197,6 +197,36 @@
 
         </dt>
         <dd>Affine control-variate bias correction across fidelities</dd>
+      </dl></div><div class="section level2">
+      <h2 id="ode-compartmental-forward-model-templates">ODE / compartmental forward-model templates<a class="anchor" aria-label="anchor" href="#ode-compartmental-forward-model-templates"></a></h2>
+
+      <div class="section-desc"><p>Ready-to-use differential-equation forward models – a generic ODE builder plus crop-growth and SEIR specialisations – that plug into the IES driver as typed forward-model objects.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="ode_forward_model.html">ode_forward_model()</a></code>
+
+        </dt>
+        <dd>Forward Model from a System of Ordinary Differential Equations</dd>
+
+        <dt>
+
+          <code><a href="crop_growth_forward_model.html">crop_growth_forward_model()</a></code>
+
+        </dt>
+        <dd>Crop-Growth Forward Model (Logistic / Expolinear Biomass)</dd>
+
+        <dt>
+
+          <code><a href="seir_forward_model.html">seir_forward_model()</a></code>
+
+        </dt>
+        <dd>SEIR Compartmental Forward Model</dd>
       </dl></div><div class="section level2">
       <h2 id="in-process-ies-via-r-callback">In-process IES via R callback<a class="anchor" aria-label="anchor" href="#in-process-ies-via-r-callback"></a></h2>
 
@@ -419,6 +449,13 @@
 
         </dt>
         <dd>PESTO Ensemble Manifest (S7 class)</dd>
+
+        <dt>
+
+          <code><a href="pesto_obs_schema.html">pesto_obs_schema()</a></code>
+
+        </dt>
+        <dd>Build a grounded <code>obs_schema</code> descriptor for a manifest</dd>
 
         <dt>
 

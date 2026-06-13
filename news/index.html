@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -37,9 +37,20 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="pesto-development-version">PESTO (development version)<a class="anchor" aria-label="anchor" href="#pesto-development-version"></a></h2>
-<ul><li>Post-0.6.0 development cycle. Readied as the authoritative ensemble-manifest emitter for orchestra-coordinated runs (no API change).</li>
+<h2 class="pkg-version" data-toc-text="0.7.0" id="pesto-070">PESTO 0.7.0<a class="anchor" aria-label="anchor" href="#pesto-070"></a></h2>
+<p>The release that readies PESTO as the authoritative ensemble-manifest emitter for orchestra-coordinated runs and broadens the forward-model surface beyond the <code>apsimx</code> simulator to native ordinary-differential-equation models.</p>
+<div class="section level3">
+<h3 id="new-features-0-7-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-7-0"></a></h3>
+<ul><li><p><strong>ODE / compartmental forward-model templates.</strong> New exported builders turn a system of ordinary differential equations into a typed <code><a href="../reference/pesto_forward_model.html">pesto_forward_model()</a></code> that plugs straight into <code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code>, a <code><a href="../reference/pesto_multifidelity_model.html">pesto_multifidelity_model()</a></code> stack, and the manifest emitter – the ODE analogue of the <code><a href="../reference/apsim_callback.html">apsim_callback()</a></code> adapter. <code><a href="../reference/ode_forward_model.html">ode_forward_model()</a></code> is the generic builder (supply a <code>function(t, y, theta)</code> right-hand side, the initial state, and the time grid); <code><a href="../reference/crop_growth_forward_model.html">crop_growth_forward_model()</a></code> is the logistic dry-matter-accumulation crop template (Goudriaan &amp; Monteith 1990); and <code><a href="../reference/seir_forward_model.html">seir_forward_model()</a></code> is the closed-population SEIR epidemic template (Anderson &amp; May 1991). Integration is a self-contained fixed-step RK4 by default (no new hard dependency); <code>solver = "desolve"</code> delegates to the optional <code>deSolve</code> package for stiff systems. Each template is exercised by a simulate-forward-then-invert test that recovers the generating parameters.</p></li>
+<li><p><strong>Manifest schema <code>1.1.0</code>: grounded semantic descriptor (<code>obs_schema</code>).</strong> <code>pesto_ensemble_manifest</code> gains an optional <code>obs_schema</code> slot stating the physical quantity and unit of each output and parameter column (plus optional per-column grounding provenance: <code>verified_on</code>, <code>oracle_kind</code>, <code>evidence_path</code>). Build one with the new exported <code><a href="../reference/pesto_obs_schema.html">pesto_obs_schema()</a></code> and pass it through <code>as_manifest(fit, obs_schema = ...)</code>. The descriptor turns column meaning from out-of-band roxygen convention into a machine-checkable field, so a downstream consumer can verify two manifests are commensurable by name rather than positionally. The class validator rejects a descriptor naming a column that does not exist in the data. <code>obs_schema</code> is provenance metadata and is not folded into <code>data_hash</code> (correspondence is grounded by an independent consumer, not by self-hash). Additive and backward-compatible: a <code>1.0.0</code> manifest reads back unchanged with <code>obs_schema = NULL</code>.</p></li>
+<li><p><strong><code><a href="../reference/apsim_callback.html">apsim_callback()</a></code> stamps the in-use APSIM version.</strong> The returned forward-model closure now carries an <code>"apsim_version"</code> attribute (from <code><a href="https://rdrr.io/pkg/apsimx/man/apsim_version.html" class="external-link">apsimx::apsim_version()</a></code>, <code>NA_character_</code> when undeterminable), so a calibrated run can be grounded to the exact simulator that produced it via <code>as_manifest(fit, apsim_version = attr(fm, "apsim_version"))</code>.</p></li>
 </ul></div>
+<div class="section level3">
+<h3 id="minor-improvements-and-fixes-0-7-0">Minor improvements and fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-fixes-0-7-0"></a></h3>
+<ul><li><p>The <em>In-Process IES via R Callback</em> vignette gains an over-determination guard section: it shows how conditioning on a likelihood tighter than the data deserve (passing the standard error of a replicate mean, <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mi>/</mi><msqrt><mi>m</mi></msqrt></mrow><annotation encoding="application/x-tex">\sigma/\sqrt{m}</annotation></semantics></math>, instead of the field-realistic replicate spread <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>σ</mi><annotation encoding="application/x-tex">\sigma</annotation></semantics></math>) collapses the ensemble and produces a confidently-wrong posterior, and how <code><a href="../reference/ensemble_spread_ess.html">ensemble_spread_ess()</a></code> and credible-interval coverage diagnose it.</p></li>
+<li><p><code><a href="../reference/pesto_obs_schema.html">pesto_obs_schema()</a></code> gains a runnable example.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.6.0" id="pesto-060">PESTO 0.6.0<a class="anchor" aria-label="anchor" href="#pesto-060"></a></h2>
 <div class="section level3">
@@ -265,7 +276,7 @@
 <h3 id="self-contained-pestpp-ies-comparison-0-2-0">Self-contained <code>pestpp-ies</code> comparison<a class="anchor" aria-label="anchor" href="#self-contained-pestpp-ies-comparison-0-2-0"></a></h3>
 <ul><li>
 <code>vignettes/pestpp-comparison-and-simulation.Rmd</code> now compares PESTO native IES against <code><a href="../reference/pesto_reference_ies.html">pesto_reference_ies()</a></code> by default — no upstream binary required. The pure-R reference cache ships at <code>inst/extdata/pestpp_cache/scenario_a_reference.rds</code> (SHA-256-pinned to the prior ensemble). When the developer-side cache <code>tools/pestpp_benchmark/scenario_a_pestpp_ies.rds</code> is present and <code>PESTO_PESTPP_BIN</code> resolves, the vignette extends the agreement plot with the live binary’s posterior.</li>
-<li>Hardcoded <code>/Users/a1222812/...</code> path replaced with <code>Sys.getenv("PESTO_PESTPP_BIN")</code> + <code>Sys.which("pestpp-ies")</code> fallback.</li>
+<li>Hardcoded local absolute path replaced with <code>Sys.getenv("PESTO_PESTPP_BIN")</code> + <code>Sys.which("pestpp-ies")</code> fallback.</li>
 <li>New <code>tools/pestpp_benchmark/run_benchmark.R</code> regenerates both caches deterministically. Documented in <code>CONTRIBUTING.md</code>.</li>
 </ul></div>
 <div class="section level3">

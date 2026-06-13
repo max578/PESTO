@@ -71,7 +71,7 @@ cat("pestpp-ies on PATH:   ", pestpp_available, "\n",
 
 print(pesto_version())
 #> $pesto_version
-#> [1] "0.6.0.9000"
+#> [1] "0.7.0"
 #> 
 #> $pestpp_version
 #> [1] "not found"
@@ -654,7 +654,7 @@ mda_upgrade <- ensemble_solution_mda(
 )
 cat(sprintf("Scenario B: %d iter, %d real, %d par, %d obs in %.2fs\n",
             n_iter_B, n_real_B, n_par_B, n_obs_B, runtime_B))
-#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.66s
+#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.65s
 cat(sprintf("Phi reduction: %.2e -> %.2e  (factor %.1f)\n",
             phi_B[1L], phi_B[length(phi_B)], phi_B[1L] / phi_B[length(phi_B)]))
 #> Phi reduction: 1.69e+03 -> 3.51e+02  (factor 4.8)
@@ -784,11 +784,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 
 | rank | rSVD_ms | LAPACK_ms | speedup_rSVD |
 |-----:|--------:|----------:|-------------:|
-|    5 |   2.875 |    41.369 |        14.39 |
-|   20 |   6.191 |    41.423 |         6.69 |
-|   50 |  10.805 |    41.355 |         3.83 |
-|  100 |  37.405 |    41.254 |         1.10 |
-|  180 |  74.160 |    41.609 |         0.56 |
+|    5 |   2.929 |    42.332 |        14.45 |
+|   20 |   6.181 |    41.477 |         6.71 |
+|   50 |  10.851 |    41.268 |         3.80 |
+|  100 |  37.340 |    41.364 |         1.11 |
+|  180 |  74.033 |    41.162 |         0.56 |
 
 rSVD vs LAPACK on a 400 x 200 matrix as k varies. {.table}
 
@@ -801,7 +801,7 @@ auto_res <- adaptive_svd(A_bench, k = 20L, method = "auto")
 acc_res  <- accelerate_svd(A_bench, thin = TRUE)
 cat("auto chose:    ", auto_res$method_used,
     " in ", round(auto_res$time_ms, 2), "ms\n", sep = "")
-#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 6.13ms
+#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 6.18ms
 cat("LAPACK direct: ", round(length(acc_res$d), 0),
     " singular values returned\n", sep = "")
 #> LAPACK direct: 200 singular values returned
@@ -1199,9 +1199,9 @@ knitr::kable(cov_dt, caption = "Vignette coverage of NAMESPACE exports.")
 
 | metric                             | value |
 |:-----------------------------------|------:|
-| Exports declared                   |  49.0 |
+| Exports declared                   |  53.0 |
 | Exports exercised in this vignette |  28.0 |
-| Coverage (%)                       |  57.1 |
+| Coverage (%)                       |  52.8 |
 
 Vignette coverage of NAMESPACE exports. {.table}
 
@@ -1225,7 +1225,7 @@ if (length(unknown_in_use) > 0L) {
 .vig_t1 <- proc.time()["elapsed"]
 cat(sprintf("Vignette wall-clock: %.1f s\n",
             as.numeric(.vig_t1 - .vig_t0)))
-#> Vignette wall-clock: 12.0 s
+#> Vignette wall-clock: 12.3 s
 ```
 
 ``` r
@@ -1253,23 +1253,23 @@ sessionInfo()
 #> 
 #> other attached packages:
 #> [1] viridis_0.6.5     viridisLite_0.4.3 ggplot2_4.0.3     data.table_1.18.4
-#> [5] PESTO_0.6.0.9000 
+#> [5] PESTO_0.7.0      
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] microbenchmark_1.5.0 vctrs_0.7.3          cli_3.6.6           
-#>  [4] knitr_1.51           rlang_1.2.0          xfun_0.58           
-#>  [7] S7_0.2.2             textshaping_1.0.5    jsonlite_2.0.0      
-#> [10] labeling_0.4.3       glue_1.8.1           htmltools_0.5.9     
-#> [13] gridExtra_2.3        ragg_1.5.2           sass_0.4.10         
-#> [16] scales_1.4.0         rmarkdown_2.31       grid_4.6.0          
-#> [19] evaluate_1.0.5       jquerylib_0.1.4      fastmap_1.2.0       
-#> [22] yaml_2.3.12          lifecycle_1.0.5      compiler_4.6.0      
-#> [25] RColorBrewer_1.1-3   fs_2.1.0             Rcpp_1.1.1-1.1      
-#> [28] lattice_0.22-9       farver_2.1.2         systemfonts_1.3.2   
-#> [31] digest_0.6.39        R6_2.6.1             Matrix_1.7-5        
-#> [34] bslib_0.11.0         withr_3.0.2          tools_4.6.0         
-#> [37] gtable_0.3.6         pkgdown_2.2.0        cachem_1.1.0        
-#> [40] desc_1.4.3
+#>  [1] Matrix_1.7-5         gtable_0.3.6         jsonlite_2.0.0      
+#>  [4] compiler_4.6.0       Rcpp_1.1.1-1.1       gridExtra_2.3       
+#>  [7] jquerylib_0.1.4      systemfonts_1.3.2    scales_1.4.0        
+#> [10] textshaping_1.0.5    yaml_2.3.12          fastmap_1.2.0       
+#> [13] lattice_0.22-9       R6_2.6.1             microbenchmark_1.5.0
+#> [16] labeling_0.4.3       knitr_1.51           desc_1.4.3          
+#> [19] bslib_0.11.0         RColorBrewer_1.1-3   rlang_1.2.0         
+#> [22] cachem_1.1.0         xfun_0.58            fs_2.1.0            
+#> [25] sass_0.4.10          S7_0.2.2             otel_0.2.0          
+#> [28] cli_3.6.6            pkgdown_2.2.0        withr_3.0.2         
+#> [31] digest_0.6.39        grid_4.6.0           lifecycle_1.0.5     
+#> [34] vctrs_0.7.3          evaluate_1.0.5       glue_1.8.1          
+#> [37] farver_2.1.2         ragg_1.5.2           rmarkdown_2.31      
+#> [40] tools_4.6.0          htmltools_0.5.9
 ```
 
 ## References

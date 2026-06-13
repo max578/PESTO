@@ -66,6 +66,19 @@ combiner.
 - [`mf_control_variate()`](https://max578.github.io/PESTO/reference/mf_control_variate.md)
   : Affine control-variate bias correction across fidelities
 
+## ODE / compartmental forward-model templates
+
+Ready-to-use differential-equation forward models – a generic ODE
+builder plus crop-growth and SEIR specialisations – that plug into the
+IES driver as typed forward-model objects.
+
+- [`ode_forward_model()`](https://max578.github.io/PESTO/reference/ode_forward_model.md)
+  : Forward Model from a System of Ordinary Differential Equations
+- [`crop_growth_forward_model()`](https://max578.github.io/PESTO/reference/crop_growth_forward_model.md)
+  : Crop-Growth Forward Model (Logistic / Expolinear Biomass)
+- [`seir_forward_model()`](https://max578.github.io/PESTO/reference/seir_forward_model.md)
+  : SEIR Compartmental Forward Model
+
 ## In-process IES via R callback
 
 Driver and APSIM adapter for forward-model callable IES, bypassing the
@@ -150,6 +163,11 @@ kernR and proxymix.
 
 - [`pesto_ensemble_manifest`](https://max578.github.io/PESTO/reference/pesto_ensemble_manifest.md)
   : PESTO Ensemble Manifest (S7 class)
+
+- [`pesto_obs_schema()`](https://max578.github.io/PESTO/reference/pesto_obs_schema.md)
+  :
+
+  Build a grounded `obs_schema` descriptor for a manifest
 
 - [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
   :

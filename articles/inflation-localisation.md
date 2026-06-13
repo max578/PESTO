@@ -234,16 +234,17 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.6.0.9000
+#> [1] PESTO_0.7.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       
-#>  [5] xfun_0.58          S7_0.2.2           textshaping_1.0.5  jsonlite_2.0.0    
-#>  [9] data.table_1.18.4  glue_1.8.1         htmltools_0.5.9    ragg_1.5.2        
-#> [13] sass_0.4.10        scales_1.4.0       rmarkdown_2.31     grid_4.6.0        
-#> [17] evaluate_1.0.5     jquerylib_0.1.4    fastmap_1.2.0      yaml_2.3.12       
-#> [21] lifecycle_1.0.5    compiler_4.6.0     RColorBrewer_1.1-3 fs_2.1.0          
-#> [25] Rcpp_1.1.1-1.1     farver_2.1.2       systemfonts_1.3.2  digest_0.6.39     
-#> [29] R6_2.6.1           bslib_0.11.0       tools_4.6.0        gtable_0.3.6      
-#> [33] pkgdown_2.2.0      ggplot2_4.0.3      cachem_1.1.0       desc_1.4.3
+#>  [5] xfun_0.58          otel_0.2.0         S7_0.2.2           textshaping_1.0.5 
+#>  [9] jsonlite_2.0.0     data.table_1.18.4  glue_1.8.1         htmltools_0.5.9   
+#> [13] ragg_1.5.2         sass_0.4.10        scales_1.4.0       rmarkdown_2.31    
+#> [17] grid_4.6.0         evaluate_1.0.5     jquerylib_0.1.4    fastmap_1.2.0     
+#> [21] yaml_2.3.12        lifecycle_1.0.5    compiler_4.6.0     RColorBrewer_1.1-3
+#> [25] fs_2.1.0           Rcpp_1.1.1-1.1     farver_2.1.2       systemfonts_1.3.2 
+#> [29] digest_0.6.39      R6_2.6.1           bslib_0.11.0       gtable_0.3.6      
+#> [33] tools_4.6.0        pkgdown_2.2.0      ggplot2_4.0.3      cachem_1.1.0      
+#> [37] desc_1.4.3
 ```
