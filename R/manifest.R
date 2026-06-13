@@ -184,6 +184,25 @@ pesto_ensemble_manifest <- S7::new_class(
 #'   be omitted (`NULL`).
 #' @seealso The manifest contract `inst/manifest_contract.md` and the
 #'   orchestra provenance vocabulary.
+#' @examples
+#' # Describe two output columns and one parameter, grounding the yield
+#' # column against a dated oracle and leaving the rest unverified.
+#' schema <- pesto_obs_schema(
+#'   outputs = data.frame(
+#'     name        = c("yield", "biomass"),
+#'     quantity    = c("grain yield", "above-ground biomass"),
+#'     unit        = c("kg/ha", "kg/ha"),
+#'     verified_on = c(as.Date("2026-06-01"), as.Date(NA)),
+#'     stringsAsFactors = FALSE
+#'   ),
+#'   params = data.frame(
+#'     name      = "rue",
+#'     apsim_node = "Wheat.Leaf.Photosynthesis.RUE.FixedValue",
+#'     unit      = "g/MJ",
+#'     stringsAsFactors = FALSE
+#'   )
+#' )
+#' str(schema, max.level = 2L)
 #' @export
 pesto_obs_schema <- function(outputs = NULL, params = NULL) {
   norm <- function(df, required) {

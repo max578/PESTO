@@ -39,6 +39,15 @@ reference:
   - pesto_multifidelity_model
   - mf_control_variate
 
+- title: ODE / compartmental forward-model templates
+  desc: Ready-to-use differential-equation forward models -- a generic ODE
+    builder plus crop-growth and SEIR specialisations -- that plug into the IES
+    driver as typed forward-model objects.
+  contents:
+  - ode_forward_model
+  - crop_growth_forward_model
+  - seir_forward_model
+
 - title: In-process IES via R callback
   desc: Driver and APSIM adapter for forward-model callable IES, bypassing the .pst file cycle.
   contents:
@@ -89,6 +98,7 @@ reference:
   desc: Versioned, hashed, provenance-tracked ensemble-run container consumed by kernR and proxymix.
   contents:
   - pesto_ensemble_manifest
+  - pesto_obs_schema
   - as_manifest
   - write_manifest
   - read_manifest

@@ -3,6 +3,33 @@
 * Post-0.6.0 development cycle. Readied as the authoritative ensemble-manifest
   emitter for orchestra-coordinated runs.
 
+## New features
+
+* **ODE / compartmental forward-model templates.** New exported builders turn
+  a system of ordinary differential equations into a typed
+  `pesto_forward_model()` that plugs straight into `pesto_ies_callback()`, a
+  `pesto_multifidelity_model()` stack, and the manifest emitter -- the ODE
+  analogue of the `apsim_callback()` adapter. `ode_forward_model()` is the
+  generic builder (supply a `function(t, y, theta)` right-hand side, the
+  initial state, and the time grid); `crop_growth_forward_model()` is the
+  logistic dry-matter-accumulation crop template (Goudriaan & Monteith 1990);
+  and `seir_forward_model()` is the closed-population SEIR epidemic template
+  (Anderson & May 1991). Integration is a self-contained fixed-step RK4 by
+  default (no new hard dependency); `solver = "desolve"` delegates to the
+  optional `deSolve` package for stiff systems. Each template is exercised by a
+  simulate-forward-then-invert test that recovers the generating parameters.
+
+## Minor improvements and fixes
+
+* The *In-Process IES via R Callback* vignette gains an over-determination
+  guard section: it shows how conditioning on a likelihood tighter than the
+  data deserve (passing the standard error of a replicate mean,
+  $\sigma/\sqrt{m}$, instead of the field-realistic replicate spread $\sigma$)
+  collapses the ensemble and produces a confidently-wrong posterior, and how
+  `ensemble_spread_ess()` and credible-interval coverage diagnose it.
+
+* `pesto_obs_schema()` gains a runnable example.
+
 * **Manifest schema `1.1.0`: grounded semantic descriptor (`obs_schema`).**
   `pesto_ensemble_manifest` gains an optional `obs_schema` slot stating the
   physical quantity and unit of each output and parameter column (plus optional
