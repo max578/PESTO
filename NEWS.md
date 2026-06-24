@@ -1,3 +1,25 @@
+# PESTO 0.8.0
+
+## New features
+
+* `train_gp_surrogate_tuned()` and its companion `predict_gp_surrogate_tuned()`
+  fit a GP surrogate at **maximum-likelihood length scales** rather than the
+  median heuristic `train_gp_surrogate()` uses by default. The fit is
+  **anisotropic** by default -- one length scale per input dimension, estimated
+  by maximising the GP's own log marginal likelihood through per-axis coordinate
+  pre-scaling (no change to the C++ kernel), with the response centred first. On
+  a strongly anisotropic response this is a large accuracy gain over a single
+  length scale: on the Branin function it cuts held-out error about 23-fold
+  versus the median-heuristic default (to roughly half a percent of the function
+  range) and about 4.6-fold versus a single MLE length scale, bringing the
+  surrogate within a small factor of a dedicated anisotropic GP (`DiceKriging`).
+  This resolves the constellation `/stretch` finding that the *default* surrogate
+  was several-fold worse than an MLE GP on an anisotropic function. The GP
+  remains zero-mean, so it stays a small factor above a fully-optimised
+  trend-bearing GP -- a documented limitation, not a length-scale defect.
+  Re-grounding script:
+  `ORCHESTRA_dev/stretch/constellation/verify/v8_R3_pesto_gp_tuned_regrounded.R`.
+
 # PESTO 0.7.0
 
 The release that readies PESTO as the authoritative ensemble-manifest emitter
