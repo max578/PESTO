@@ -105,7 +105,7 @@ test_that("max_fail_frac aborts past the threshold", {
 test_that("multicore evaluation matches serial and is reproducible", {
   skip_on_os("windows")              # mclapply is serial on Windows
   skip_on_cran()
-  if (parallel::detectCores() < 2L) skip("needs >= 2 cores")
+  skip_if(parallel::detectCores() < 2L, "needs >= 2 cores")
   lm <- linear_model(seed = 3L)
   theta <- matrix(stats::rnorm(8L * lm$npar), 8L, lm$npar)
   serial <- pesto_forward_model(fn = lm$fn, n_obs = lm$nobs)
