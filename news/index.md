@@ -1,5 +1,36 @@
 # Changelog
 
+## PESTO (development version)
+
+- Post-0.8.0 development cycle (no API or behaviour change).
+
+## PESTO 0.8.0
+
+### New features
+
+- [`train_gp_surrogate_tuned()`](https://max578.github.io/PESTO/reference/train_gp_surrogate_tuned.md)
+  and its companion
+  [`predict_gp_surrogate_tuned()`](https://max578.github.io/PESTO/reference/predict_gp_surrogate_tuned.md)
+  fit a GP surrogate at **maximum-likelihood length scales** rather than
+  the median heuristic
+  [`train_gp_surrogate()`](https://max578.github.io/PESTO/reference/train_gp_surrogate.md)
+  uses by default. The fit is **anisotropic** by default – one length
+  scale per input dimension, estimated by maximising the GP’s own log
+  marginal likelihood through per-axis coordinate pre-scaling (no change
+  to the C++ kernel), with the response centred first. On a strongly
+  anisotropic response this is a large accuracy gain over a single
+  length scale: on the Branin function it cuts held-out error about
+  23-fold versus the median-heuristic default (to roughly half a percent
+  of the function range) and about 4.6-fold versus a single MLE length
+  scale, bringing the surrogate within a small factor of a dedicated
+  anisotropic GP (`DiceKriging`). This resolves the constellation
+  `/stretch` finding that the *default* surrogate was several-fold worse
+  than an MLE GP on an anisotropic function. The GP remains zero-mean,
+  so it stays a small factor above a fully-optimised trend-bearing GP –
+  a documented limitation, not a length-scale defect. Re-grounding
+  script:
+  `ORCHESTRA_dev/stretch/constellation/verify/v8_R3_pesto_gp_tuned_regrounded.R`.
+
 ## PESTO 0.7.0
 
 The release that readies PESTO as the authoritative ensemble-manifest
@@ -343,8 +374,8 @@ canon recipes on the `max578/PESTO` channel.
 
 - `codemeta.json` `copyrightHolder` corrected from
   `Organization "Supremum Consulting Ltd"` to `Person "Max Moldovan"`
-  with ORCID `0000-0001-9680-8474` and University of Adelaide
-  affiliation, matching `Authors@R` and `LICENSE.md`.
+  with ORCID `0000-0001-9680-8474` and Adelaide University affiliation,
+  matching `Authors@R` and `LICENSE.md`.
 
 #### AAGI canon recipes added
 

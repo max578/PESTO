@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,18 @@
       <small>Source: <a href="https://github.com/max578/PESTO/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="pesto-development-version">PESTO (development version)<a class="anchor" aria-label="anchor" href="#pesto-development-version"></a></h2>
+<ul><li>Post-0.8.0 development cycle (no API or behaviour change).</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.8.0" id="pesto-080">PESTO 0.8.0<a class="anchor" aria-label="anchor" href="#pesto-080"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-8-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-8-0"></a></h3>
+<ul><li>
+<code><a href="../reference/train_gp_surrogate_tuned.html">train_gp_surrogate_tuned()</a></code> and its companion <code><a href="../reference/predict_gp_surrogate_tuned.html">predict_gp_surrogate_tuned()</a></code> fit a GP surrogate at <strong>maximum-likelihood length scales</strong> rather than the median heuristic <code><a href="../reference/train_gp_surrogate.html">train_gp_surrogate()</a></code> uses by default. The fit is <strong>anisotropic</strong> by default – one length scale per input dimension, estimated by maximising the GP’s own log marginal likelihood through per-axis coordinate pre-scaling (no change to the C++ kernel), with the response centred first. On a strongly anisotropic response this is a large accuracy gain over a single length scale: on the Branin function it cuts held-out error about 23-fold versus the median-heuristic default (to roughly half a percent of the function range) and about 4.6-fold versus a single MLE length scale, bringing the surrogate within a small factor of a dedicated anisotropic GP (<code>DiceKriging</code>). This resolves the constellation <code>/stretch</code> finding that the <em>default</em> surrogate was several-fold worse than an MLE GP on an anisotropic function. The GP remains zero-mean, so it stays a small factor above a fully-optimised trend-bearing GP – a documented limitation, not a length-scale defect. Re-grounding script: <code>ORCHESTRA_dev/stretch/constellation/verify/v8_R3_pesto_gp_tuned_regrounded.R</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.7.0" id="pesto-070">PESTO 0.7.0<a class="anchor" aria-label="anchor" href="#pesto-070"></a></h2>
 <p>The release that readies PESTO as the authoritative ensemble-manifest emitter for orchestra-coordinated runs and broadens the forward-model surface beyond the <code>apsimx</code> simulator to native ordinary-differential-equation models.</p>
@@ -172,7 +184,7 @@
 <div class="section level4">
 <h4 id="sole-copyright-holder-0-4-0">Sole copyright holder<a class="anchor" aria-label="anchor" href="#sole-copyright-holder-0-4-0"></a></h4>
 <ul><li>
-<code>codemeta.json</code> <code>copyrightHolder</code> corrected from <code>Organization "Supremum Consulting Ltd"</code> to <code>Person "Max Moldovan"</code> with ORCID <code>0000-0001-9680-8474</code> and University of Adelaide affiliation, matching <code>Authors@R</code> and <code>LICENSE.md</code>.</li>
+<code>codemeta.json</code> <code>copyrightHolder</code> corrected from <code>Organization "Supremum Consulting Ltd"</code> to <code>Person "Max Moldovan"</code> with ORCID <code>0000-0001-9680-8474</code> and Adelaide University affiliation, matching <code>Authors@R</code> and <code>LICENSE.md</code>.</li>
 </ul></div>
 <div class="section level4">
 <h4 id="aagi-canon-recipes-added-0-4-0">AAGI canon recipes added<a class="anchor" aria-label="anchor" href="#aagi-canon-recipes-added-0-4-0"></a></h4>

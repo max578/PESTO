@@ -11,7 +11,7 @@ Each iteration:"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,7 +63,8 @@ Each iteration:</p>
 <span>  inflation <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  localisation <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  on_failure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"na"</span>, <span class="st">"stop"</span><span class="op">)</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  phi_tol <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -88,7 +89,9 @@ bare function.</p></dd>
 <dt id="arg-prior-ensemble">prior_ensemble<a class="anchor" aria-label="anchor" href="#arg-prior-ensemble"></a></dt>
 <dd><p>Matrix or data.table, <code>nreal x npar</code>. Columns are
 parameters; an optional <code>real_name</code> column is preserved if present.
-Column names supply parameter names.</p></dd>
+Column names supply parameter names. To <strong>warm-start</strong>, pass the parameter
+columns of a previous run's <code>par_ensemble</code> as the prior of the next: a
+posterior ensemble is itself a valid prior ensemble.</p></dd>
 
 
 <dt id="arg-obs">obs<a class="anchor" aria-label="anchor" href="#arg-obs"></a></dt>
@@ -157,6 +160,16 @@ forward unchanged and proceeds; <code>"stop"</code> aborts on any failure.</p></
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Logical. Print per-iteration phi summaries.</p></dd>
 
+
+<dt id="arg-phi-tol">phi_tol<a class="anchor" aria-label="anchor" href="#arg-phi-tol"></a></dt>
+<dd><p>Numeric scalar or <code>NULL</code>. Optional convergence tolerance:
+when non-<code>NULL</code>, iteration stops early once the relative reduction in the
+mean objective function (phi) between successive iterations falls below
+<code>phi_tol</code> – the phi-reduction stopping rule of White (2018). <code>NULL</code>
+(default) runs the full <code>noptmax</code> iterations, leaving the update
+byte-identical to the unchecked smoother. Use a smaller <code>phi_tol</code> to
+demand more iterations, a larger one to stop sooner.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -187,6 +200,15 @@ evaluations across all iterations (including the final refresh).</p></dd>
 
 <dt>failure_rate</dt>
 <dd><p>Fraction of forward evaluations that returned NA.</p></dd>
+
+<dt>converged</dt>
+<dd><p>Logical: <code>TRUE</code> if the run stopped early on the
+<code>phi_tol</code> convergence criterion; <code>FALSE</code> when <code>phi_tol</code> is <code>NULL</code> or
+the full <code>noptmax</code> was reached.</p></dd>
+
+<dt>n_iterations</dt>
+<dd><p>Number of IES iterations actually run (fewer than
+<code>noptmax</code> if the convergence checker stopped the run early).</p></dd>
 
 <dt>fidelity</dt>
 <dd><p>For a <code><a href="pesto_multifidelity_model.html">pesto_multifidelity_model()</a></code> run, a provenance
@@ -233,6 +255,9 @@ is the plug-in point for bias-corrected surrogate cascades.</p>
     <p>Chen, Y. &amp; Oliver, D.S. (2013). Levenberg-Marquardt forms of the
 iterative ensemble smoother for efficient history matching and
 uncertainty quantification. <em>Computational Geosciences</em>, 17(4), 689–703.</p>
+<p>White, J.T. (2018). A model-independent iterative ensemble smoother for
+efficient history-matching and uncertainty quantification in very high
+dimensions. <em>Environmental Modelling &amp; Software</em>, 109, 191–201.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

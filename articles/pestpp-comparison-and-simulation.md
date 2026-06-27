@@ -71,7 +71,7 @@ cat("pestpp-ies on PATH:   ", pestpp_available, "\n",
 
 print(pesto_version())
 #> $pesto_version
-#> [1] "0.7.0"
+#> [1] "0.8.0.9000"
 #> 
 #> $pestpp_version
 #> [1] "not found"
@@ -80,7 +80,7 @@ print(pesto_version())
 #> [1] "x86_64-pc-linux-gnu"
 #> 
 #> $r_version
-#> [1] "R version 4.6.0 (2026-04-24)"
+#> [1] "R version 4.6.1 (2026-06-24)"
 ```
 
 ------------------------------------------------------------------------
@@ -784,11 +784,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 
 | rank | rSVD_ms | LAPACK_ms | speedup_rSVD |
 |-----:|--------:|----------:|-------------:|
-|    5 |   2.929 |    42.332 |        14.45 |
-|   20 |   6.181 |    41.477 |         6.71 |
-|   50 |  10.851 |    41.268 |         3.80 |
-|  100 |  37.340 |    41.364 |         1.11 |
-|  180 |  74.033 |    41.162 |         0.56 |
+|    5 |   2.682 |    39.938 |        14.89 |
+|   20 |   5.851 |    39.758 |         6.80 |
+|   50 |  10.052 |    39.230 |         3.90 |
+|  100 |  34.280 |    39.217 |         1.14 |
+|  180 |  70.110 |    39.324 |         0.56 |
 
 rSVD vs LAPACK on a 400 x 200 matrix as k varies. {.table}
 
@@ -801,7 +801,7 @@ auto_res <- adaptive_svd(A_bench, k = 20L, method = "auto")
 acc_res  <- accelerate_svd(A_bench, thin = TRUE)
 cat("auto chose:    ", auto_res$method_used,
     " in ", round(auto_res$time_ms, 2), "ms\n", sep = "")
-#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 6.18ms
+#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.82ms
 cat("LAPACK direct: ", round(length(acc_res$d), 0),
     " singular values returned\n", sep = "")
 #> LAPACK direct: 200 singular values returned
@@ -1001,7 +1001,7 @@ knitr::kable(sim_summary, caption = "Scenario C: aggregate diagnostics.")
 | Median phi reduction (1 iter) | 12.12 |
 | Mean surrogate savings (%)    |  0.00 |
 | Mean adaptive size            | 39.00 |
-| Median GPU-path time (ms)     |  0.26 |
+| Median GPU-path time (ms)     |  0.24 |
 | Replicates                    | 50.00 |
 
 Scenario C: aggregate diagnostics. {.table}
@@ -1199,9 +1199,9 @@ knitr::kable(cov_dt, caption = "Vignette coverage of NAMESPACE exports.")
 
 | metric                             | value |
 |:-----------------------------------|------:|
-| Exports declared                   |  53.0 |
+| Exports declared                   |  55.0 |
 | Exports exercised in this vignette |  28.0 |
-| Coverage (%)                       |  52.8 |
+| Coverage (%)                       |  50.9 |
 
 Vignette coverage of NAMESPACE exports. {.table}
 
@@ -1225,13 +1225,13 @@ if (length(unknown_in_use) > 0L) {
 .vig_t1 <- proc.time()["elapsed"]
 cat(sprintf("Vignette wall-clock: %.1f s\n",
             as.numeric(.vig_t1 - .vig_t0)))
-#> Vignette wall-clock: 12.3 s
+#> Vignette wall-clock: 12.0 s
 ```
 
 ``` r
 
 sessionInfo()
-#> R version 4.6.0 (2026-04-24)
+#> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.4 LTS
 #> 
@@ -1253,23 +1253,23 @@ sessionInfo()
 #> 
 #> other attached packages:
 #> [1] viridis_0.6.5     viridisLite_0.4.3 ggplot2_4.0.3     data.table_1.18.4
-#> [5] PESTO_0.7.0      
+#> [5] PESTO_0.8.0.9000 
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] Matrix_1.7-5         gtable_0.3.6         jsonlite_2.0.0      
-#>  [4] compiler_4.6.0       Rcpp_1.1.1-1.1       gridExtra_2.3       
+#>  [4] compiler_4.6.1       Rcpp_1.1.1-1.1       gridExtra_2.3.1     
 #>  [7] jquerylib_0.1.4      systemfonts_1.3.2    scales_1.4.0        
 #> [10] textshaping_1.0.5    yaml_2.3.12          fastmap_1.2.0       
 #> [13] lattice_0.22-9       R6_2.6.1             microbenchmark_1.5.0
 #> [16] labeling_0.4.3       knitr_1.51           desc_1.4.3          
 #> [19] bslib_0.11.0         RColorBrewer_1.1-3   rlang_1.2.0         
-#> [22] cachem_1.1.0         xfun_0.58            fs_2.1.0            
+#> [22] cachem_1.1.0         xfun_0.59            fs_2.1.0            
 #> [25] sass_0.4.10          S7_0.2.2             otel_0.2.0          
-#> [28] cli_3.6.6            pkgdown_2.2.0        withr_3.0.2         
-#> [31] digest_0.6.39        grid_4.6.0           lifecycle_1.0.5     
+#> [28] cli_3.6.6            pkgdown_2.2.0        withr_3.0.3         
+#> [31] digest_0.6.39        grid_4.6.1           lifecycle_1.0.5     
 #> [34] vctrs_0.7.3          evaluate_1.0.5       glue_1.8.1          
 #> [37] farver_2.1.2         ragg_1.5.2           rmarkdown_2.31      
-#> [40] tools_4.6.0          htmltools_0.5.9
+#> [40] tools_4.6.1          htmltools_0.5.9
 ```
 
 ## References

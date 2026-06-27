@@ -88,6 +88,9 @@ Driver and APSIM adapter for forward-model callable IES, bypassing the
   : Run IES with an In-Process R Callback Forward Model
 - [`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md)
   : Run a Sequential (Filter-Mode) Iterative Ensemble Smoother
+- [`print(`*`<pesto_ies_result>`*`)`](https://max578.github.io/PESTO/reference/pesto_ies_result-methods.md)
+  [`plot(`*`<pesto_ies_result>`*`)`](https://max578.github.io/PESTO/reference/pesto_ies_result-methods.md)
+  : Print and plot methods for PESTO ensemble-smoother results
 - [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
   : apsimx Forward-Model Adapter for PESTO IES
 
@@ -127,6 +130,11 @@ convergence-aware ensemble sizing.
   : Train a Gaussian Process Surrogate
 - [`predict_gp_surrogate()`](https://max578.github.io/PESTO/reference/predict_gp_surrogate.md)
   : Predict with GP Surrogate (with Uncertainty)
+- [`train_gp_surrogate_tuned()`](https://max578.github.io/PESTO/reference/train_gp_surrogate_tuned.md)
+  : Train a GP Surrogate with Maximum-Likelihood (Anisotropic) Length
+  Scales
+- [`predict_gp_surrogate_tuned()`](https://max578.github.io/PESTO/reference/predict_gp_surrogate_tuned.md)
+  : Predict from an MLE-Tuned GP Surrogate
 - [`train_rff_surrogate()`](https://max578.github.io/PESTO/reference/train_rff_surrogate.md)
   : Train a Sparse GP Surrogate via Random Fourier Features
 - [`predict_rff_surrogate()`](https://max578.github.io/PESTO/reference/predict_rff_surrogate.md)

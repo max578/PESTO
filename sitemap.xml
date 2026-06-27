@@ -45,6 +45,7 @@
 <url><loc>https://max578.github.io/PESTO/reference/pesto_ies.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_ies_callback.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_ies_filter.html</loc></url>
+<url><loc>https://max578.github.io/PESTO/reference/pesto_ies_result-methods.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_inflation.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_localisation.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_multifidelity_model.html</loc></url>
@@ -59,6 +60,7 @@
 <url><loc>https://max578.github.io/PESTO/reference/plot_phi.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/plot_surrogate_diagnostics.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/predict_gp_surrogate.html</loc></url>
+<url><loc>https://max578.github.io/PESTO/reference/predict_gp_surrogate_tuned.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/predict_rff_surrogate.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/print.pesto_pst.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/read_ensemble.html</loc></url>
@@ -68,6 +70,7 @@
 <url><loc>https://max578.github.io/PESTO/reference/seir_forward_model.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/surrogate_ensemble_update.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/train_gp_surrogate.html</loc></url>
+<url><loc>https://max578.github.io/PESTO/reference/train_gp_surrogate_tuned.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/train_rff_surrogate.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/verify_manifest.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/write_ensemble.html</loc></url>

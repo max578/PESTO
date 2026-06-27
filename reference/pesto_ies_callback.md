@@ -21,7 +21,8 @@ pesto_ies_callback(
   inflation = NULL,
   localisation = NULL,
   on_failure = c("na", "stop"),
-  verbose = TRUE
+  verbose = TRUE,
+  phi_tol = NULL
 )
 ```
 
@@ -47,7 +48,9 @@ pesto_ies_callback(
 
   Matrix or data.table, `nreal x npar`. Columns are parameters; an
   optional `real_name` column is preserved if present. Column names
-  supply parameter names.
+  supply parameter names. To **warm-start**, pass the parameter columns
+  of a previous run's `par_ensemble` as the prior of the next: a
+  posterior ensemble is itself a valid prior ensemble.
 
 - obs:
 
@@ -120,6 +123,16 @@ pesto_ies_callback(
 
   Logical. Print per-iteration phi summaries.
 
+- phi_tol:
+
+  Numeric scalar or `NULL`. Optional convergence tolerance: when
+  non-`NULL`, iteration stops early once the relative reduction in the
+  mean objective function (phi) between successive iterations falls
+  below `phi_tol` – the phi-reduction stopping rule of White (2018).
+  `NULL` (default) runs the full `noptmax` iterations, leaving the
+  update byte-identical to the unchecked smoother. Use a smaller
+  `phi_tol` to demand more iterations, a larger one to stop sooner.
+
 ## Value
 
 A list of class `c("pesto_ies_callback_result", "pesto_ies_result")`
@@ -158,6 +171,17 @@ with components:
 - failure_rate:
 
   Fraction of forward evaluations that returned NA.
+
+- converged:
+
+  Logical: `TRUE` if the run stopped early on the `phi_tol` convergence
+  criterion; `FALSE` when `phi_tol` is `NULL` or the full `noptmax` was
+  reached.
+
+- n_iterations:
+
+  Number of IES iterations actually run (fewer than `noptmax` if the
+  convergence checker stopped the run early).
 
 - fidelity:
 
@@ -216,6 +240,10 @@ is the plug-in point for bias-corrected surrogate cascades.
 Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
 iterative ensemble smoother for efficient history matching and
 uncertainty quantification. *Computational Geosciences*, 17(4), 689–703.
+
+White, J.T. (2018). A model-independent iterative ensemble smoother for
+efficient history-matching and uncertainty quantification in very high
+dimensions. *Environmental Modelling & Software*, 109, 191–201.
 
 ## See also
 
