@@ -1,3 +1,7 @@
+# PESTO (development version)
+
+* Post-0.8.0 development cycle (no API or behaviour change).
+
 # PESTO 0.8.0
 
 ## New features
