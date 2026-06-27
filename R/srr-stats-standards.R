@@ -3,7 +3,6 @@
 #' All of the following standards initially have `@srrstatsTODO` tags.
 #' These may be moved at any time to any other locations in your code.
 #' Once addressed, please modify the tag from `@srrstatsTODO` to `@srrstats`,
-#' or `@srrstatsNA`, ensuring that references to every one of the following
 #' standards remain somewhere within your code.
 #' (These comments may be deleted at any time.)
 #'
@@ -31,7 +30,6 @@
 #' @srrstatsTODO {G2.4c} *explicit conversion to character via `as.character()` (and not `paste` or `paste0`)*
 #' @srrstatsTODO {G2.4d} *explicit conversion to factor via `as.factor()`*
 #' @srrstatsTODO {G2.4e} *explicit conversion from factor via `as...()` functions*
-#' @srrstatsNA {G2.5} *Where inputs are expected to be of `factor` type, secondary documentation should explicitly state whether these should be `ordered` or not, and those inputs should provide appropriate error or other routines to ensure inputs follow these expectations.* [PESTO: inputs are numeric matrices/vectors and numeric-column data.frames; factor inputs are not accepted]
 #' @srrstatsTODO {G2.6} *Software which accepts one-dimensional input should ensure values are appropriately pre-processed regardless of class structures.* 
 #' @srrstatsTODO {G2.7} *Software should accept as input as many of the above standard tabular forms as possible, including extension to domain-specific forms.* 
 #' @srrstatsTODO {G2.8} *Software should provide appropriate conversion or dispatch routines as part of initial pre-processing to ensure that all other sub-functions of a package receive inputs of a single defined class or type.*
@@ -142,5 +140,6 @@ NULL
 #' to `@srrstatsNA`, and placed together in this block, along with explanations
 #' for why each of these standards have been deemed not applicable.
 #' (These comments may also be deleted at any time.)
+#' @srrstatsNA {G2.5} *Where inputs are expected to be of `factor` type, secondary documentation should explicitly state whether these should be `ordered` or not, and those inputs should provide appropriate error or other routines to ensure inputs follow these expectations.* [PESTO: inputs are numeric matrices/vectors and numeric-column data.frames; factor inputs are not accepted]
 #' @noRd
 NULL
