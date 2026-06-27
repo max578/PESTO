@@ -24,7 +24,8 @@ URL: https://github.com/max578/PESTO,
 BugReports: https://github.com/max578/PESTO/issues
 Encoding: UTF-8
 Language: en-AU
-Roxygen: list(markdown = TRUE)
+Roxygen: list(markdown = TRUE, roclets = c("namespace", "rd",
+    "srr::srr_stats_roclet"))
 RoxygenNote: 7.3.3
 SystemRequirements: C++17
 Depends:
@@ -48,6 +49,7 @@ Suggests:
     microbenchmark,
     Matrix,
     apsimx (>= 2.7.0),
-    deSolve (>= 1.30)
+    deSolve (>= 1.30),
+    srr
 VignetteBuilder: knitr
 Config/testthat/edition: 3

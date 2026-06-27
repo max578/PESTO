@@ -25,6 +25,12 @@
 #'   The full reproducible multi-tool benchmark vs PEST 18.25 + pestpp-ies 5.2.16
 #'   underlies G1.5 / G1.6.
 #' @srrstats {G5.5} Every correctness test fixes the RNG via set.seed().
+#' @srrstats {BS4.1} Explicit comparison with an external sampler: the golden
+#'   test compares the IES posterior mean against fixed-version pestpp-ies
+#'   5.2.16 (stored fixture), demonstrating parity with the established tool.
+#' @srrstats {BS7.2} Recovery of the expected posterior given a prior and data:
+#'   the IES posterior mean matches the closed-form Gaussian-conjugate posterior
+#'   on a linear-Gaussian problem.
 #' @noRd
 NULL
 

@@ -14,6 +14,9 @@
 #'   number of observations grows -- the expected behaviour of a consistent
 #'   estimator -- and the filter driver's posterior spread tightens as windows
 #'   accrue (test-ies-filter.R).
+#' @srrstats {BS7.3} Scaling of algorithmic efficiency / accuracy with input
+#'   data size: recovery error decreases as the number of observations grows
+#'   (the data-size scaling test below).
 #' @noRd
 NULL
 

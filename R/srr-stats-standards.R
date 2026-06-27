@@ -1,29 +1,27 @@
 #' srr_stats
 #'
-#' All of the following standards initially have `@srrstatsTODO` tags.
-#' These may be moved at any time to any other locations in your code.
-#' Once addressed, please modify the tag from `@srrstatsTODO` to `@srrstats`,
-#' standards remain somewhere within your code.
-#' (These comments may be deleted at any time.)
+#' Compliance documentation for the rOpenSci statistical-software standards.
+#' `@srrstats` tags lead with how PESTO complies; `@srrstatsTODO` marks standards
+#' not yet addressed; non-applicable standards are in the NA_standards block.
 #'
 #' @srrstatsVerbose TRUE
 #'
-#' @srrstats {G1.0} *Statistical Software should list at least one primary reference from published academic literature.* [PESTO: primary references cited in roxygen (Chen & Oliver 2013; Evensen 2018; Goudriaan & Monteith 1990; Anderson & May 1991)]
+#' @srrstats {G1.0} Primary references are cited in roxygen (Chen & Oliver 2013; Evensen 2018; Goudriaan & Monteith 1990; Anderson & May 1991).
 #' @srrstatsTODO {G1.1} *Statistical Software should document whether the algorithm(s) it implements are:* - *The first implementation of a novel algorithm*; or - *The first implementation within **R** of an algorithm which has previously been implemented in other languages or contexts*; or - *An improvement on other implementations of similar algorithms in **R***.
-#' @srrstats {G1.2} *Statistical Software should include a* Life Cycle Statement *describing current and anticipated future states of development.* [PESTO: Life Cycle Statement in API_STABILITY.md (additive-then-lifecycle policy)]
+#' @srrstats {G1.2} A Life Cycle Statement is provided in API_STABILITY.md (additive-then-lifecycle policy).
 #' @srrstatsTODO {G1.3} *All statistical terminology should be clarified and unambiguously defined.*
-#' @srrstats {G1.4} *Software should use [`roxygen2`](https://roxygen2.r-lib.org/) to document all functions.* [PESTO: all exported functions documented via roxygen2 (man/)]
-#' @srrstats {G1.4a} *All internal (non-exported) functions should also be documented in standard [`roxygen2`](https://roxygen2.r-lib.org/) format, along with a final `@noRd` tag to suppress automatic generation of `.Rd` files or [`@keywords internal`](https://roxygen2.r-lib.org/reference/tags-index-crossref.html?q=keywords%20internal#null) if documentation is still desired.* [PESTO: internal helpers carry @noRd + @keywords internal (e.g. R/internal_validation.R)]
+#' @srrstats {G1.4} All exported functions are documented with roxygen2 (see man/).
+#' @srrstats {G1.4a} Internal (non-exported) helpers carry @noRd and @keywords internal (e.g. R/internal_validation.R).
 #' @srrstatsTODO {G1.5} *Software should include all code necessary to reproduce results which form the basis of performance claims made in associated publications.*
 #' @srrstatsTODO {G1.6} *Software should include code necessary to compare performance claims with alternative implementations in other R packages.*
-#' @srrstats {G2.0} *Implement assertions on lengths of inputs, particularly through asserting that inputs expected to be single- or multi-valued are indeed so.* [PESTO: length assertions via .assert_*_scalar (length(x)!=1L) in R/internal_validation.R]
+#' @srrstats {G2.0} Input lengths are asserted via the .assert_*_scalar helpers (length(x) != 1L) in R/internal_validation.R.
 #' @srrstatsTODO {G2.0a} Provide explicit secondary documentation of any expectations on lengths of inputs
-#' @srrstats {G2.1} *Implement assertions on types of inputs (see the initial point on nomenclature above).* [PESTO: type assertions is.numeric/character/logical/function/matrix in R/internal_validation.R]
+#' @srrstats {G2.1} Input types are asserted (numeric / character / logical / function / matrix) in R/internal_validation.R.
 #' @srrstatsTODO {G2.1a} *Provide explicit secondary documentation of expectations on data types of all vector inputs.*
-#' @srrstats {G2.2} *Appropriately prohibit or restrict submission of multivariate input to parameters expected to be univariate.* [PESTO: univariate params guarded by scalar length(x)!=1L asserts (R/internal_validation.R)]
-#' @srrstats {G2.3} *For univariate character input:* [PESTO: univariate character inputs restricted via match.arg() / .assert_choice()]
-#' @srrstats {G2.3a} *Use `match.arg()` or equivalent where applicable to only permit expected values.* [PESTO: match.arg() used for char-parameter dispatch (method=, format=, on_failure=, taper=)]
-#' @srrstats {G2.3b} *Either: use `tolower()` or equivalent to ensure input of character parameters is not case dependent; or explicitly document that parameters are strictly case-sensitive.* [PESTO: unmatched character values raise an explicit error via match.arg()]
+#' @srrstats {G2.2} Univariate parameters are guarded by scalar length assertions (R/internal_validation.R).
+#' @srrstats {G2.3} Univariate character inputs are restricted via match.arg() / .assert_choice().
+#' @srrstats {G2.3a} match.arg() is used for character-parameter dispatch (method, format, on_failure, taper).
+#' @srrstats {G2.3b} Unmatched character values raise an explicit error via match.arg().
 #' @srrstatsTODO {G2.4} *Provide appropriate mechanisms to convert between different data types, potentially including:*
 #' @srrstatsTODO {G2.4a} *explicit conversion to `integer` via `as.integer()`*
 #' @srrstatsTODO {G2.4b} *explicit conversion to continuous via `as.numeric()`*
@@ -33,95 +31,83 @@
 #' @srrstatsTODO {G2.6} *Software which accepts one-dimensional input should ensure values are appropriately pre-processed regardless of class structures.*
 #' @srrstatsTODO {G2.7} *Software should accept as input as many of the above standard tabular forms as possible, including extension to domain-specific forms.*
 #' @srrstatsTODO {G2.8} *Software should provide appropriate conversion or dispatch routines as part of initial pre-processing to ensure that all other sub-functions of a package receive inputs of a single defined class or type.*
-#' @srrstatsTODO {G2.9} *Software should issue diagnostic messages for type conversion in which information is lost (such as conversion of variables from factor to character; standardisation of variable names; or removal of meta-data such as those associated with [`sf`-format](https://r-spatial.github.io/sf/) data) or added (such as insertion of variable or column names where none were provided).*
-#' @srrstatsTODO {G2.10} *Software should ensure that extraction or filtering of single columns from tabular inputs should not presume any particular default behaviour, and should ensure all column-extraction operations behave consistently regardless of the class of tabular data used as input.*
-#' @srrstatsTODO {G2.11} *Software should ensure that `data.frame`-like tabular objects which have columns which do not themselves have standard class attributes (typically, `vector`) are appropriately processed, and do not error without reason. This behaviour should be tested. Again, columns created by the [`units` package](https://github.com/r-quantities/units/) provide a good test case.*
-#' @srrstatsTODO {G2.12} *Software should ensure that `data.frame`-like tabular objects which have list columns should ensure that those columns are appropriately pre-processed either through being removed, converted to equivalent vector columns where appropriate, or some other appropriate treatment such as an informative error. This behaviour should be tested.*
+#' @srrstatsTODO {G2.9} *Software should issue diagnostic messages for type conversion in which information is lost or added.*
+#' @srrstatsTODO {G2.10} *Software should ensure that extraction or filtering of single columns from tabular inputs behaves consistently regardless of the class of tabular data used as input.*
+#' @srrstatsTODO {G2.11} *Software should ensure that data.frame-like tabular objects with columns lacking standard class attributes are appropriately processed, and this behaviour should be tested.*
+#' @srrstatsTODO {G2.12} *Software should ensure that data.frame-like tabular objects with list columns are appropriately pre-processed, and this behaviour should be tested.*
 #' @srrstatsTODO {G2.13} *Statistical Software should implement appropriate checks for missing data as part of initial pre-processing prior to passing data to analytic algorithms.*
 #' @srrstatsTODO {G2.14} *Where possible, all functions should provide options for users to specify how to handle missing (`NA`) data, with options minimally including:*
 #' @srrstatsTODO {G2.14a} *error on missing data*
 #' @srrstatsTODO {G2.14b} *ignore missing data with default warnings or messages issued*
 #' @srrstatsTODO {G2.14c} *replace missing data with appropriately imputed values*
-#' @srrstatsTODO {G2.15} *Functions should never assume non-missingness, and should never pass data with potential missing values to any base routines with default `na.rm = FALSE`-type parameters (such as [`mean()`](https://stat.ethz.ch/R-manual/R-devel/library/base/html/mean.html), [`sd()`](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/sd.html) or [`cor()`](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/cor.html)).*
+#' @srrstatsTODO {G2.15} *Functions should never assume non-missingness, and should never pass data with potential missing values to any base routines with default na.rm = FALSE-type parameters.*
 #' @srrstatsTODO {G2.16} *All functions should also provide options to handle undefined values (e.g., `NaN`, `Inf` and `-Inf`), including potentially ignoring or removing such values.*
-#' @srrstats {G3.0} *Statistical software should never compare floating point numbers for equality. All numeric equality comparisons should either ensure that they are made between integers, or use appropriate tolerances for approximate equality.* [PESTO: no naive floating-point equality (verified by source scan); tolerances/inequalities used]
+#' @srrstats {G3.0} No naive floating-point equality is used (verified by source scan); tolerances / inequalities are used throughout.
 #' @srrstatsTODO {G3.1} *Statistical software which relies on covariance calculations should enable users to choose between different algorithms for calculating covariances, and should not rely solely on covariances from the `stats::cov` function.*
 #' @srrstatsTODO {G3.1a} *The ability to use arbitrarily specified covariance methods should be documented (typically in examples or vignettes).*
 #' @srrstatsTODO {G4.0} *Statistical Software which enables outputs to be written to local files should parse parameters specifying file names to ensure appropriate file suffixes are automatically generated where not provided.*
 #'
 #' Testing standards (the G5 series) are documented next to the tests that
-#' satisfy them, under tests/testthat/. Members deemed not applicable (G5.1,
-#' G5.4c, G5.11, G5.11a) are recorded in the NA block below.
+#' satisfy them, under tests/testthat/. Non-applicable members (G5.1, G5.4c,
+#' G5.11, G5.11a) are in the NA_standards block below.
 #'
-#' @srrstatsTODO {BS1.0} *Bayesian software which uses the term "hyperparameter" should explicitly clarify the meaning of that term in the context of that software.*
-#' @srrstatsTODO {BS1.1} *Descriptions of how to enter data, both in textual form and via code examples. Both of these should consider the simplest cases of single objects representing independent and dependent data, and potentially more complicated cases of multiple independent data inputs.*
-#' @srrstatsTODO {BS1.2} *Description of how to specify prior distributions, both in textual form describing the general principles of specifying prior distributions, along with more applied descriptions and examples, within:*
-#' @srrstatsTODO {BS1.2a} *The main package `README`, either as textual description or example code*
-#' @srrstatsTODO {BS1.2b} *At least one package vignette, both as general and applied textual descriptions, and example code*
-#' @srrstatsTODO {BS1.2c} *Function-level documentation, preferably with code included in examples*
-#' @srrstatsTODO {BS1.3} *Description of all parameters which control the computational process (typically those determining aspects such as numbers and lengths of sampling processes, seeds used to start them, thinning parameters determining post-hoc sampling from simulated values, and convergence criteria). In particular:*
-#' @srrstatsTODO {BS1.3a} *Bayesian Software should document, both in text and examples, how to use the output of previous simulations as starting points of subsequent simulations.*
-#' @srrstatsTODO {BS1.3b} *Where applicable, Bayesian software should document, both in text and examples, how to use different sampling algorithms for a given model.*
-#' @srrstatsTODO {BS1.4} *For Bayesian Software which implements or otherwise enables convergence checkers, documentation should explicitly describe and provide examples of use with and without convergence checkers.*
-#' @srrstatsTODO {BS1.5} *For Bayesian Software which implements or otherwise enables multiple convergence checkers, differences between these should be explicitly tested.*
-#' @srrstatsTODO {BS2.1} *Bayesian Software should implement pre-processing routines to ensure all input data is dimensionally commensurate, for example by ensuring commensurate lengths of vectors or numbers of rows of tabular inputs.*
-#' @srrstatsTODO {BS2.1a} *The effects of such routines should be tested.*
-#' @srrstatsTODO {BS2.2} *Ensure that all appropriate validation and pre-processing of distributional parameters are implemented as distinct pre-processing steps prior to submitting to analytic routines, and especially prior to submitting to multiple parallel computational chains.*
-#' @srrstatsTODO {BS2.3} *Ensure that lengths of vectors of distributional parameters are checked, with no excess values silently discarded (unless such output is explicitly suppressed, as detailed below).*
-#' @srrstatsTODO {BS2.4} *Ensure that lengths of vectors of distributional parameters are commensurate with expected model input (see example immediately below)*
-#' @srrstatsTODO {BS2.5} *Where possible, implement pre-processing checks to validate appropriateness of numeric values submitted for distributional parameters; for example, by ensuring that distributional parameters defining second-order moments such as distributional variance or shape parameters, or any parameters which are logarithmically transformed, are non-negative.*
-#' @srrstatsTODO {BS2.6} *Check that values for computational parameters lie within plausible ranges.*
-#' @srrstatsTODO {BS2.7} *Enable starting values to be explicitly controlled via one or more input parameters, including multiple values for software which implements or enables multiple computational "chains."*
-#' @srrstatsTODO {BS2.8} *Enable results of previous runs to be used as starting points for subsequent runs.*
-#' @srrstatsTODO {BS2.9} *Ensure each chain is started with a different seed by default.*
-#' @srrstatsTODO {BS2.10} *Issue diagnostic messages when identical seeds are passed to distinct computational chains.*
-#' @srrstatsTODO {BS2.11} *Software which accepts starting values as a vector should provide the parameter with a plural name: for example, "starting_values" and not "starting_value".*
-#' @srrstatsTODO {BS2.12} *Bayesian Software should implement at least one parameter controlling the verbosity of output, defaulting to verbose output of all appropriate messages, warnings, errors, and progress indicators.*
-#' @srrstatsTODO {BS2.13} *Bayesian Software should enable suppression of messages and progress indicators, while retaining verbosity of warnings and errors. This should be tested.*
-#' @srrstatsTODO {BS2.14} *Bayesian Software should enable suppression of warnings where appropriate. This should be tested.*
-#' @srrstatsTODO {BS2.15} *Bayesian Software should explicitly enable errors to be caught, and appropriately processed either through conversion to warnings, or otherwise captured in return values. This should be tested.*
-#' @srrstatsTODO {BS3.0} *Explicitly document assumptions made in regard to missing values; for example that data is assumed to contain no missing (`NA`, `Inf`) values, and that such values, or entire rows including any such values, will be automatically removed from input data.*
-#' @srrstatsTODO {BS3.1} *Implement pre-processing routines to diagnose perfect collinearity, and provide appropriate diagnostic messages or warnings*
-#' @srrstatsTODO {BS3.2} *Provide distinct routines for processing perfectly collinear data, potentially bypassing sampling algorithms*
-#' @srrstatsTODO {BS4.0} *Packages should document sampling algorithms (generally via literary citation, or reference to other software)*
-#' @srrstatsTODO {BS4.1} *Packages should provide explicit comparisons with external samplers which demonstrate intended advantage of implementation (generally via tests, vignettes, or both).*
-#' @srrstatsTODO {BS4.2} *Implement at least one means to validate posterior estimates.*
-#' @srrstatsTODO {BS4.3} *Implement or otherwise offer at least one type of convergence checker, and provide a documented reference for that implementation.*
-#' @srrstatsTODO {BS4.4} *Enable computations to be stopped on convergence (although not necessarily by default).*
-#' @srrstatsTODO {BS4.5} *Ensure that appropriate mechanisms are provided for models which do not converge.*
-#' @srrstatsTODO {BS4.6} *Implement tests to confirm that results with convergence checker are statistically equivalent to results from equivalent fixed number of samples without convergence checking.*
-#' @srrstatsTODO {BS4.7} *Where convergence checkers are themselves parametrised, the effects of such parameters should also be tested. For threshold parameters, for example, lower values should result in longer sequence lengths.*
-#' @srrstatsTODO {BS5.0} *Return values should include starting value(s) or seed(s), including values for each sequence where multiple sequences are included*
-#' @srrstatsTODO {BS5.1} *Return values should include appropriate metadata on types (or classes) and dimensions of input data*
-#' @srrstatsTODO {BS5.2} *Bayesian Software should either return the input function or prior distributional specification in the return object; or enable direct access to such via additional functions which accept the return object as single argument.*
-#' @srrstatsTODO {BS5.3} *Bayesian Software should return convergence statistics or equivalent*
-#' @srrstatsTODO {BS5.4} *Where multiple checkers are enabled, Bayesian Software should return details of convergence checker used*
-#' @srrstatsTODO {BS5.5} *Appropriate diagnostic statistics to indicate absence of convergence should either be returned or immediately able to be accessed.*
-#' @srrstatsTODO {BS6.0} *Software should implement a default `print` method for return objects*
-#' @srrstatsTODO {BS6.1} *Software should implement a default `plot` method for return objects*
-#' @srrstatsTODO {BS6.2} *Software should provide and document straightforward abilities to plot sequences of posterior samples, with burn-in periods clearly distinguished*
-#' @srrstatsTODO {BS6.3} *Software should provide and document straightforward abilities to plot posterior distributional estimates*
-#' @srrstatsTODO {BS6.4} *Software may provide `summary` methods for return objects*
-#' @srrstatsTODO {BS6.5} *Software may provide abilities to plot both sequences of posterior samples and distributional estimates together in single graphic*
-#' @srrstatsTODO {BS7.0} *Software should demonstrate and confirm recovery of parametric estimates of a prior distribution*
-#' @srrstatsTODO {BS7.1} *Software should demonstrate and confirm recovery of a prior distribution in the absence of any additional data or information*
-#' @srrstatsTODO {BS7.2} *Software should demonstrate and confirm recovery of a expected posterior distribution given a specified prior and some input data*
-#' @srrstatsTODO {BS7.3} *Bayesian software should include tests which demonstrate and confirm the scaling of algorithmic efficiency with sizes of input data.*
-#' @srrstatsTODO {BS7.4} *Bayesian software should implement tests which confirm that predicted or fitted values are on (approximately) the same scale as input values.*
-#' @srrstatsTODO {BS7.4a} *The implications of any assumptions on scales on input objects should be explicitly tested in this context; for example that the scales of inputs which do not have means of zero will not be able to be recovered.*
+#' Bayesian and Monte Carlo (BS) standards -- compliance leads each entry.
+#' @srrstats {BS1.0} "hyperparameter" is used only for the GP-surrogate kernel parameters (length-scale, input-scale), defined in train_gp_surrogate_tuned() documentation.
+#' @srrstats {BS1.1} Data entry (a prior parameter ensemble, a named observation vector, obs_sd) is shown in the pesto_ies_callback() examples and the getting-started vignette.
+#' @srrstats {BS1.2} The prior is supplied as a prior parameter ensemble; how to specify it is documented at the prior_ensemble parameter with worked examples.
+#' @srrstatsTODO {BS1.2a} Prior specification in the main README (pending the README.Rmd conversion).
+#' @srrstats {BS1.2b} The getting-started vignette shows prior vs posterior ensembles via plot_ensemble().
+#' @srrstats {BS1.2c} pesto_ies_callback() examples construct a prior ensemble and run the smoother.
+#' @srrstats {BS1.3} The computational-process parameters (noptmax, lambda, parcov, eigthresh, use_approx) are each documented in roxygen.
+#' @srrstatsTODO {BS1.3a} Document (text + example) using a previous run's posterior as the starting ensemble of the next run.
+#' @srrstats {BS1.3b} The alternative drivers (in-process callback, sequential filter, MDA, .pst path) are documented and cross-linked via @seealso.
+#' @srrstats {BS2.1} Dimensional commensurability of inputs (nobs / npar / nreal) is enforced in the driver pre-processing.
+#' @srrstats {BS2.1a} The dimension / length validation is tested (test-ies-callback.R, test-edge-conditions.R).
+#' @srrstats {BS2.2} obs_sd (the observation-error specification) is validated as a distinct pre-processing step before the iteration loop.
+#' @srrstats {BS2.3} obs_sd must be scalar or length-nobs; a non-conforming length raises an error (no excess values silently discarded).
+#' @srrstats {BS2.4} obs_sd length is checked for commensurability with the observations (scalar recycled to nobs).
+#' @srrstats {BS2.5} Variance-like parameters are constrained positive: obs_sd > 0 and parcov > 0 are enforced.
+#' @srrstats {BS2.6} Computational parameters are range-checked (noptmax >= 1, positive eigthresh, in-range fidelity levels).
+#' @srrstats {BS2.11} Starting points are supplied as the prior_ensemble matrix -- inherently plural, one row per realisation.
+#' @srrstats {BS2.12} The verbose parameter controls progress output and defaults to TRUE.
+#' @srrstats {BS2.15} on_failure = "na" catches forward-model failures and captures them in the return value (failure_rate + NA realisations) rather than aborting; tested in test-ies-callback.R.
+#' @srrstats {BS3.0} Missing-value handling is documented via the on_failure parameter and the forward-model contract (failed realisations become NA rows, tolerated or aborted).
+#' @srrstats {BS4.0} The assimilation algorithms are documented via citation (Chen & Oliver 2013; Evensen 2018) in roxygen references.
+#' @srrstatsTODO {BS4.3} Offer a convergence checker (e.g. a phi-reduction stopping rule) with a documented reference -- design decision pending (fixed-iteration vs adaptive stopping).
+#' @srrstatsTODO {BS4.4} Enable stopping on convergence -- coupled to the BS4.3 design decision.
+#' @srrstats {BS4.5} Non-convergence is surfaced via the returned phi trace and the per-iteration spread-ESS ratio; failed forward evaluations are handled via on_failure; Marquardt lambda damping mitigates divergence.
+#'
+#' Bayesian standards documented next to their code/tests: BS2.7, BS2.8, BS2.13,
+#' BS5.1, BS5.3, BS5.5 (test-bayesian-interface.R); BS4.1, BS7.2
+#' (test-correctness-analytic.R); BS4.2, BS7.0, BS7.1, BS7.4, BS7.4a
+#' (test-bayesian-recovery.R); BS7.3 (test-recovery-scaling.R); BS6.0, BS6.1,
+#' BS6.3 (R/ies_result_methods.R).
 #' @noRd
 NULL
 
 #' NA_standards
 #'
-#' Any non-applicable standards can have their tags changed from `@srrstatsTODO`
-#' to `@srrstatsNA`, and placed together in this block, along with explanations
-#' for why each of these standards have been deemed not applicable.
-#' (These comments may also be deleted at any time.)
-#' @srrstatsNA {G2.5} *Where inputs are expected to be of `factor` type, secondary documentation should explicitly state whether these should be `ordered` or not, and those inputs should provide appropriate error or other routines to ensure inputs follow these expectations.* [PESTO: inputs are numeric matrices/vectors and numeric-column data.frames; factor inputs are not accepted]
-#' @srrstatsNA {G5.1} *Data sets created within, and used to test, a package should be exported.* [PESTO: no `data/` directory or `sysdata.rda`; all test data are generated inline from fixed `set.seed()` calls (fully reproducible from the test sources), so there is no stored data set to export]
-#' @srrstatsNA {G5.4c} *Where applicable, stored values may be drawn from published paper outputs.* [PESTO: no canonical published numeric output exists for the iterative ensemble smoother / MDA algorithms to store; correctness is instead established against an analytic closed-form solution (G5.4) and against fixed-version pestpp-ies 5.2.16 (G5.4b)]
-#' @srrstatsNA {G5.11} *Where extended tests require large data sets or other assets, these should be provided for downloading.* [PESTO: extended tests use only inline simulated data (cheap, self-contained); no large external data sets or downloads are required]
-#' @srrstatsNA {G5.11a} *When any downloads of additional data necessary for extended tests fail, the tests themselves should not fail, rather be skipped.* [PESTO: no test performs a download, so there is no download-failure path]
+#' Standards deemed not applicable to PESTO, each with a justification.
+#'
+#' @srrstatsNA {G2.5} PESTO inputs are numeric matrices / vectors and numeric-column data.frames; factor inputs are not accepted, so ordered-factor handling does not apply.
+#' @srrstatsNA {G5.1} No data/ directory or sysdata.rda; all test data are generated inline from fixed set.seed() calls (fully reproducible from the test sources), so there is no stored data set to export.
+#' @srrstatsNA {G5.4c} No canonical published numeric output exists for the iterative ensemble smoother / MDA algorithms to store; correctness is established against an analytic closed-form solution (G5.4) and against fixed-version pestpp-ies 5.2.16 (G5.4b).
+#' @srrstatsNA {G5.11} Extended tests use only inline simulated data (cheap, self-contained); no large external data sets or downloads are required.
+#' @srrstatsNA {G5.11a} No test performs a download, so there is no download-failure path.
+#' @srrstatsNA {BS1.4} The iterative ensemble smoother runs a fixed number of iterations with no in-run convergence checker; documenting use with/without a checker does not apply.
+#' @srrstatsNA {BS1.5} A single convergence notion (the phi misfit); there are no multiple convergence checkers to contrast.
+#' @srrstatsNA {BS2.9} The IES update holds no internal RNG state and runs no chains -- it is deterministic given the prior ensemble; per-chain seeding does not apply (reproducibility is set by the upstream prior-ensemble draw, tested in test-noise-susceptibility.R).
+#' @srrstatsNA {BS2.10} No seed arguments and no computational chains; identical-seed diagnostics do not apply.
+#' @srrstatsNA {BS2.14} Warnings flag genuine numerical / specification conditions (e.g. localisation with use_approx = FALSE) and are not silenced by design; suppressWarnings() remains available to the caller.
+#' @srrstatsNA {BS3.1} Rank deficiency / collinearity is handled intrinsically by SVD truncation (eigthresh) in the ensemble update; there is no separate collinearity-diagnosis routine.
+#' @srrstatsNA {BS3.2} SVD truncation processes (near-)collinear ensembles inherently; no distinct bypass routine is required.
+#' @srrstatsNA {BS4.6} No in-run convergence checker, so checker-vs-fixed equivalence cannot be (and need not be) tested.
+#' @srrstatsNA {BS4.7} No parametrised convergence checker whose threshold effects could be tested.
+#' @srrstatsNA {BS5.0} The update holds no internal RNG / seed state (deterministic given the prior ensemble); reproducibility is set by the upstream prior draw, so there is no internal seed to return.
+#' @srrstatsNA {BS5.2} The assimilation data specification (obs_target, obs_sd, weights) is returned; the prior ensemble and forward model are user-supplied objects retained by the caller and are not copied into the result, avoiding large duplication for expensive simulators.
+#' @srrstatsNA {BS5.4} A single convergence notion; there is no checker selection to report.
+#' @srrstatsNA {BS6.2} An ensemble smoother has no Markov-chain burn-in; the phi-convergence trace (the default plot() method) is the iteration diagnostic.
+#' @srrstatsNA {BS6.4} Optional ("may"); the default print method provides the run summary.
+#' @srrstatsNA {BS6.5} Optional ("may").
 #' @noRd
 NULL
