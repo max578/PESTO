@@ -1,14 +1,14 @@
-# PESTO ensemble manifest — S7 class formalising the cross-package
-# contract object that kernR, proxymix, and the paper skill consume.
-# Year-1 §A5 of the UQ ag-stack roadmap.
+# PESTO ensemble manifest — S7 class formalising a versioned, hashed,
+# self-describing record of an ensemble run that any downstream tool can
+# read and verify without depending on PESTO internals.
 
 #' PESTO Ensemble Manifest (S7 class)
 #'
 #' A versioned, hashed, provenance-tracked container for the result of a
-#' PESTO ensemble run. The manifest is the cross-package contract object
-#' that downstream consumers (`kernR`, `proxymix`, paper-skill) read; it
-#' carries enough provenance to make a run independently reproducible and
-#' independently verifiable (via [verify_manifest()]).
+#' PESTO ensemble run. It is a portable *data contract*: a documented,
+#' versioned format that any downstream tool can read without depending on
+#' PESTO internals, carrying enough provenance to make a run independently
+#' reproducible and independently verifiable (via [verify_manifest()]).
 #'
 #' Construct directly via the class constructor, or — preferred — via
 #' [as_manifest()] applied to a `pesto_ies_callback_result`.
@@ -30,8 +30,8 @@
 #'   `apsim_node`, `unit` (+ same optional provenance). Build one with
 #'   [pesto_obs_schema()]. The descriptor is provenance metadata — it is
 #'   **not** folded into `data_hash` (correspondence is grounded by a
-#'   second member that agrees on units, not by self-hash; see the
-#'   orchestra provenance vocabulary). Default `NULL` (absent).
+#'   second manifest that agrees on units, not by self-hash). Default
+#'   `NULL` (absent).
 #' @param params `data.frame` / `data.table`. Parameter ensemble; first
 #'   column `real_name`, subsequent columns one per parameter.
 #' @param outputs `data.frame` / `data.table`. Simulated observation
@@ -81,8 +81,7 @@
 #' The YAML carries an explicit `integrity:` field
 #' (`"verifiable"` / `"not_verifiable"`) derived from `format` so
 #' downstream non-R tools can branch on the integrity contract
-#' without needing to know the kernR/PESTO-specific format
-#' vocabulary.
+#' without needing to know the PESTO-specific format vocabulary.
 #'
 #' @examples
 #' set.seed(1)
@@ -166,12 +165,11 @@ pesto_ensemble_manifest <- S7::new_class(
 #' output and parameter column *means* (its physical quantity and unit),
 #' so a downstream consumer can verify two manifests are commensurable by
 #' name rather than trusting a positional convention. This is the single
-#' Independent-Oracle anchor the manifest contract previously lacked.
+#' Independent-Oracle anchor the manifest format previously lacked.
 #'
-#' Each row optionally carries provenance per the orchestra provenance
-#' vocabulary: `verified_on` (a `Date`, or `NA` for an unverified fact),
-#' `oracle_kind`, and `evidence_path`. A column is *grounded* only when
-#' `verified_on` is a non-`NA` date.
+#' Each row optionally carries provenance: `verified_on` (a `Date`, or `NA`
+#' for an unverified fact), `oracle_kind`, and `evidence_path`. A column is
+#' *grounded* only when `verified_on` is a non-`NA` date.
 #'
 #' @param outputs Optional `data.frame` describing output columns, with
 #'   columns `name`, `quantity`, `unit` (character) and optionally
@@ -182,8 +180,7 @@ pesto_ensemble_manifest <- S7::new_class(
 #' @return A validated `list(outputs = , params = )` suitable for the
 #'   `obs_schema` argument of [pesto_ensemble_manifest]. Either side may
 #'   be omitted (`NULL`).
-#' @seealso The manifest contract `inst/manifest_contract.md` and the
-#'   orchestra provenance vocabulary.
+#' @seealso The manifest format specification in `inst/manifest_contract.md`.
 #' @examples
 #' # Describe two output columns and one parameter, grounding the yield
 #' # column against a dated oracle and leaving the rest unverified.
@@ -611,9 +608,9 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
 .manifest_to_yaml_list <- function(m, params_path, outputs_path,
                                    assim_path, inspection_csv = NULL) {
   # `integrity` is derived from `format`. Persisting it on the
-  # serialised side lets non-R consumers (Python tooling, paper-skill
-  # graders) branch on the integrity contract without parsing the
-  # PESTO-specific format vocabulary.
+  # serialised side lets non-R consumers (e.g. Python tooling) branch on
+  # the integrity contract without parsing the PESTO-specific format
+  # vocabulary.
   integrity <- if (m@format %in% c("rds", "both")) "verifiable"
                else                                "not_verifiable"
   out <- list(

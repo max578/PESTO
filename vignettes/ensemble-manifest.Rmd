@@ -1,8 +1,8 @@
 ---
-title: "Ensemble Manifests -- the Cross-Package Contract"
+title: "The Ensemble-Run Manifest: a Portable, Verifiable Record"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Ensemble Manifests -- the Cross-Package Contract}
+  %\VignetteIndexEntry{The Ensemble-Run Manifest: a Portable, Verifiable Record}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,15 +16,19 @@ set.seed(20260516)
 
 A PESTO ensemble run produces a moderately large pile of state:
 parameter ensemble, simulated outputs, target observations, IES
-weights, the RNG seed, the lambda schedule, runtime context. To let
-`kernR`, `proxymix`, and the paper-writing pipeline consume that
-output **without reaching into PESTO-specific list internals**, v0.3.0
-introduces a versioned S7 contract object -- `pesto_ensemble_manifest` -- plus YAML+CSV persistence with SHA-256
-integrity checking.
+weights, the RNG seed, the lambda schedule, runtime context. The
+manifest captures all of it as a versioned S7 object --
+`pesto_ensemble_manifest` -- with YAML + sidecar persistence and SHA-256
+integrity checking, so a run is:
 
-This is Year-1 §A5 of the UQ ag-stack roadmap. It is deliberately
-infrastructure rather than methodology: the value is that every
-downstream consumer reads the same object, with the same provenance
+- **reproducible and auditable** -- a complete, hash-verified record you
+  can re-open and check later; and
+- **portable** -- a documented, versioned *data contract* that any
+  downstream tool can read **without reaching into PESTO-specific list
+  internals**.
+
+It is deliberately infrastructure rather than methodology: the value is
+that every consumer reads the same object, with the same provenance
 guarantees, on every run.
 
 ## Constructing a manifest from an IES run
@@ -155,19 +159,20 @@ v$ok
 `verify_manifest()` returns the stored vs recomputed hashes so a
 downstream consumer can fail fast and report the divergence cleanly.
 
-## Cross-package contract
+## Consuming a manifest
 
-The manifest is the single object that `kernR` (HSIC identifiability,
-DR-DATE counterfactuals, MMD posterior-predictive checks) and
-`proxymix` (GMM density-ratio bridges) consume. By dispatching on the
-S7 class, those packages never see PESTO-internal list shapes. They
-read `m@params`, `m@outputs`, `m@weights`, `m@obs_target` through the
-contract and let `verify_manifest()` gate on integrity.
+Any downstream tool can consume a manifest through the same stable
+surface, without ever seeing PESTO-internal list shapes. A conformant
+consumer reads it back with `read_manifest()`, calls `verify_manifest()`
+before trusting it, and then works with the typed slots -- `m@params`,
+`m@outputs`, `m@weights`, `m@obs_target` -- branching on
+`m@schema_version` for forward compatibility. For example, a downstream
+analysis of an APSIM crop-model ensemble would read the manifest, refuse
+on `integrity: "not_verifiable"` or a high `failure_rate`, and thread
+`m@data_hash` / `m@run_id` into its own provenance so the lineage closes.
 
-The companion jstyle `outputs_manifest.yaml` (the project-level
-artefact index) will reference per-run manifests like this one by
-relative path + the same `data_hash`, so a project's manifest tree is
-end-to-end hash-verifiable.
+The full producer / consumer obligations are documented as a standalone
+format specification in `inst/manifest_contract.md`.
 
 ```{r, include=FALSE}
 unlink(dir, recursive = TRUE)

@@ -97,8 +97,8 @@ reference:
   - write_ensemble
   - print.pesto_pst
 
-- title: Ensemble manifest (S7 cross-package contract)
-  desc: Versioned, hashed, provenance-tracked ensemble-run container consumed by kernR and proxymix.
+- title: Ensemble manifest (portable run record)
+  desc: Versioned, hashed, self-describing ensemble-run record for reproducibility and downstream consumption by any tool.
   contents:
   - pesto_ensemble_manifest
   - pesto_obs_schema

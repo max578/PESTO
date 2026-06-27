@@ -21,8 +21,8 @@ trusting positional convention. \code{outputs} columns: \code{name},
 \code{apsim_node}, \code{unit} (+ same optional provenance). Build one with
 \code{\link[=pesto_obs_schema]{pesto_obs_schema()}}. The descriptor is provenance metadata — it is
 \strong{not} folded into \code{data_hash} (correspondence is grounded by a
-second member that agrees on units, not by self-hash; see the
-orchestra provenance vocabulary). Default \code{NULL} (absent).}
+second manifest that agrees on units, not by self-hash). Default
+\code{NULL} (absent).}
 
 \item{params}{\code{data.frame} / \code{data.table}. Parameter ensemble; first
 column \code{real_name}, subsequent columns one per parameter.}
@@ -66,10 +66,10 @@ evaluations that returned \code{NA}.}
 }
 \description{
 A versioned, hashed, provenance-tracked container for the result of a
-PESTO ensemble run. The manifest is the cross-package contract object
-that downstream consumers (\code{kernR}, \code{proxymix}, paper-skill) read; it
-carries enough provenance to make a run independently reproducible and
-independently verifiable (via \code{\link[=verify_manifest]{verify_manifest()}}).
+PESTO ensemble run. It is a portable \emph{data contract}: a documented,
+versioned format that any downstream tool can read without depending on
+PESTO internals, carrying enough provenance to make a run independently
+reproducible and independently verifiable (via \code{\link[=verify_manifest]{verify_manifest()}}).
 }
 \details{
 Construct directly via the class constructor, or — preferred — via
@@ -99,8 +99,7 @@ is by construction broken.
 The YAML carries an explicit \verb{integrity:} field
 (\code{"verifiable"} / \code{"not_verifiable"}) derived from \code{format} so
 downstream non-R tools can branch on the integrity contract
-without needing to know the kernR/PESTO-specific format
-vocabulary.
+without needing to know the PESTO-specific format vocabulary.
 }
 
 \examples{

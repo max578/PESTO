@@ -18,11 +18,13 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-**PESTO** (Parameter ESTimation Optimised) is an R package
-that provides high-performance parameter estimation, uncertainty
-quantification, and inverse modelling capabilities. It builds on the
-modernised PEST++ algorithms developed by the USGS, bringing these
-powerful tools natively into the R ecosystem.
+**PESTO** (**P**arameter **E**stimation, **S**urrogates, and **T**ooling for
+**O**ptimisation) is an R package for high-performance parameter estimation,
+uncertainty quantification, and inverse modelling. It brings the algorithms of
+**PEST** (*Parameter ESTimation*; Doherty 2015) and its C++ successor
+**PEST++** (White et al. 2020) natively into the R ecosystem, and extends them
+with a typed forward-model contract, an in-process simulator callback,
+multi-fidelity acceleration, and surrogate methods.
 
 ### Key Features
 
@@ -283,6 +285,8 @@ cat("Reason:", sizing$reasoning, "\n")
 
 ## References
 
+- Doherty, J. (2015). *PEST: Model-Independent Parameter Estimation --
+  User Manual* (6th ed.). Watermark Numerical Computing, Brisbane.
 - White, J.T., Hunt, R.J., Fienen, M.N., & Doherty, J.E. (2020).
   Approaches to Highly Parameterized Inversion: PEST++ Version 5.
   USGS Techniques and Methods 7-C26.

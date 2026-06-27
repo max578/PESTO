@@ -72,9 +72,9 @@
 #'   binary version (via `apsimx::apsim_version()`, `NA_character_` if it
 #'   cannot be determined), so a calibrated run can be grounded to the
 #'   exact simulator that produced it. Thread it into the manifest with
-#'   `as_manifest(fit, apsim_version = attr(fm, "apsim_version"))`; kernR
-#'   then refuses to compare two manifests built against incompatible
-#'   APSIM majors.
+#'   `as_manifest(fit, apsim_version = attr(fm, "apsim_version"))`, so a
+#'   downstream consumer can refuse to compare two manifests built against
+#'   incompatible APSIM major versions.
 #' @seealso [pesto_ies_callback()] for the IES driver; [pesto_ies()]
 #'   for the classic `.pst`-file path.
 #' @export
@@ -250,8 +250,9 @@ apsim_callback <- function(template,
 
 # Capture the in-use APSIM binary version for run provenance. Defensive:
 # returns NA_character_ when apsimx or a working APSIM install is absent, so
-# a non-APSIM or CI context never errors. The captured string is grounded
-# downstream by kernR's major-version refusal on a manifest pair.
+# a non-APSIM or CI context never errors. The captured string lets a
+# downstream consumer refuse a manifest pair built against incompatible
+# APSIM major versions.
 .capture_apsim_version <- function() {
   if (!requireNamespace("apsimx", quietly = TRUE)) return(NA_character_)
   # An absent APSIM binary makes apsim_version() *warn* and return empty; that

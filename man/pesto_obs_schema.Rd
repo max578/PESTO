@@ -26,13 +26,12 @@ Constructs the optional \code{obs_schema} slot of a
 output and parameter column \emph{means} (its physical quantity and unit),
 so a downstream consumer can verify two manifests are commensurable by
 name rather than trusting a positional convention. This is the single
-Independent-Oracle anchor the manifest contract previously lacked.
+Independent-Oracle anchor the manifest format previously lacked.
 }
 \details{
-Each row optionally carries provenance per the orchestra provenance
-vocabulary: \code{verified_on} (a \code{Date}, or \code{NA} for an unverified fact),
-\code{oracle_kind}, and \code{evidence_path}. A column is \emph{grounded} only when
-\code{verified_on} is a non-\code{NA} date.
+Each row optionally carries provenance: \code{verified_on} (a \code{Date}, or \code{NA}
+for an unverified fact), \code{oracle_kind}, and \code{evidence_path}. A column is
+\emph{grounded} only when \code{verified_on} is a non-\code{NA} date.
 }
 \examples{
 # Describe two output columns and one parameter, grounding the yield
@@ -55,6 +54,5 @@ schema <- pesto_obs_schema(
 str(schema, max.level = 2L)
 }
 \seealso{
-The manifest contract \code{inst/manifest_contract.md} and the
-orchestra provenance vocabulary.
+The manifest format specification in \code{inst/manifest_contract.md}.
 }

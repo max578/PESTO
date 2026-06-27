@@ -52,9 +52,9 @@ carries an \code{"apsim_version"} attribute recording the in-use APSIM
 binary version (via \code{apsimx::apsim_version()}, \code{NA_character_} if it
 cannot be determined), so a calibrated run can be grounded to the
 exact simulator that produced it. Thread it into the manifest with
-\code{as_manifest(fit, apsim_version = attr(fm, "apsim_version"))}; kernR
-then refuses to compare two manifests built against incompatible
-APSIM majors.
+\code{as_manifest(fit, apsim_version = attr(fm, "apsim_version"))}, so a
+downstream consumer can refuse to compare two manifests built against
+incompatible APSIM major versions.
 }
 \description{
 Builds an in-process forward-model closure for \code{\link[=pesto_ies_callback]{pesto_ies_callback()}}
