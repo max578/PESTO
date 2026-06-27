@@ -78,6 +78,8 @@ reference:
   contents:
   - train_gp_surrogate
   - predict_gp_surrogate
+  - train_gp_surrogate_tuned
+  - predict_gp_surrogate_tuned
   - train_rff_surrogate
   - predict_rff_surrogate
   - surrogate_ensemble_update

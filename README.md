@@ -120,7 +120,7 @@ Contributions are welcome. Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for t
 citation("PESTO")
 ```
 
-> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.5.0. https://github.com/max578/PESTO
+> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.8.0. https://github.com/max578/PESTO
 
 ## Related Projects
 
@@ -129,7 +129,7 @@ citation("PESTO")
 
 ## Acknowledgements
 
-PESTO builds on the algorithmic legacy of the [PEST++](https://github.com/usgs/pestpp) project (US Geological Survey) and the underlying PEST framework by John Doherty. The package is developed at the University of Adelaide; the surrogate-acceleration, adaptive-ensemble-sizing, and convergence-aware components are original contributions of the author.
+PESTO builds on the algorithmic legacy of the [PEST++](https://github.com/usgs/pestpp) project (US Geological Survey) and the underlying PEST framework by John Doherty. The package is developed at Adelaide University; the surrogate-acceleration, adaptive-ensemble-sizing, and convergence-aware components are original contributions of the author.
 
 ## License
 

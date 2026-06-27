@@ -310,7 +310,7 @@ canon recipes on the `max578/PESTO` channel.
 * `codemeta.json` `copyrightHolder` corrected from
   `Organization "Supremum Consulting Ltd"` to
   `Person "Max Moldovan"` with ORCID `0000-0001-9680-8474` and
-  University of Adelaide affiliation, matching `Authors@R` and
+  Adelaide University affiliation, matching `Authors@R` and
   `LICENSE.md`.
 
 ### AAGI canon recipes added

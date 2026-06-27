@@ -3,14 +3,14 @@
   "@type": "SoftwareSourceCode",
   "identifier": "PESTO",
   "name": "PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation",
-  "version": "0.5.0",
+  "version": "0.8.0",
   "description": "High-performance parameter estimation, uncertainty quantification, and inverse modelling toolkit built on modernised PEST++ algorithms. Provides native R interfaces to iterative ensemble smoothers (IES), Gauss-Levenberg-Marquardt (GLM) solvers, global sensitivity analysis, and multi-objective optimisation under uncertainty. Includes surrogate-accelerated IES via Gaussian Process and Random Fourier Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen), and convergence-aware adaptive ensemble sizing.",
   "license": "https://spdx.org/licenses/GPL-3.0-or-later",
   "codeRepository": "https://github.com/max578/PESTO",
   "issueTracker": "https://github.com/max578/PESTO/issues",
   "datePublished": "2026-04-25",
   "dateCreated": "2026-04-08",
-  "dateModified": "2026-06-02",
+  "dateModified": "2026-06-27",
   "keywords": [
     "parameter estimation",
     "uncertainty quantification",
@@ -61,7 +61,7 @@
       "@id": "https://orcid.org/0000-0001-9680-8474",
       "affiliation": {
         "@type": "Organization",
-        "name": "University of Adelaide"
+        "name": "Adelaide University"
       }
     }
   ],
@@ -83,7 +83,7 @@
       "@id": "https://orcid.org/0000-0001-9680-8474",
       "affiliation": {
         "@type": "Organization",
-        "name": "University of Adelaide"
+        "name": "Adelaide University"
       }
     }
   ],
