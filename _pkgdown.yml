@@ -53,6 +53,7 @@ reference:
   contents:
   - pesto_ies_callback
   - pesto_ies_filter
+  - pesto_ies_result-methods
   - apsim_callback
 
 - title: Inflation and localisation

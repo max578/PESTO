@@ -49,8 +49,9 @@ jobs:
 
       - uses: codecov/codecov-action@v4
         with:
-          # Fail CI if Codecov runs into problems uploading the report.
-          fail_ci_if_error: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+          # A Codecov upload problem (e.g. no token configured) should not fail
+          # the workflow; the report uploads when CODECOV_TOKEN is set.
+          fail_ci_if_error: false
           file: ./cobertura.xml
           plugins: noop
           disable_search: true
