@@ -28,6 +28,7 @@ reference:
   - pesto_sensitivity
   - pesto_surrogate_ies
   - pesto_version
+  - pestpp_available
 
 - title: Forward-model contract and multi-fidelity
   desc: Typed forward-model object both adapter modes honour, and the

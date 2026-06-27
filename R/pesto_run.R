@@ -411,6 +411,41 @@ pesto_sensitivity <- function(pst_file,
   )
 }
 
+#' Is a PEST++ Executable Available?
+#'
+#' A non-erroring capability probe for a PEST++ family executable. It is the
+#' documented way for examples, vignettes, and conditional tests to skip
+#' gracefully when no binary is installed: every PESTO algorithm runs natively
+#' in R, so the external binaries are needed only for the optional
+#' cross-checking and `.pst`-file paths.
+#'
+#' The probe looks first for a copy bundled with PESTO (`inst/bin`), then for
+#' the executable on the system `PATH`. It mirrors the resolution used by
+#' [pesto_ies()] and friends but never throws.
+#'
+#' @param which Character scalar naming the executable to probe. Defaults to
+#'   `"pestpp-ies"`; any PEST++ tool name is accepted, e.g. `"pestpp-glm"`,
+#'   `"pestpp-swp"`, `"pestpp-sen"`.
+#' @return A length-one logical: `TRUE` if the named executable is resolvable,
+#'   `FALSE` otherwise. Never errors.
+#' @examples
+#' # FALSE on a machine without PEST++ installed -- and that is fine:
+#' pestpp_available()
+#' pestpp_available("pestpp-glm")
+#' @seealso [pesto_ies()], [pesto_glm()]
+#' @export
+pestpp_available <- function(which = "pestpp-ies") {
+  if (!is.character(which) || length(which) != 1L || is.na(which) ||
+      !nzchar(which)) {
+    stop("`which` must be a single non-empty executable name.", call. = FALSE)
+  }
+  found <- tryCatch(
+    .find_pestpp_exe(which, NULL),
+    error = function(e) ""
+  )
+  nzchar(found)
+}
+
 #' Run IES with an In-Process R Callback Forward Model
 #'
 #' Drives an Iterative Ensemble Smoother entirely in R, using a user-supplied
