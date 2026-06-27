@@ -1,10 +1,10 @@
 # PESTO Ensemble Manifest (S7 class)
 
 A versioned, hashed, provenance-tracked container for the result of a
-PESTO ensemble run. The manifest is the cross-package contract object
-that downstream consumers (`kernR`, `proxymix`, paper-skill) read; it
-carries enough provenance to make a run independently reproducible and
-independently verifiable (via
+PESTO ensemble run. It is a portable *data contract*: a documented,
+versioned format that any downstream tool can read without depending on
+PESTO internals, carrying enough provenance to make a run independently
+reproducible and independently verifiable (via
 [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)).
 
 ## Arguments
@@ -33,9 +33,8 @@ independently verifiable (via
   same optional provenance). Build one with
   [`pesto_obs_schema()`](https://max578.github.io/PESTO/reference/pesto_obs_schema.md).
   The descriptor is provenance metadata — it is **not** folded into
-  `data_hash` (correspondence is grounded by a second member that agrees
-  on units, not by self-hash; see the orchestra provenance vocabulary).
-  Default `NULL` (absent).
+  `data_hash` (correspondence is grounded by a second manifest that
+  agrees on units, not by self-hash). Default `NULL` (absent).
 
 - params:
 
@@ -138,7 +137,7 @@ paths are recorded inside the YAML. Three sidecar modes:
 The YAML carries an explicit `integrity:` field (`"verifiable"` /
 `"not_verifiable"`) derived from `format` so downstream non-R tools can
 branch on the integrity contract without needing to know the
-kernR/PESTO-specific format vocabulary.
+PESTO-specific format vocabulary.
 
 ## Examples
 

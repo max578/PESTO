@@ -23,18 +23,16 @@
   23-fold versus the median-heuristic default (to roughly half a percent
   of the function range) and about 4.6-fold versus a single MLE length
   scale, bringing the surrogate within a small factor of a dedicated
-  anisotropic GP (`DiceKriging`). This resolves the constellation
-  `/stretch` finding that the *default* surrogate was several-fold worse
-  than an MLE GP on an anisotropic function. The GP remains zero-mean,
-  so it stays a small factor above a fully-optimised trend-bearing GP –
-  a documented limitation, not a length-scale defect. Re-grounding
-  script:
-  `ORCHESTRA_dev/stretch/constellation/verify/v8_R3_pesto_gp_tuned_regrounded.R`.
+  anisotropic GP (`DiceKriging`). This resolves a known finding that the
+  *default* surrogate was several-fold worse than an MLE GP on an
+  anisotropic function. The GP remains zero-mean, so it stays a small
+  factor above a fully-optimised trend-bearing GP – a documented
+  limitation, not a length-scale defect.
 
 ## PESTO 0.7.0
 
 The release that readies PESTO as the authoritative ensemble-manifest
-emitter for orchestra-coordinated runs and broadens the forward-model
+emitter for coordinated multi-tool runs and broadens the forward-model
 surface beyond the `apsimx` simulator to native
 ordinary-differential-equation models.
 
@@ -221,8 +219,8 @@ still accepts a bare `function(theta) -> obs`.
   [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
   tags them `method = "ies_filter"` (added to the
   `pesto_ensemble_manifest` validator) and carries their fidelity
-  provenance, so a filtered ensemble is a first-class scenario for the
-  downstream `kernR` consumers.
+  provenance, so a filtered ensemble is a first-class scenario for any
+  downstream consumer.
 
 #### Behaviour
 
@@ -414,9 +412,9 @@ canon recipes on the `max578/PESTO` channel.
   (CSV-only sidecars, hash recorded but not disk-verifiable).
 - New top-level YAML field `integrity: verifiable | not_verifiable`
   derived from `format`. Verifiable: `rds`, `both`. Not verifiable:
-  `csv_unverified`. Lets non-R downstream tools (paper-skill graders,
-  Python pipelines) branch on the integrity contract without parsing the
-  PESTO-specific format vocabulary.
+  `csv_unverified`. Lets non-R downstream tools (e.g. Python pipelines)
+  branch on the integrity contract without parsing the PESTO-specific
+  format vocabulary.
 - The legacy `format = "csv"` spelling is still accepted at the API
   boundary with a deprecation warning; the persisted form always uses
   `csv_unverified`.
@@ -466,15 +464,15 @@ canon recipes on the `max578/PESTO` channel.
 
 ## PESTO 0.3.0
 
-### Ensemble Manifest as S7 Cross-Package Contract (roadmap §A5)
+### Ensemble Manifest as a Portable, Versioned Run Record
 
 - New S7 class `pesto_ensemble_manifest` — versioned, hashed,
   provenance-tracked container for ensemble-run output. Slots cover
   `params`, `outputs`, `weights`, `obs_target`, `seed`, `data_hash`
   (SHA-256), `fidelity`, `apsim_version`, `pesto_version`, `timestamp`,
   plus method context (`method`, `noptmax`, `lambda_schedule`,
-  `failure_rate`). This is the contract object that downstream consumers
-  (`kernR`, `proxymix`, paper-skill) will read.
+  `failure_rate`). This is the documented, versioned format that any
+  downstream tool can read.
 - New
   [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
   — S7 generic with a method for `pesto_ies_callback_result`.

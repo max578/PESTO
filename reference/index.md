@@ -164,10 +164,10 @@ programmatically.
 - [`print(`*`<pesto_pst>`*`)`](https://max578.github.io/PESTO/reference/print.pesto_pst.md)
   : Print method for pesto_pst objects
 
-## Ensemble manifest (S7 cross-package contract)
+## Ensemble manifest (portable run record)
 
-Versioned, hashed, provenance-tracked ensemble-run container consumed by
-kernR and proxymix.
+Versioned, hashed, self-describing ensemble-run record for
+reproducibility and downstream consumption by any tool.
 
 - [`pesto_ensemble_manifest`](https://max578.github.io/PESTO/reference/pesto_ensemble_manifest.md)
   : PESTO Ensemble Manifest (S7 class)

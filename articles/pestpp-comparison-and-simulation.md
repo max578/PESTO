@@ -784,11 +784,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 
 | rank | rSVD_ms | LAPACK_ms | speedup_rSVD |
 |-----:|--------:|----------:|-------------:|
-|    5 |   2.682 |    39.938 |        14.89 |
-|   20 |   5.851 |    39.758 |         6.80 |
-|   50 |  10.052 |    39.230 |         3.90 |
-|  100 |  34.280 |    39.217 |         1.14 |
-|  180 |  70.110 |    39.324 |         0.56 |
+|    5 |   2.738 |    40.249 |        14.70 |
+|   20 |   5.818 |    39.928 |         6.86 |
+|   50 |  10.095 |    39.474 |         3.91 |
+|  100 |  34.522 |    39.457 |         1.14 |
+|  180 |  70.259 |    39.726 |         0.57 |
 
 rSVD vs LAPACK on a 400 x 200 matrix as k varies. {.table}
 
@@ -801,7 +801,7 @@ auto_res <- adaptive_svd(A_bench, k = 20L, method = "auto")
 acc_res  <- accelerate_svd(A_bench, thin = TRUE)
 cat("auto chose:    ", auto_res$method_used,
     " in ", round(auto_res$time_ms, 2), "ms\n", sep = "")
-#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.82ms
+#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.86ms
 cat("LAPACK direct: ", round(length(acc_res$d), 0),
     " singular values returned\n", sep = "")
 #> LAPACK direct: 200 singular values returned
@@ -1225,7 +1225,7 @@ if (length(unknown_in_use) > 0L) {
 .vig_t1 <- proc.time()["elapsed"]
 cat(sprintf("Vignette wall-clock: %.1f s\n",
             as.numeric(.vig_t1 - .vig_t0)))
-#> Vignette wall-clock: 12.0 s
+#> Vignette wall-clock: 12.2 s
 ```
 
 ``` r

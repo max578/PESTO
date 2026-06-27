@@ -6,7 +6,7 @@ a machine-checkable statement of what each output and parameter column
 *means* (its physical quantity and unit), so a downstream consumer can
 verify two manifests are commensurable by name rather than trusting a
 positional convention. This is the single Independent-Oracle anchor the
-manifest contract previously lacked.
+manifest format previously lacked.
 
 ## Usage
 
@@ -36,15 +36,13 @@ Either side may be omitted (`NULL`).
 
 ## Details
 
-Each row optionally carries provenance per the orchestra provenance
-vocabulary: `verified_on` (a `Date`, or `NA` for an unverified fact),
-`oracle_kind`, and `evidence_path`. A column is *grounded* only when
-`verified_on` is a non-`NA` date.
+Each row optionally carries provenance: `verified_on` (a `Date`, or `NA`
+for an unverified fact), `oracle_kind`, and `evidence_path`. A column is
+*grounded* only when `verified_on` is a non-`NA` date.
 
 ## See also
 
-The manifest contract `inst/manifest_contract.md` and the orchestra
-provenance vocabulary.
+The manifest format specification in `inst/manifest_contract.md`.
 
 ## Examples
 

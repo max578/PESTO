@@ -67,11 +67,16 @@
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p><strong>PESTO</strong> (Parameter ESTimation Optimised) is an R
-package that provides high-performance parameter estimation, uncertainty
-quantification, and inverse modelling capabilities. It builds on the
-modernised PEST++ algorithms developed by the USGS, bringing these
-powerful tools natively into the R ecosystem.</p>
+<p><strong>PESTO</strong> (<strong>P</strong>arameter
+<strong>E</strong>stimation, <strong>S</strong>urrogates, and
+<strong>T</strong>ooling for <strong>O</strong>ptimisation) is an R
+package for high-performance parameter estimation, uncertainty
+quantification, and inverse modelling. It brings the algorithms of
+<strong>PEST</strong> (<em>Parameter ESTimation</em>; Doherty 2015) and
+its C++ successor <strong>PEST++</strong> (White et al. 2020) natively
+into the R ecosystem, and extends them with a typed forward-model
+contract, an in-process simulator callback, multi-fidelity acceleration,
+and surrogate methods.</p>
 <div class="section level3">
 <h3 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h3>
@@ -268,8 +273,8 @@ the computational heart of the package:</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">bench</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; Unit: microseconds</span></span>
-<span><span class="co">#&gt;       expr     min       lq     mean  median       uq     max neval</span></span>
-<span><span class="co">#&gt;  PESTO_cpp 429.161 431.8415 443.0674 439.781 445.3415 553.293   100</span></span></code></pre></div>
+<span><span class="co">#&gt;       expr    min      lq    mean   median     uq     max neval</span></span>
+<span><span class="co">#&gt;  PESTO_cpp 428.68 432.507 441.826 436.1935 445.01 618.233   100</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="computing-phi-objective-function">Computing Phi (Objective Function)<a class="anchor" aria-label="anchor" href="#computing-phi-objective-function"></a>
@@ -349,7 +354,7 @@ speedups:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Method:"</span>, <span class="va">res_auto</span><span class="op">$</span><span class="va">method_used</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Method: rsvd (Halko-Martinsson-Tropp)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_auto</span><span class="op">$</span><span class="va">time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Time: 17.48 ms</span></span>
+<span><span class="co">#&gt; Time: 17.45 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Singular values (top 5):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_auto</span><span class="op">$</span><span class="va">d</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Singular values (top 5): 50.643 50.283 49.956 49.689 49.454</span></span>
 <span></span>
@@ -384,9 +389,9 @@ diagnostics:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"SVD method:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">svd_method</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; SVD method: LAPACK (platform-optimised)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"SVD time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">svd_time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; SVD time: 2.01 ms</span></span>
+<span><span class="co">#&gt; SVD time: 2.12 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Total time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">total_time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Total time: 2.44 ms</span></span>
+<span><span class="co">#&gt; Total time: 2.53 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Singular values used:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">singular_values_used</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Singular values used: 50</span></span></code></pre></div>
 </div>
@@ -448,6 +453,9 @@ Gauss-Levenberg-Marquardt estimation</li>
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <ul>
+<li>Doherty, J. (2015). <em>PEST: Model-Independent Parameter Estimation
+– User Manual</em> (6th ed.). Watermark Numerical Computing,
+Brisbane.</li>
 <li>White, J.T., Hunt, R.J., Fienen, M.N., &amp; Doherty, J.E. (2020).
 Approaches to Highly Parameterized Inversion: PEST++ Version 5. USGS
 Techniques and Methods 7-C26.</li>

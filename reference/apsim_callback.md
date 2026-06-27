@@ -79,9 +79,9 @@ APSIM binary version (via
 `NA_character_` if it cannot be determined), so a calibrated run can be
 grounded to the exact simulator that produced it. Thread it into the
 manifest with
-`as_manifest(fit, apsim_version = attr(fm, "apsim_version"))`; kernR
-then refuses to compare two manifests built against incompatible APSIM
-majors.
+`as_manifest(fit, apsim_version = attr(fm, "apsim_version"))`, so a
+downstream consumer can refuse to compare two manifests built against
+incompatible APSIM major versions.
 
 ## Details
 

@@ -119,9 +119,9 @@ carries an <code>"apsim_version"</code> attribute recording the in-use APSIM
 binary version (via <code><a href="https://rdrr.io/pkg/apsimx/man/apsim_version.html" class="external-link">apsimx::apsim_version()</a></code>, <code>NA_character_</code> if it
 cannot be determined), so a calibrated run can be grounded to the
 exact simulator that produced it. Thread it into the manifest with
-<code>as_manifest(fit, apsim_version = attr(fm, "apsim_version"))</code>; kernR
-then refuses to compare two manifests built against incompatible
-APSIM majors.</p>
+<code>as_manifest(fit, apsim_version = attr(fm, "apsim_version"))</code>, so a
+downstream consumer can refuse to compare two manifests built against
+incompatible APSIM major versions.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

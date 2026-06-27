@@ -2,11 +2,14 @@
 
 ## Introduction
 
-**PESTO** (Parameter ESTimation Optimised) is an R package that provides
-high-performance parameter estimation, uncertainty quantification, and
-inverse modelling capabilities. It builds on the modernised PEST++
-algorithms developed by the USGS, bringing these powerful tools natively
-into the R ecosystem.
+**PESTO** (**P**arameter **E**stimation, **S**urrogates, and **T**ooling
+for **O**ptimisation) is an R package for high-performance parameter
+estimation, uncertainty quantification, and inverse modelling. It brings
+the algorithms of **PEST** (*Parameter ESTimation*; Doherty 2015) and
+its C++ successor **PEST++** (White et al. 2020) natively into the R
+ecosystem, and extends them with a typed forward-model contract, an
+in-process simulator callback, multi-fidelity acceleration, and
+surrogate methods.
 
 ### Key Features
 
@@ -199,8 +202,8 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
   print(bench)
 }
 #> Unit: microseconds
-#>       expr     min       lq     mean  median       uq     max neval
-#>  PESTO_cpp 429.161 431.8415 443.0674 439.781 445.3415 553.293   100
+#>       expr    min      lq    mean   median     uq     max neval
+#>  PESTO_cpp 428.68 432.507 441.826 436.1935 445.01 618.233   100
 ```
 
 ## Computing Phi (Objective Function)
@@ -287,7 +290,7 @@ res_auto <- adaptive_svd(A, k = 20L, method = "auto")
 cat("Method:", res_auto$method_used, "\n")
 #> Method: rsvd (Halko-Martinsson-Tropp)
 cat("Time:", round(res_auto$time_ms, 2), "ms\n")
-#> Time: 17.48 ms
+#> Time: 17.45 ms
 cat("Singular values (top 5):", round(res_auto$d[1:5], 3), "\n")
 #> Singular values (top 5): 50.643 50.283 49.956 49.689 49.454
 
@@ -325,9 +328,9 @@ result <- ensemble_solution_gpu(
 cat("SVD method:", result$svd_method, "\n")
 #> SVD method: LAPACK (platform-optimised)
 cat("SVD time:", round(result$svd_time_ms, 2), "ms\n")
-#> SVD time: 2.01 ms
+#> SVD time: 2.12 ms
 cat("Total time:", round(result$total_time_ms, 2), "ms\n")
-#> Total time: 2.44 ms
+#> Total time: 2.53 ms
 cat("Singular values used:", result$singular_values_used, "\n")
 #> Singular values used: 50
 ```
@@ -393,6 +396,8 @@ cat("Reason:", sizing$reasoning, "\n")
 
 ## References
 
+- Doherty, J. (2015). *PEST: Model-Independent Parameter Estimation –
+  User Manual* (6th ed.). Watermark Numerical Computing, Brisbane.
 - White, J.T., Hunt, R.J., Fienen, M.N., & Doherty, J.E. (2020).
   Approaches to Highly Parameterized Inversion: PEST++ Version 5. USGS
   Techniques and Methods 7-C26.

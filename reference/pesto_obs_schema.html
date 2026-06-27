@@ -4,12 +4,12 @@ pesto_ensemble_manifest: a machine-checkable statement of what each
 output and parameter column means (its physical quantity and unit),
 so a downstream consumer can verify two manifests are commensurable by
 name rather than trusting a positional convention. This is the single
-Independent-Oracle anchor the manifest contract previously lacked."><meta property="og:description" content="Constructs the optional obs_schema slot of a
+Independent-Oracle anchor the manifest format previously lacked."><meta property="og:description" content="Constructs the optional obs_schema slot of a
 pesto_ensemble_manifest: a machine-checkable statement of what each
 output and parameter column means (its physical quantity and unit),
 so a downstream consumer can verify two manifests are commensurable by
 name rather than trusting a positional convention. This is the single
-Independent-Oracle anchor the manifest contract previously lacked."></head><body>
+Independent-Oracle anchor the manifest format previously lacked."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -53,7 +53,7 @@ Independent-Oracle anchor the manifest contract previously lacked."></head><body
 output and parameter column <em>means</em> (its physical quantity and unit),
 so a downstream consumer can verify two manifests are commensurable by
 name rather than trusting a positional convention. This is the single
-Independent-Oracle anchor the manifest contract previously lacked.</p>
+Independent-Oracle anchor the manifest format previously lacked.</p>
     </div>
 
     <div class="section level2">
@@ -85,15 +85,13 @@ be omitted (<code>NULL</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Each row optionally carries provenance per the orchestra provenance
-vocabulary: <code>verified_on</code> (a <code>Date</code>, or <code>NA</code> for an unverified fact),
-<code>oracle_kind</code>, and <code>evidence_path</code>. A column is <em>grounded</em> only when
-<code>verified_on</code> is a non-<code>NA</code> date.</p>
+    <p>Each row optionally carries provenance: <code>verified_on</code> (a <code>Date</code>, or <code>NA</code>
+for an unverified fact), <code>oracle_kind</code>, and <code>evidence_path</code>. A column is
+<em>grounded</em> only when <code>verified_on</code> is a non-<code>NA</code> date.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p>The manifest contract <code>inst/manifest_contract.md</code> and the
-orchestra provenance vocabulary.</p></div>
+    <div class="dont-index"><p>The manifest format specification in <code>inst/manifest_contract.md</code>.</p></div>
     </div>
 
     <div class="section level2">

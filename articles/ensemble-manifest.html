@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Ensemble Manifests -- the Cross-Package Contract • PESTO</title>
+<title>The Ensemble-Run Manifest: a Portable, Verifiable Record • PESTO</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Ensemble Manifests -- the Cross-Package Contract">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="The Ensemble-Run Manifest: a Portable, Verifiable Record">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -55,7 +55,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Ensemble Manifests -- the Cross-Package Contract</h1>
+      <h1>The Ensemble-Run Manifest: a Portable, Verifiable Record</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/max578/PESTO/blob/main/vignettes/ensemble-manifest.Rmd" class="external-link"><code>vignettes/ensemble-manifest.Rmd</code></a></small>
@@ -69,15 +69,21 @@
 </h2>
 <p>A PESTO ensemble run produces a moderately large pile of state:
 parameter ensemble, simulated outputs, target observations, IES weights,
-the RNG seed, the lambda schedule, runtime context. To let
-<code>kernR</code>, <code>proxymix</code>, and the paper-writing
-pipeline consume that output <strong>without reaching into
-PESTO-specific list internals</strong>, v0.3.0 introduces a versioned S7
-contract object – <code>pesto_ensemble_manifest</code> – plus YAML+CSV
-persistence with SHA-256 integrity checking.</p>
-<p>This is Year-1 §A5 of the UQ ag-stack roadmap. It is deliberately
-infrastructure rather than methodology: the value is that every
-downstream consumer reads the same object, with the same provenance
+the RNG seed, the lambda schedule, runtime context. The manifest
+captures all of it as a versioned S7 object –
+<code>pesto_ensemble_manifest</code> – with YAML + sidecar persistence
+and SHA-256 integrity checking, so a run is:</p>
+<ul>
+<li>
+<strong>reproducible and auditable</strong> – a complete,
+hash-verified record you can re-open and check later; and</li>
+<li>
+<strong>portable</strong> – a documented, versioned <em>data
+contract</em> that any downstream tool can read <strong>without reaching
+into PESTO-specific list internals</strong>.</li>
+</ul>
+<p>It is deliberately infrastructure rather than methodology: the value
+is that every consumer reads the same object, with the same provenance
 guarantees, on every run.</p>
 </div>
 <div class="section level2">
@@ -111,17 +117,17 @@ guarantees, on every run.</p>
 <span>                 apsim_version <span class="op">=</span> <span class="cn">NA_character_</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;pesto_ensemble_manifest&gt; schema 1.1.0</span></span>
-<span><span class="co">#&gt;   run_id        : ies_callback_20260627_215942_fe6542df</span></span>
+<span><span class="co">#&gt;   run_id        : ies_callback_20260627_232549_fe6542df</span></span>
 <span><span class="co">#&gt;   method        : ies_callback  (noptmax=4)</span></span>
 <span><span class="co">#&gt;   ensemble      : 60 realisations x 3 parameters | 6 observations</span></span>
 <span><span class="co">#&gt;   failure rate  : 0.00%</span></span>
 <span><span class="co">#&gt;   pesto version : 0.8.0.9000  apsim: NA</span></span>
-<span><span class="co">#&gt;   timestamp     : 2026-06-27T21:59:42+0000</span></span>
+<span><span class="co">#&gt;   timestamp     : 2026-06-27T23:25:49+0000</span></span>
 <span><span class="co">#&gt;   data hash     : sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6</span></span></code></pre></div>
 <p>Slots are reachable via the standard S7 <code>@</code> accessor:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span><span class="op">@</span><span class="va">run_id</span></span>
-<span><span class="co">#&gt; [1] "ies_callback_20260627_215942_fe6542df"</span></span>
+<span><span class="co">#&gt; [1] "ies_callback_20260627_232549_fe6542df"</span></span>
 <span><span class="va">m</span><span class="op">@</span><span class="va">data_hash</span></span>
 <span><span class="co">#&gt; [1] "sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6"</span></span>
 <span><span class="va">m</span><span class="op">@</span><span class="va">noptmax</span></span>
@@ -160,7 +166,7 @@ otherwise trip on formatter precision loss:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">14</span><span class="op">]</span>,</span>
 <span>          collapse <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; schema_version: 1.1.0</span></span>
-<span><span class="co">#&gt; run_id: ies_callback_20260627_215942_fe6542df</span></span>
+<span><span class="co">#&gt; run_id: ies_callback_20260627_232549_fe6542df</span></span>
 <span><span class="co">#&gt; data_hash: sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6</span></span>
 <span><span class="co">#&gt; format: rds</span></span>
 <span><span class="co">#&gt; integrity: verifiable</span></span>
@@ -237,19 +243,22 @@ hashes so a downstream consumer can fail fast and report the divergence
 cleanly.</p>
 </div>
 <div class="section level2">
-<h2 id="cross-package-contract">Cross-package contract<a class="anchor" aria-label="anchor" href="#cross-package-contract"></a>
+<h2 id="consuming-a-manifest">Consuming a manifest<a class="anchor" aria-label="anchor" href="#consuming-a-manifest"></a>
 </h2>
-<p>The manifest is the single object that <code>kernR</code> (HSIC
-identifiability, DR-DATE counterfactuals, MMD posterior-predictive
-checks) and <code>proxymix</code> (GMM density-ratio bridges) consume.
-By dispatching on the S7 class, those packages never see PESTO-internal
-list shapes. They read <code>m@params</code>, <code>m@outputs</code>,
-<code>m@weights</code>, <code>m@obs_target</code> through the contract
-and let <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> gate on integrity.</p>
-<p>The companion jstyle <code>outputs_manifest.yaml</code> (the
-project-level artefact index) will reference per-run manifests like this
-one by relative path + the same <code>data_hash</code>, so a project’s
-manifest tree is end-to-end hash-verifiable.</p>
+<p>Any downstream tool can consume a manifest through the same stable
+surface, without ever seeing PESTO-internal list shapes. A conformant
+consumer reads it back with <code><a href="../reference/read_manifest.html">read_manifest()</a></code>, calls
+<code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> before trusting it, and then works with
+the typed slots – <code>m@params</code>, <code>m@outputs</code>,
+<code>m@weights</code>, <code>m@obs_target</code> – branching on
+<code>m@schema_version</code> for forward compatibility. For example, a
+downstream analysis of an APSIM crop-model ensemble would read the
+manifest, refuse on <code>integrity: "not_verifiable"</code> or a high
+<code>failure_rate</code>, and thread <code>m@data_hash</code> /
+<code>m@run_id</code> into its own provenance so the lineage closes.</p>
+<p>The full producer / consumer obligations are documented as a
+standalone format specification in
+<code>inst/manifest_contract.md</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a>

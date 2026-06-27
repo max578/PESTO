@@ -4,12 +4,14 @@
 **O**ptimisation
 
 PESTO is a high-performance R package for model-independent parameter
-estimation and uncertainty quantification, built on modernised
-[PEST++](https://github.com/usgs/pestpp) iterative ensemble-smoother
-(IES) algorithms with novel methodological extensions. It is the first
-R-native implementation of PEST++-class ensemble smoothers, adding a
+estimation and uncertainty quantification. It brings the algorithms of
+**PEST** (*Parameter ESTimation*; Doherty 2015) and its C++ successor
+[**PEST++**](https://github.com/usgs/pestpp) (White et al. 2020) –
+notably the iterative ensemble smoother (IES) – natively into R, and is
+the first R-native implementation of that algorithm family. It adds a
 typed forward-model contract, an in-process simulator callback,
-multi-fidelity acceleration, and covariance inflation / localisation.
+multi-fidelity acceleration, covariance inflation / localisation, and
+surrogate methods.
 
 ## Key Features
 
@@ -352,10 +354,10 @@ programmatically.
 - [`print(`*`<pesto_pst>`*`)`](https://max578.github.io/PESTO/reference/print.pesto_pst.md)
   : Print method for pesto_pst objects
 
-## Ensemble manifest (S7 cross-package contract)
+## Ensemble manifest (portable run record)
 
-Versioned, hashed, provenance-tracked ensemble-run container consumed by
-kernR and proxymix.
+Versioned, hashed, self-describing ensemble-run record for
+reproducibility and downstream consumption by any tool.
 
 - [`pesto_ensemble_manifest`](https://max578.github.io/PESTO/reference/pesto_ensemble_manifest.md)
   : PESTO Ensemble Manifest (S7 class)
@@ -413,5 +415,5 @@ surrogate diagnostics.
 
 - [In-Process IES via R Callback -- apsimx
   Adapter](https://max578.github.io/PESTO/articles/apsim-callback.md):
-- [Ensemble Manifests -- the Cross-Package
-  Contract](https://max578.github.io/PESTO/articles/ensemble-manifest.md):
+- [The Ensemble-Run Manifest: a Portable, Verifiable
+  Record](https://max578.github.io/PESTO/articles/ensemble-manifest.md):

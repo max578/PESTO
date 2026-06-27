@@ -18,5 +18,5 @@
 
 - [In-Process IES via R Callback -- apsimx
   Adapter](https://max578.github.io/PESTO/articles/apsim-callback.md):
-- [Ensemble Manifests -- the Cross-Package
-  Contract](https://max578.github.io/PESTO/articles/ensemble-manifest.md):
+- [The Ensemble-Run Manifest: a Portable, Verifiable
+  Record](https://max578.github.io/PESTO/articles/ensemble-manifest.md):

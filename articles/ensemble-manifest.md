@@ -1,18 +1,22 @@
-# Ensemble Manifests -- the Cross-Package Contract
+# The Ensemble-Run Manifest: a Portable, Verifiable Record
 
 ## Why a manifest?
 
 A PESTO ensemble run produces a moderately large pile of state:
 parameter ensemble, simulated outputs, target observations, IES weights,
-the RNG seed, the lambda schedule, runtime context. To let `kernR`,
-`proxymix`, and the paper-writing pipeline consume that output **without
-reaching into PESTO-specific list internals**, v0.3.0 introduces a
-versioned S7 contract object – `pesto_ensemble_manifest` – plus YAML+CSV
-persistence with SHA-256 integrity checking.
+the RNG seed, the lambda schedule, runtime context. The manifest
+captures all of it as a versioned S7 object – `pesto_ensemble_manifest`
+– with YAML + sidecar persistence and SHA-256 integrity checking, so a
+run is:
 
-This is Year-1 §A5 of the UQ ag-stack roadmap. It is deliberately
-infrastructure rather than methodology: the value is that every
-downstream consumer reads the same object, with the same provenance
+- **reproducible and auditable** – a complete, hash-verified record you
+  can re-open and check later; and
+- **portable** – a documented, versioned *data contract* that any
+  downstream tool can read **without reaching into PESTO-specific list
+  internals**.
+
+It is deliberately infrastructure rather than methodology: the value is
+that every consumer reads the same object, with the same provenance
 guarantees, on every run.
 
 ## Constructing a manifest from an IES run
@@ -50,12 +54,12 @@ m <- as_manifest(fit, seed = 20260516L,
                  apsim_version = NA_character_)
 print(m)
 #> <pesto_ensemble_manifest> schema 1.1.0
-#>   run_id        : ies_callback_20260627_215942_fe6542df
+#>   run_id        : ies_callback_20260627_232549_fe6542df
 #>   method        : ies_callback  (noptmax=4)
 #>   ensemble      : 60 realisations x 3 parameters | 6 observations
 #>   failure rate  : 0.00%
 #>   pesto version : 0.8.0.9000  apsim: NA
-#>   timestamp     : 2026-06-27T21:59:42+0000
+#>   timestamp     : 2026-06-27T23:25:49+0000
 #>   data hash     : sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
 ```
 
@@ -64,7 +68,7 @@ Slots are reachable via the standard S7 `@` accessor:
 ``` r
 
 m@run_id
-#> [1] "ies_callback_20260627_215942_fe6542df"
+#> [1] "ies_callback_20260627_232549_fe6542df"
 m@data_hash
 #> [1] "sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6"
 m@noptmax
@@ -113,7 +117,7 @@ A peek at what the YAML actually looks like (truncated):
 cat(paste(readLines(file.path(dir, "wagga_2026_run01.yaml"))[1:14],
           collapse = "\n"))
 #> schema_version: 1.1.0
-#> run_id: ies_callback_20260627_215942_fe6542df
+#> run_id: ies_callback_20260627_232549_fe6542df
 #> data_hash: sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
 #> format: rds
 #> integrity: verifiable
@@ -200,21 +204,24 @@ v$ok
 returns the stored vs recomputed hashes so a downstream consumer can
 fail fast and report the divergence cleanly.
 
-## Cross-package contract
+## Consuming a manifest
 
-The manifest is the single object that `kernR` (HSIC identifiability,
-DR-DATE counterfactuals, MMD posterior-predictive checks) and `proxymix`
-(GMM density-ratio bridges) consume. By dispatching on the S7 class,
-those packages never see PESTO-internal list shapes. They read
-`m@params`, `m@outputs`, `m@weights`, `m@obs_target` through the
-contract and let
+Any downstream tool can consume a manifest through the same stable
+surface, without ever seeing PESTO-internal list shapes. A conformant
+consumer reads it back with
+[`read_manifest()`](https://max578.github.io/PESTO/reference/read_manifest.md),
+calls
 [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
-gate on integrity.
+before trusting it, and then works with the typed slots – `m@params`,
+`m@outputs`, `m@weights`, `m@obs_target` – branching on
+`m@schema_version` for forward compatibility. For example, a downstream
+analysis of an APSIM crop-model ensemble would read the manifest, refuse
+on `integrity: "not_verifiable"` or a high `failure_rate`, and thread
+`m@data_hash` / `m@run_id` into its own provenance so the lineage
+closes.
 
-The companion jstyle `outputs_manifest.yaml` (the project-level artefact
-index) will reference per-run manifests like this one by relative path +
-the same `data_hash`, so a project’s manifest tree is end-to-end
-hash-verifiable.
+The full producer / consumer obligations are documented as a standalone
+format specification in `inst/manifest_contract.md`.
 
 ## Reproducibility
 
