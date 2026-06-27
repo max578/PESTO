@@ -24,8 +24,8 @@
 #
 # Status: standalone diagnostic, NOT a unit test. Run from package root via
 #   Rscript inst/scripts/i2_paired_seed_check.R
-# Logs to stdout; saves a paired-seed comparison RDS to ../../<repo>/I2_paired_seed_result.rds
-# in the project tracker location for traceability.
+# Logs to stdout; saves a paired-seed comparison RDS to
+# ../../<repo>/I2_paired_seed_result.rds in the project tracker location.
 
 suppressMessages({
   library(PESTO)
@@ -63,7 +63,9 @@ par0 <- matrix(
   dimnames = list(par_names, sprintf("r%02d", seq_len(n_real)))
 )
 par0 <- pmin(pmax(par0, log_lb), log_ub)
-run_forward <- function(par_mat) apply(par_mat, 2L, function(lp) forward(exp(lp)))
+run_forward <- function(par_mat) {
+  apply(par_mat, 2L, function(lp) forward(exp(lp)))
+}
 obs0 <- run_forward(par0)
 Y    <- matrix(rep(y_obs, n_real), nrow = n_obs)
 
@@ -76,7 +78,8 @@ ref_upgrade <- function(par_mat, obs_mat, y, w, lam) {
   od <- obs_mat - om                         # nobs x nreal
   scale <- 1 / sqrt(ncol(par_mat) - 1)
   W <- diag(w)
-  Yres_signed <- matrix(rep(y, ncol(par_mat)), nrow = length(y)) - obs_mat # obs - sim
+  # obs - sim
+  Yres_signed <- matrix(rep(y, ncol(par_mat)), nrow = length(y)) - obs_mat
   S <- svd(scale * W %*% od)
   Sigma <- S$d
   inv <- 1 / (Sigma^2 + (lam + 1))
@@ -92,7 +95,8 @@ pesto_upgrade <- function(par_mat, obs_mat, y, w, lam) {
   pm <- rowMeans(par_mat); om <- rowMeans(obs_mat)
   pd <- par_mat - pm
   od <- obs_mat - om
-  obs_resid <- obs_mat - matrix(rep(y, ncol(par_mat)), nrow = length(y))  # sim - obs
+  # sim - obs
+  obs_resid <- obs_mat - matrix(rep(y, ncol(par_mat)), nrow = length(y))
   Am <- matrix(0, n_par, 0)  # use_approx = TRUE means Am ignored
   upg_T <- ensemble_solution(
     par_diff   = pd,
@@ -151,7 +155,8 @@ mean_pesto <- colMeans(post_pesto)
 mean_ref   <- colMeans(post_ref)
 rel_diff   <- 100 * abs(mean_pesto - mean_ref) / pmax(abs(mean_ref), 1e-6)
 
-cat("\n=== I2 paired-seed posterior comparison (single lambda, no Marquardt) ===\n")
+cat(paste0("\n=== I2 paired-seed posterior comparison ",
+           "(single lambda, no Marquardt) ===\n"))
 print(data.table(
   parameter   = par_names,
   truth       = round(theta_true, 4),

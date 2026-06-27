@@ -18,7 +18,8 @@ pesto_ies_callback(
   inflation = NULL,
   localisation = NULL,
   on_failure = c("na", "stop"),
-  verbose = TRUE
+  verbose = TRUE,
+  phi_tol = NULL
 )
 }
 \arguments{
@@ -36,7 +37,9 @@ bare function.}
 
 \item{prior_ensemble}{Matrix or data.table, \verb{nreal x npar}. Columns are
 parameters; an optional \code{real_name} column is preserved if present.
-Column names supply parameter names.}
+Column names supply parameter names. To \strong{warm-start}, pass the parameter
+columns of a previous run's \code{par_ensemble} as the prior of the next: a
+posterior ensemble is itself a valid prior ensemble.}
 
 \item{obs}{Named numeric vector. Target observations.}
 
@@ -80,6 +83,14 @@ drops the null-space correction.}
 forward unchanged and proceeds; \code{"stop"} aborts on any failure.}
 
 \item{verbose}{Logical. Print per-iteration phi summaries.}
+
+\item{phi_tol}{Numeric scalar or \code{NULL}. Optional convergence tolerance:
+when non-\code{NULL}, iteration stops early once the relative reduction in the
+mean objective function (phi) between successive iterations falls below
+\code{phi_tol} -- the phi-reduction stopping rule of White (2018). \code{NULL}
+(default) runs the full \code{noptmax} iterations, leaving the update
+byte-identical to the unchecked smoother. Use a smaller \code{phi_tol} to
+demand more iterations, a larger one to stop sooner.}
 }
 \value{
 A list of class \code{c("pesto_ies_callback_result", "pesto_ies_result")}
@@ -98,6 +109,11 @@ countermeasures are active.}
 \item{n_forward_evals}{Total number of realisation-level forward
 evaluations across all iterations (including the final refresh).}
 \item{failure_rate}{Fraction of forward evaluations that returned NA.}
+\item{converged}{Logical: \code{TRUE} if the run stopped early on the
+\code{phi_tol} convergence criterion; \code{FALSE} when \code{phi_tol} is \code{NULL} or
+the full \code{noptmax} was reached.}
+\item{n_iterations}{Number of IES iterations actually run (fewer than
+\code{noptmax} if the convergence checker stopped the run early).}
 \item{fidelity}{For a \code{\link[=pesto_multifidelity_model]{pesto_multifidelity_model()}} run, a provenance
 list \code{list(type, schedule, final_level, n_levels, costs)} recording the
 realised per-iteration fidelity schedule; \code{NULL} for a single-fidelity
@@ -163,6 +179,10 @@ colMeans(as.matrix(fit$par_ensemble[, -1]))  # should approach theta_true
 Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
 iterative ensemble smoother for efficient history matching and
 uncertainty quantification. \emph{Computational Geosciences}, 17(4), 689--703.
+
+White, J.T. (2018). A model-independent iterative ensemble smoother for
+efficient history-matching and uncertainty quantification in very high
+dimensions. \emph{Environmental Modelling & Software}, 109, 191--201.
 }
 \seealso{
 \code{\link[=pesto_ies]{pesto_ies()}} for the \code{.pst}-file path; \code{\link[=apsim_callback]{apsim_callback()}}

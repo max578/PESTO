@@ -32,7 +32,8 @@ b <- rnorm(nobs)
 forward <- function(theta) sweep(theta %*% t(A), 2L, b, "+")
 
 theta_true <- rnorm(npar)
-y <- as.numeric(forward(matrix(theta_true, nrow = 1L))) + rnorm(nobs, sd = sigma)
+y <- as.numeric(forward(matrix(theta_true, nrow = 1L))) +
+  rnorm(nobs, sd = sigma)
 names(y) <- paste0("o", seq_len(nobs))
 
 prior <- matrix(rnorm(nreal * npar), nreal, npar,

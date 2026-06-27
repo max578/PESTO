@@ -458,7 +458,9 @@ pesto_sensitivity <- function(pst_file,
 #'   bare function.
 #' @param prior_ensemble Matrix or data.table, `nreal x npar`. Columns are
 #'   parameters; an optional `real_name` column is preserved if present.
-#'   Column names supply parameter names.
+#'   Column names supply parameter names. To **warm-start**, pass the parameter
+#'   columns of a previous run's `par_ensemble` as the prior of the next: a
+#'   posterior ensemble is itself a valid prior ensemble.
 #' @param obs Named numeric vector. Target observations.
 #' @param obs_sd Numeric scalar or vector of length `nobs`. Observation
 #'   standard deviation(s); the IES weights are `1/obs_sd`.
@@ -466,6 +468,13 @@ pesto_sensitivity <- function(pst_file,
 #' @param lambda Numeric scalar or vector. Marquardt lambda per iteration.
 #'   A scalar is recycled; a vector shorter than `noptmax` is right-padded
 #'   with its last value (default 1.0).
+#' @param phi_tol Numeric scalar or `NULL`. Optional convergence tolerance:
+#'   when non-`NULL`, iteration stops early once the relative reduction in the
+#'   mean objective function (phi) between successive iterations falls below
+#'   `phi_tol` -- the phi-reduction stopping rule of White (2018). `NULL`
+#'   (default) runs the full `noptmax` iterations, leaving the update
+#'   byte-identical to the unchecked smoother. Use a smaller `phi_tol` to
+#'   demand more iterations, a larger one to stop sooner.
 #' @param fidelity_schedule Integer vector or `NULL`. Only consulted when
 #'   `forward_model` is a [pesto_multifidelity_model()]: the fidelity level to
 #'   evaluate at each iteration (recycled / right-padded to `noptmax`). `NULL`
@@ -506,6 +515,11 @@ pesto_sensitivity <- function(pst_file,
 #'     \item{n_forward_evals}{Total number of realisation-level forward
 #'       evaluations across all iterations (including the final refresh).}
 #'     \item{failure_rate}{Fraction of forward evaluations that returned NA.}
+#'     \item{converged}{Logical: `TRUE` if the run stopped early on the
+#'       `phi_tol` convergence criterion; `FALSE` when `phi_tol` is `NULL` or
+#'       the full `noptmax` was reached.}
+#'     \item{n_iterations}{Number of IES iterations actually run (fewer than
+#'       `noptmax` if the convergence checker stopped the run early).}
 #'     \item{fidelity}{For a [pesto_multifidelity_model()] run, a provenance
 #'       list `list(type, schedule, final_level, n_levels, costs)` recording the
 #'       realised per-iteration fidelity schedule; `NULL` for a single-fidelity
@@ -515,6 +529,10 @@ pesto_sensitivity <- function(pst_file,
 #' Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
 #' iterative ensemble smoother for efficient history matching and
 #' uncertainty quantification. *Computational Geosciences*, 17(4), 689--703.
+#'
+#' White, J.T. (2018). A model-independent iterative ensemble smoother for
+#' efficient history-matching and uncertainty quantification in very high
+#' dimensions. *Environmental Modelling & Software*, 109, 191--201.
 #' @seealso [pesto_ies()] for the `.pst`-file path; [apsim_callback()]
 #'   for the apsimx adapter.
 #' @export
@@ -547,7 +565,8 @@ pesto_ies_callback <- function(forward_model,
                                inflation = NULL,
                                localisation = NULL,
                                on_failure = c("na", "stop"),
-                               verbose = TRUE) {
+                               verbose = TRUE,
+                               phi_tol = NULL) {
 
   # Validate inputs -----------------------------------------------------
   on_failure <- match.arg(on_failure)
@@ -555,6 +574,7 @@ pesto_ies_callback <- function(forward_model,
   .check_inflation(inflation)
   .check_localisation(localisation)
   noptmax <- as.integer(noptmax)
+  if (!is.null(phi_tol)) .assert_positive_scalar(phi_tol, "phi_tol")
 
   # Coerce prior ensemble -----------------------------------------------
   if (data.table::is.data.table(prior_ensemble) ||
@@ -660,6 +680,8 @@ pesto_ies_callback <- function(forward_model,
   iter_meta   <- vector("list", noptmax)
   total_evals <- 0L
   total_failures <- 0L
+  converged   <- FALSE
+  n_iter_run  <- noptmax
 
   t0 <- proc.time()["elapsed"]
 
@@ -668,7 +690,9 @@ pesto_ies_callback <- function(forward_model,
   total_failures <- total_failures + attr(obs_mat, "n_failures")
 
   for (k in seq_len(noptmax)) {
-    ok <- stats::complete.cases(obs_mat)
+    # A realisation is usable only if all its outputs are finite: this excludes
+    # NA / NaN failures and any non-finite (Inf) outputs (srr G2.16).
+    ok <- rowSums(!is.finite(obs_mat)) == 0L
     if (sum(ok) < 2L) {
       stop(
         sprintf(
@@ -729,12 +753,32 @@ pesto_ies_callback <- function(forward_model,
       step$diag
     )
 
+    # Optional convergence checker: stop early once the relative reduction in
+    # mean phi between successive iterations falls below phi_tol (the
+    # phi-reduction stopping rule of White 2018). phi_tol = NULL (default) runs
+    # the full noptmax, leaving the result byte-identical to the unchecked run.
+    if (!is.null(phi_tol) && k > 1L) {
+      prev_phi <- iter_meta[[k - 1L]]$mean_phi
+      cur_phi  <- iter_meta[[k]]$mean_phi
+      if (is.finite(prev_phi) && prev_phi > 0 &&
+          (prev_phi - cur_phi) / prev_phi < phi_tol) {
+        converged  <- TRUE
+        n_iter_run <- k
+        break
+      }
+    }
+
     if (k < noptmax) {
       obs_mat <- eval_at(par_mat, lvl_for(k + 1L))
       total_evals    <- total_evals + nreal
       total_failures <- total_failures + attr(obs_mat, "n_failures")
     }
   }
+
+  # Trim the per-iteration records to the number of iterations actually run
+  # (a no-op unless the convergence checker stopped the run early).
+  phi_history <- phi_history[seq_len(n_iter_run)]
+  iter_meta   <- iter_meta[seq_len(n_iter_run)]
 
   # Final refresh and assemble result -----------------------------------
   # Always refresh at the highest fidelity so the returned ensemble is
@@ -778,6 +822,8 @@ pesto_ies_callback <- function(forward_model,
     runtime_seconds = runtime,
     n_forward_evals = total_evals,
     failure_rate    = total_failures / total_evals,
+    converged       = converged,
+    n_iterations    = n_iter_run,
     fidelity        = fidelity_record,
     # Assimilation inputs preserved so downstream code (e.g. A5
     # manifest emitter) can reconstruct the full run context.

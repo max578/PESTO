@@ -1,39 +1,57 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
 # PESTO <img src="man/figures/logo.png" align="right" height="139" />
 
 <!-- badges: start -->
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![License: GPL
+v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![R-CMD-check](https://github.com/max578/PESTO/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/max578/PESTO/actions/workflows/R-CMD-check.yaml)
+[![Codecov test
+coverage](https://codecov.io/gh/max578/PESTO/graph/badge.svg)](https://app.codecov.io/gh/max578/PESTO)
+[![r-universe](https://max578.r-universe.dev/badges/PESTO)](https://max578.r-universe.dev/PESTO)
 <!-- badges: end -->
 
-**P**arameter **E**stimation, **S**urrogates, and **T**ooling for **O**ptimisation
+**P**arameter **E**stimation, **S**urrogates, and **T**ooling for
+**O**ptimisation
 
-PESTO is a high-performance R package for model-independent parameter estimation and uncertainty quantification, built on modernised [PEST++](https://github.com/usgs/pestpp) algorithms with novel methodological extensions.
+PESTO is a high-performance R package for model-independent parameter
+estimation and uncertainty quantification, built on modernised
+[PEST++](https://github.com/usgs/pestpp) iterative ensemble-smoother
+(IES) algorithms with novel methodological extensions. It is the first
+R-native implementation of PEST++-class ensemble smoothers, adding a
+typed forward-model contract, an in-process simulator callback,
+multi-fidelity acceleration, and covariance inflation / localisation.
 
 ## Key Features
 
 | Feature | Description |
-|---------|-------------|
+|----|----|
 | **Fast ensemble solvers** | C++ (RcppEigen) implementation of IES and GLM update equations |
+| **In-process callback** | Couple any R forward model directly – no file-exchange overhead |
 | **Adaptive SVD** | Automatic backend selection: randomised SVD, LAPACK, or Eigen BDCSVD |
-| **Surrogate-accelerated IES** | Gaussian Process surrogates reduce model evaluations by 50--90% |
+| **Surrogate-accelerated IES** | Gaussian Process surrogates reduce model evaluations by 50–90% |
+| **Inflation & localisation** | Counter finite-ensemble under-dispersion and spurious correlations |
 | **Adaptive ensemble sizing** | ESS-based diagnostics prevent over/under-sampling |
 | **PEST++ integration** | Read/write .pst control files, run PEST++ executables from R |
 | **Publication-ready plots** | Convergence, ensemble distributions, identifiability, surrogate diagnostics |
 
 ## Installation
 
-The canonical home for PESTO is [`max578/PESTO`](https://github.com/max578/PESTO), published through the author's personal CRAN-track channel and the `max578.r-universe.dev` registry. The `AAGI-AUS/PESTO` remote is retained as a read-only mirror.
+The canonical home for PESTO is
+[`max578/PESTO`](https://github.com/max578/PESTO), published through the
+author’s personal CRAN-track channel and the `max578.r-universe.dev`
+registry. The `AAGI-AUS/PESTO` remote is retained as a read-only mirror.
 
-From GitHub (development version):
-
-```r
+``` r
+# Development version from GitHub
 # install.packages("pak")
 pak::pak("max578/PESTO")
-```
 
-Pre-built binaries are available from the author's r-universe:
-
-```r
+# Pre-built binaries from r-universe
 install.packages("PESTO", repos = c(
   "https://max578.r-universe.dev",
   "https://cloud.r-project.org"
@@ -42,95 +60,130 @@ install.packages("PESTO", repos = c(
 
 CRAN submission is in preparation.
 
-## Dependencies
+## Ensemble Bayesian inference (IES)
 
-System requirements:
+PESTO performs approximate Bayesian inference for parameter estimation.
+You specify a **prior as a parameter ensemble** – a matrix of draws
+encoding your prior belief about each parameter (rows are realisations,
+columns are parameters) – together with the observations and their error
+standard deviation. PESTO conditions the ensemble on the observations
+through the IES update and returns an approximate **posterior ensemble**
+with uncertainty diagnostics. Any R function mapping a parameter matrix
+to an observation matrix can be the forward model.
 
-- R >= 4.1.0
-- C++17 compiler (clang on macOS, g++ on Linux, Rtools on Windows)
-- LAPACK/BLAS (bundled with R)
-
-R-package dependencies are declared in `DESCRIPTION`. Imports: `Rcpp` (>= 1.0.12), `data.table`, `ggplot2`, `S7` (>= 0.2.0), `yaml` (>= 2.3.0), `digest` (>= 0.6.0). Suggested for vignettes and benchmarks: `testthat`, `knitr`, `rmarkdown`, `viridis`, `microbenchmark`, `Matrix`, `apsimx` (>= 2.7.0).
-
-## Quick Start
-
-```r
+``` r
 library(PESTO)
+set.seed(1)
 
-# Create a parameter estimation scenario
-pars <- data.table::data.table(
-  parnme    = paste0("k", 1:10),
-  partrans  = "log",
-  parchglim = "factor",
-  parval1   = runif(10, 0.1, 10),
-  parlbnd   = 0.001,
-  parubnd   = 1000,
-  pargp     = "hydraulic"
-)
+# Forward model: y = G %*% theta (any R function theta-matrix -> obs-matrix works)
+G <- matrix(rnorm(6 * 3), 6, 3)
+forward <- function(theta) theta %*% t(G)
+truth <- c(a = 1, b = -0.5, c = 2)
+obs <- stats::setNames(as.numeric(G %*% truth) + rnorm(6, sd = 0.05),
+                       paste0("o", 1:6))
 
-obs <- data.table::data.table(
-  obsnme = paste0("h", 1:20),
-  obsval = rnorm(20, 5, 1),
-  weight = 1.0,
-  obgnme = "heads"
-)
+# Prior: an ensemble of parameter draws (here a broad Gaussian over 3 parameters)
+prior <- matrix(rnorm(80 * 3), 80, 3, dimnames = list(NULL, names(truth)))
 
-pst <- create_pest_scenario(pars, obs, "python model.py")
-write_pst(pst, "model.pst")
+fit <- pesto_ies_callback(forward, prior, obs, obs_sd = 0.05, noptmax = 6,
+                          verbose = FALSE)
+colMeans(as.matrix(fit$par_ensemble[, -1]))   # posterior mean -> (1, -0.5, 2)
+#>          a          b          c 
+#>  1.0136949 -0.4936717  1.9847292
+```
 
-# Core computational kernels (no PEST++ binary needed)
+Optional convergence-based early stopping (`phi_tol`), covariance
+inflation (`pesto_inflation()`), and localisation
+(`pesto_localisation()`) are documented in `?pesto_ies_callback` and the
+*Getting started* vignette.
+
+## Low-level kernels
+
+The C++ update kernels are exported for advanced use (no PEST++ binary
+needed):
+
+``` r
 set.seed(42)
 npar <- 100; nobs <- 200; nreal <- 50
 upgrade <- ensemble_solution(
-  par_diff  = matrix(rnorm(npar * nreal), npar, nreal),
-  obs_diff  = matrix(rnorm(nobs * nreal), nobs, nreal),
-  obs_resid = matrix(rnorm(nobs * nreal), nobs, nreal),
-  par_resid = matrix(rnorm(npar * nreal), npar, nreal),
-  weights   = abs(rnorm(nobs)) + 0.1,
+  par_diff   = matrix(rnorm(npar * nreal), npar, nreal),
+  obs_diff   = matrix(rnorm(nobs * nreal), nobs, nreal),
+  obs_resid  = matrix(rnorm(nobs * nreal), nobs, nreal),
+  par_resid  = matrix(rnorm(npar * nreal), npar, nreal),
+  weights    = abs(rnorm(nobs)) + 0.1,
   parcov_inv = abs(rnorm(npar)) + 0.1,
-  Am        = matrix(rnorm(npar * (nreal - 1)), npar, nreal - 1),
-  cur_lam   = 1.0
+  Am         = matrix(rnorm(npar * (nreal - 1)), npar, nreal - 1),
+  cur_lam    = 1.0
 )
+dim(upgrade)
+#> [1]  50 100
 ```
 
-## Performance
+The classical `.pst`-file path is also supported:
 
-Benchmarks on Apple Silicon (M-series) comparing PESTO's C++ kernel against a pure R implementation:
+``` r
+pars <- data.table::data.table(
+  parnme = paste0("k", 1:10), partrans = "log", parchglim = "factor",
+  parval1 = runif(10, 0.1, 10), parlbnd = 0.001, parubnd = 1000,
+  pargp = "hydraulic"
+)
+obs <- data.table::data.table(
+  obsnme = paste0("h", 1:20), obsval = rnorm(20, 5, 1),
+  weight = 1.0, obgnme = "heads"
+)
+pst <- create_pest_scenario(pars, obs, "python model.py")
+write_pst(pst, file.path(tempdir(), "model.pst"))
+```
 
-| Scale (params x obs x reals) | PESTO (ms) | R native (ms) | Speedup |
-|-------------------------------|-----------|----------------|---------|
-| 50 x 100 x 30                | 0.17      | 0.17           | 1.0x    |
-| 500 x 1000 x 50              | 1.45      | 2.59           | 1.8x    |
-| 2000 x 5000 x 100            | 22.3      | 64.0           | 2.9x    |
+## Dependencies
 
-Randomised SVD: **35x** faster than full LAPACK at 2000x1000 for rank-20 approximation.
+- R \>= 4.1.0
+- C++17 compiler (clang on macOS, g++ on Linux, Rtools on Windows)
+- LAPACK/BLAS (bundled with R)
+
+R-package dependencies are declared in `DESCRIPTION` (Imports: `Rcpp`,
+`data.table`, `ggplot2`, `S7`, `yaml`, `digest`).
 
 ## Documentation
 
-- `vignette("getting-started", package = "PESTO")` -- Introduction and basic usage
-- `vignette("surrogate-ies", package = "PESTO")` -- Surrogate-accelerated IES tutorial
+- `vignette("getting-started", package = "PESTO")` – Introduction and
+  basic usage
+- `vignette("inflation-localisation", package = "PESTO")` –
+  Finite-ensemble countermeasures
+- `vignette("surrogate-ies", package = "PESTO")` – Surrogate-accelerated
+  IES
+- `vignette("pestpp-comparison-and-simulation", package = "PESTO")` –
+  Benchmark vs PEST/PEST++
+- `vignette("ensemble-manifest", package = "PESTO")` – The reproducible
+  run manifest
 
 ## Contributing
 
-Contributions are welcome. Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for the development workflow, coding style, and the pull-request convention. Bug reports and feature requests go through [GitHub Issues](https://github.com/max578/PESTO/issues). Security-relevant defects should be reported privately per [`SECURITY.md`](SECURITY.md). All participants are expected to abide by the [Code of Conduct](CODE_OF_CONDUCT.md).
+Contributions are welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for
+the development workflow and pull-request convention; bug reports and
+feature requests go through [GitHub
+Issues](https://github.com/max578/PESTO/issues). All participants abide
+by the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Citation
 
-```r
+``` r
 citation("PESTO")
 ```
 
-> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.8.0. https://github.com/max578/PESTO
-
-## Related Projects
-
-- [PEST++](https://github.com/usgs/pestpp) -- The original USGS parameter estimation suite
-- [pyEMU](https://github.com/pypest/pyemu) -- Python interface for PEST/PEST++
+> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and
+> Tooling for Optimisation. R package version 0.8.0.
+> <https://github.com/max578/PESTO>
 
 ## Acknowledgements
 
-PESTO builds on the algorithmic legacy of the [PEST++](https://github.com/usgs/pestpp) project (US Geological Survey) and the underlying PEST framework by John Doherty. The package is developed at Adelaide University; the surrogate-acceleration, adaptive-ensemble-sizing, and convergence-aware components are original contributions of the author.
+PESTO builds on the algorithmic legacy of the
+[PEST++](https://github.com/usgs/pestpp) project (US Geological Survey)
+and the underlying PEST framework by John Doherty. Developed at Adelaide
+University; the surrogate-acceleration, adaptive-ensemble-sizing,
+multi-fidelity, and convergence-aware components are original
+contributions of the author.
 
 ## License
 
-GPL (>= 3). See [`LICENSE.md`](LICENSE.md) for the full text.
+GPL (\>= 3). See [`LICENSE.md`](LICENSE.md) for the full text.

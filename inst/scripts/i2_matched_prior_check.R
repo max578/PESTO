@@ -49,7 +49,9 @@ par0   <- pmin(pmax(par0, log_lb), log_ub)
 log_prior_sd <- 0.6
 parcov_inv <- rep(1 / log_prior_sd^2, n_par)
 
-run_forward <- function(par_mat) apply(par_mat, 2L, function(lp) forward(exp(lp)))
+run_forward <- function(par_mat) {
+  apply(par_mat, 2L, function(lp) forward(exp(lp)))
+}
 obs0 <- run_forward(par0)
 Y    <- matrix(rep(y_obs, n_real), nrow = length(y_obs))
 
