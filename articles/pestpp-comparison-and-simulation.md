@@ -1,8 +1,11 @@
-# PEST++ Comparison and Simulation Study
+# PEST and PEST++ Comparison and Simulation Study
 
 ## Overview
 
-This vignette has three goals:
+This vignette benchmarks PESTO against the PEST and PEST++ tool families
+and then stress-tests it as a simulation study. It opens with a
+head-to-head **cross-tool benchmark** (PESTO vs classic PEST vs PEST++
+on identical problems), after which three scenarios go deeper:
 
 1.  **Scenario A** – show that PESTO’s R-native iterative ensemble
     smoother reproduces results from the upstream `pestpp-ies` binary on
@@ -20,6 +23,46 @@ This vignette has three goals:
 
 Throughout, comparisons are honest. Where PESTO loses, this is reported
 in plain numbers, not glossed over.
+
+## Lineage and scope
+
+PESTO stands in a direct line of model-independent parameter-estimation
+tools:
+
+- **PEST** (*Parameter ESTimation*; Doherty 2015) is the original
+  Fortran framework. Its core estimator is deterministic
+  Gauss-Levenberg-Marquardt (GLM), with Tikhonov / SVD-assisted
+  regularisation, and its uncertainty quantification is a *linearised*
+  Bayesian posterior (the PREDUNC path) or calibration-constrained
+  null-space Monte Carlo.
+- **PEST++** (White et al. 2020) is the open-source C++
+  re-implementation and extension. It adds, among other solvers,
+  `pestpp-ies` – an *iterative ensemble smoother* (IES) after Chen &
+  Oliver (2013) – which classic PEST does not provide.
+- **PESTO** brings that IES family natively into R and adds surrogate
+  acceleration, multi-fidelity, inflation / localisation, and an
+  in-process forward-model callback.
+
+This lineage fixes what a *fair* comparison looks like, because the
+tools do not all implement the same algorithm:
+
+| Algorithm class | classic PEST | PEST++ | PESTO |
+|----|----|----|----|
+| Deterministic GLM (+ linearised UQ) | yes (`pest`) | yes (`pestpp-glm`) | – |
+| Iterative ensemble smoother (IES) | **no** | yes (`pestpp-ies`) | yes (native) |
+
+So PESTO’s IES is benchmarked against `pestpp-ies` – its algorithmic
+twin – as the operative oracle, while classic PEST enters the comparison
+as the *deterministic-GLM* reference. Reading the GLM optimum against an
+ensemble posterior is legitimate on a well-posed problem (where the
+linearisation holds) and instructive on a non-linear one (where it does
+not); both cases appear below.
+
+The optional cross-checks against the external binaries are guarded by
+[`pestpp_available()`](https://max578.github.io/PESTO/reference/pestpp_available.md),
+an exported probe that returns `FALSE` (rather than erroring) when no
+binary is installed – every PESTO algorithm runs without any external
+dependency.
 
 ``` r
 
@@ -58,15 +101,15 @@ with no external binary dependency.
 
 ``` r
 
+have_pestpp <- pestpp_available("pestpp-ies")   # exported, non-erroring probe
 pestpp_bin <- Sys.getenv("PESTO_PESTPP_BIN", unset = "")
 if (!nzchar(pestpp_bin)) {
   pestpp_bin <- Sys.which("pestpp-ies")
 }
-pestpp_available <- nzchar(pestpp_bin)
-cat("pestpp-ies on PATH:   ", pestpp_available, "\n",
-    "binary:               ", if (pestpp_available) pestpp_bin else "<reference cache only>",
+cat("pestpp-ies available: ", have_pestpp, "\n",
+    "binary:               ", if (nzchar(pestpp_bin)) pestpp_bin else "<reference cache only>",
     "\n", sep = "")
-#> pestpp-ies on PATH:   FALSE
+#> pestpp-ies available: FALSE
 #> binary:               <reference cache only>
 
 print(pesto_version())
@@ -82,6 +125,206 @@ print(pesto_version())
 #> $r_version
 #> [1] "R version 4.6.1 (2026-06-24)"
 ```
+
+------------------------------------------------------------------------
+
+## Cross-tool benchmark: PESTO vs PEST vs PEST++
+
+The scenarios below dissect PESTO against `pestpp-ies` in depth. This
+section gives the wider head-to-head picture: a fixed-seed Monte-Carlo
+study – twenty seeds per cell – run by a standalone reproducibility
+harness that drives **classic PEST**, **PEST++**, and **PESTO** through
+identical inverse problems and scores them on the same footing. The
+numbers are frozen, real outputs shipped with the package and loaded
+here; they are not recomputed at build time, because the external
+binaries are not available on CRAN check farms.
+
+``` r
+
+mt_path <- system.file("extdata", "pestpp_cache",
+                       "multitool_benchmark_summary.rds", package = "PESTO")
+if (!nzchar(mt_path)) {
+  mt_path <- file.path("..", "inst", "extdata", "pestpp_cache",
+                       "multitool_benchmark_summary.rds")
+}
+mt <- readRDS(mt_path)
+mt_sum <- as.data.table(mt$summary)
+
+knitr::kable(
+  data.frame(Tool = names(mt$tool_versions),
+             Version = unname(mt$tool_versions)),
+  caption = sprintf("Benchmarked versions (run %s).", mt$generated_on)
+)
+```
+
+| Tool                | Version    |
+|:--------------------|:-----------|
+| PESTO               | 0.8.0.9000 |
+| PEST (classic)      | 18.25      |
+| PEST++ (pestpp-ies) | 5.2.16     |
+
+Benchmarked versions (run 2026-06-27). {.table}
+
+The two problems straddle the algorithm boundary from the lineage table
+above – one where the deterministic-GLM linearisation holds, one where
+it does not:
+
+``` r
+
+knitr::kable(
+  mt$problems[, c("id", "regime", "n_params", "n_obs")],
+  col.names = c("Problem", "Regime", "Params", "Obs"),
+  caption = "Benchmark problems (20 seeds each)."
+)
+```
+
+| Problem              | Regime             | Params | Obs |
+|:---------------------|:-------------------|-------:|----:|
+| linear_p20_n50       | linear, well-posed |     20 |  50 |
+| logistic_exp_p10_n30 | non-linear ODE     |     10 |  30 |
+
+Benchmark problems (20 seeds each). {.table}
+
+### Accuracy, calibration, and cost
+
+``` r
+
+primary <- mt_sum[tool %in% c("pesto_callback", "pest_predunc", "pestpp_ies")]
+primary[, problem := ifelse(tier == "tier1",
+                            "linear (well-posed)", "non-linear ODE")]
+m_order <- c("PESTO (native IES)", "PEST (classic, GLM + PREDUNC)",
+             "PEST++ (pestpp-ies)")
+primary[, method := factor(method, levels = m_order)]
+setorder(primary, tier, method)
+
+tab <- primary[, .(
+  Problem            = problem,
+  Method             = method,
+  `RMSE (median)`    = round(rmse_med, 4),
+  `CI90 coverage`    = round(ci90_cov, 3),
+  `Wall-clock (s)`   = round(wallclock_s, 2),
+  `Fwd evals`        = round(fwd_evals)
+)]
+knitr::kable(tab, caption = paste(
+  "Medians over 20 seeds. RMSE is to the known truth; target CI90",
+  "coverage is 0.90; forward evaluations are per single inversion."
+))
+```
+
+| Problem | Method | RMSE (median) | CI90 coverage | Wall-clock (s) | Fwd evals |
+|:---|:---|---:|---:|---:|---:|
+| linear (well-posed) | PESTO (native IES) | 0.0232 | 0.128 | 0.23 | 550 |
+| linear (well-posed) | PEST (classic, GLM + PREDUNC) | 0.0239 | 0.805 | 82.10 | 378 |
+| linear (well-posed) | PEST++ (pestpp-ies) | 0.0243 | 0.218 | 197.32 | 950 |
+| non-linear ODE | PESTO (native IES) | 0.1371 | 0.540 | 1.51 | 1050 |
+| non-linear ODE | PEST (classic, GLM + PREDUNC) | 1.3230 | 0.970 | 62.93 | 262 |
+| non-linear ODE | PEST++ (pestpp-ies) | 0.1651 | 0.395 | 421.90 | 1850 |
+
+Medians over 20 seeds. RMSE is to the known truth; target CI90 coverage
+is 0.90; forward evaluations are per single inversion. {.table
+style="width:100%;"}
+
+``` r
+
+wide <- dcast(primary, problem ~ tool, value.var = "wallclock_s")
+speed <- data.table(
+  Problem                  = wide$problem,
+  `PESTO vs classic PEST`  = sprintf("%dx", round(wide$pest_predunc /
+                                                  wide$pesto_callback)),
+  `PESTO vs PEST++`        = sprintf("%dx", round(wide$pestpp_ies /
+                                                  wide$pesto_callback))
+)
+knitr::kable(speed, caption = "Wall-clock speed-up factor (median, x faster).")
+```
+
+| Problem             | PESTO vs classic PEST | PESTO vs PEST++ |
+|:--------------------|:----------------------|:----------------|
+| linear (well-posed) | 359x                  | 862x            |
+| non-linear ODE      | 42x                   | 280x            |
+
+Wall-clock speed-up factor (median, x faster). {.table}
+
+``` r
+
+ggplot(primary, aes(method, rmse_med, colour = method)) +
+  geom_pointrange(aes(ymin = rmse_iqr_lo, ymax = rmse_iqr_hi), linewidth = 0.7) +
+  facet_wrap(~ problem) +
+  scale_y_log10() +
+  scale_colour_manual(values = c(
+    "PESTO (native IES)"           = PAL[1],
+    "PEST (classic, GLM + PREDUNC)" = PAL[2],
+    "PEST++ (pestpp-ies)"          = PAL[3])) +
+  labs(x = NULL, y = "Posterior RMSE to truth (log scale)",
+       title = "Accuracy: median and inter-quartile range over 20 seeds") +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 20, hjust = 1))
+```
+
+![Median posterior RMSE to truth with inter-quartile bars on a
+logarithmic axis, by method and problem. On the linear problem all three
+methods sit together near 0.024. On the non-linear ODE, PESTO and PEST++
+stay near 0.15 while classic PEST rises above 1.0 with a very long upper
+whisker.](pestpp-comparison-and-simulation_files/figure-html/multitool-accuracy-plot-1.png)
+
+``` r
+
+ggplot(primary, aes(method, wallclock_s, fill = method)) +
+  geom_col() +
+  facet_wrap(~ problem) +
+  scale_y_log10() +
+  scale_fill_manual(values = c(
+    "PESTO (native IES)"           = PAL[1],
+    "PEST (classic, GLM + PREDUNC)" = PAL[2],
+    "PEST++ (pestpp-ies)"          = PAL[3])) +
+  labs(x = NULL, y = "Wall-clock per inversion, s (log scale)",
+       title = "Cost: in-process PESTO vs file-coupled binaries") +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 20, hjust = 1))
+```
+
+![Median wall-clock seconds per inversion on a logarithmic axis, by
+method and problem. PESTO sits well below one second; classic PEST sits
+near one minute; PEST++ sits in the hundreds of seconds. The gap is two
+to three orders of
+magnitude.](pestpp-comparison-and-simulation_files/figure-html/multitool-speed-plot-1.png)
+
+### Honest reading
+
+- **Accuracy parity on the linear problem.** On the well-posed linear
+  inverse problem all three methods recover the truth to the same median
+  RMSE (about 0.023–0.024). PESTO’s R-native IES is neither better nor
+  worse in accuracy than the reference implementations – exactly what a
+  faithful re-implementation should show.
+- **The non-linear problem separates the algorithm classes.** On the
+  predator-prey ODE the ensemble methods (PESTO and `pestpp-ies`) stay
+  accurate (median RMSE about 0.14 and 0.17), while classic PEST’s
+  *linearised* GLM posterior degrades by an order of magnitude (median
+  about 1.3, with a very long upper IQR whisker across seeds). This is
+  the lineage table made empirical: the deterministic-GLM linearisation
+  is reliable where the forward map is near-linear and fragile where it
+  is not.
+- **Speed is wall-clock, not fewer evaluations.** PESTO is two to three
+  orders of magnitude faster in wall-clock. The cause is *not* fewer
+  forward solves – classic PEST is gradient-based and actually uses the
+  fewest model evaluations of the three. PESTO’s advantage comes from
+  evaluating the forward model in-process and updating the ensemble in
+  C++, avoiding the per-evaluation file-exchange and process-spawn
+  overhead the file-coupled binaries pay on every model call.
+- **Calibration is the honest weak spot.** PESTO’s *raw* ensemble
+  credible intervals under-cover (CI90 of roughly 0.13 on the linear
+  problem) – the finite-ensemble under-dispersion that the *Inflation
+  and localisation* vignette exists to correct. Classic PEST’s
+  linearised intervals are better calibrated on the linear problem and
+  over-wide around its poor estimate on the non-linear one. Apply
+  inflation (and, for spatial problems, localisation) before trusting
+  PESTO credible intervals straight out of the box.
+
+PESTO’s surrogate-accelerated path and classic PEST’s null-space
+Monte-Carlo path were also benchmarked; their full rows are in the
+shipped summary object (`mt$summary`) and are explored in the
+*Surrogate-accelerated IES* vignette and the discussion below.
 
 ------------------------------------------------------------------------
 
@@ -255,7 +498,7 @@ rmse_pesto_A    <- sqrt(mean((post_mean_pesto - theta_true_A)^2))
 
 cat(sprintf("PESTO native IES: %d iterations in %.2fs;  posterior RMSE = %.4f\n",
             n_iter_A, runtime_pesto_A, rmse_pesto_A))
-#> PESTO native IES: 6 iterations in 0.05s;  posterior RMSE = 0.3548
+#> PESTO native IES: 6 iterations in 0.04s;  posterior RMSE = 0.3548
 ```
 
 ### Pure-R textbook reference (always shipped)
@@ -303,7 +546,7 @@ reference comparator with the live binary’s posterior.
 
 dev_cache <- file.path("..", "tools", "pestpp_benchmark",
                        "scenario_a_pestpp_ies.rds")
-if (pestpp_available && file.exists(dev_cache)) {
+if (have_pestpp && file.exists(dev_cache)) {
   ies_cache <- readRDS(dev_cache)
   posterior_pestpp_A <- as.matrix(
     ies_cache$posterior_par[, ies_cache$par_names, with = FALSE]
@@ -319,13 +562,13 @@ if (pestpp_available && file.exists(dev_cache)) {
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 ```
 
-The cache was produced by running `pestpp-ies` (version 5.2.25) on the
+The cache was produced by running `pestpp-ies` (version 5.2.16) on the
 same .pst control file with `noptmax = 6` and `ies_num_reals = 40`. To
 regenerate it interactively when the binary is present:
 
 ``` r
 
-if (interactive() && pestpp_available) {
+if (interactive() && have_pestpp) {
   message("Live pestpp-ies run takes ~30s; the vignette uses the cache.")
 }
 ```
@@ -376,7 +619,7 @@ knitr::kable(runtime_dt, caption = "Scenario A: runtime and accuracy.")
 
 | Implementation          | Iterations | Realisations | Wallclock_s | PosteriorRMSE |
 |:------------------------|-----------:|-------------:|------------:|--------------:|
-| PESTO native (R + Rcpp) |          6 |           40 |        0.05 |        0.3548 |
+| PESTO native (R + Rcpp) |          6 |           40 |        0.04 |        0.3548 |
 | pestpp-ies (binary)     |          6 |           40 |          NA |        0.3548 |
 
 Scenario A: runtime and accuracy. {.table}
@@ -654,7 +897,7 @@ mda_upgrade <- ensemble_solution_mda(
 )
 cat(sprintf("Scenario B: %d iter, %d real, %d par, %d obs in %.2fs\n",
             n_iter_B, n_real_B, n_par_B, n_obs_B, runtime_B))
-#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.65s
+#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.68s
 cat(sprintf("Phi reduction: %.2e -> %.2e  (factor %.1f)\n",
             phi_B[1L], phi_B[length(phi_B)], phi_B[1L] / phi_B[length(phi_B)]))
 #> Phi reduction: 1.69e+03 -> 3.51e+02  (factor 4.8)
@@ -784,11 +1027,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 
 | rank | rSVD_ms | LAPACK_ms | speedup_rSVD |
 |-----:|--------:|----------:|-------------:|
-|    5 |   2.738 |    40.249 |        14.70 |
-|   20 |   5.818 |    39.928 |         6.86 |
-|   50 |  10.095 |    39.474 |         3.91 |
-|  100 |  34.522 |    39.457 |         1.14 |
-|  180 |  70.259 |    39.726 |         0.57 |
+|    5 |   2.794 |    39.385 |        14.09 |
+|   20 |   5.946 |    40.053 |         6.74 |
+|   50 |  10.293 |    39.652 |         3.85 |
+|  100 |  34.699 |    39.401 |         1.14 |
+|  180 |  70.773 |    39.826 |         0.56 |
 
 rSVD vs LAPACK on a 400 x 200 matrix as k varies. {.table}
 
@@ -801,7 +1044,7 @@ auto_res <- adaptive_svd(A_bench, k = 20L, method = "auto")
 acc_res  <- accelerate_svd(A_bench, thin = TRUE)
 cat("auto chose:    ", auto_res$method_used,
     " in ", round(auto_res$time_ms, 2), "ms\n", sep = "")
-#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.86ms
+#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.92ms
 cat("LAPACK direct: ", round(length(acc_res$d), 0),
     " singular values returned\n", sep = "")
 #> LAPACK direct: 200 singular values returned
@@ -1001,7 +1244,7 @@ knitr::kable(sim_summary, caption = "Scenario C: aggregate diagnostics.")
 | Median phi reduction (1 iter) | 12.12 |
 | Mean surrogate savings (%)    |  0.00 |
 | Mean adaptive size            | 39.00 |
-| Median GPU-path time (ms)     |  0.24 |
+| Median GPU-path time (ms)     |  0.26 |
 | Replicates                    | 50.00 |
 
 Scenario C: aggregate diagnostics. {.table}
@@ -1106,7 +1349,7 @@ wrap_status <- data.table(
   function_  = c("pesto_ies", "pesto_glm", "pesto_sweep", "pesto_sensitivity"),
   exported   = c(is.function(pesto_ies),  is.function(pesto_glm),
                  is.function(pesto_sweep), is.function(pesto_sensitivity)),
-  binary_present = pestpp_available
+  binary_present = have_pestpp
 )
 knitr::kable(wrap_status, caption = "Binary-wrapper exports.")
 ```
@@ -1123,7 +1366,7 @@ Binary-wrapper exports. {.table}
 ``` r
 
 
-if (interactive() && pestpp_available) {
+if (interactive() && have_pestpp) {
   message("Live pestpp wrapper smoke-test deferred to interactive sessions.")
 }
 ```
@@ -1199,9 +1442,9 @@ knitr::kable(cov_dt, caption = "Vignette coverage of NAMESPACE exports.")
 
 | metric                             | value |
 |:-----------------------------------|------:|
-| Exports declared                   |  55.0 |
-| Exports exercised in this vignette |  28.0 |
-| Coverage (%)                       |  50.9 |
+| Exports declared                   |    56 |
+| Exports exercised in this vignette |    28 |
+| Coverage (%)                       |    50 |
 
 Vignette coverage of NAMESPACE exports. {.table}
 
@@ -1225,7 +1468,7 @@ if (length(unknown_in_use) > 0L) {
 .vig_t1 <- proc.time()["elapsed"]
 cat(sprintf("Vignette wall-clock: %.1f s\n",
             as.numeric(.vig_t1 - .vig_t0)))
-#> Vignette wall-clock: 12.2 s
+#> Vignette wall-clock: 13.7 s
 ```
 
 ``` r

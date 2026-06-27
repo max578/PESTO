@@ -7,7 +7,7 @@
 
 ### Algorithms and comparison
 
-- [PEST++ Comparison and Simulation
+- [PEST and PEST++ Comparison and Simulation
   Study](https://max578.github.io/PESTO/articles/pestpp-comparison-and-simulation.md):
 - [Surrogate-Accelerated Iterative Ensemble
   Smoother](https://max578.github.io/PESTO/articles/surrogate-ies.md):

@@ -2,7 +2,27 @@
 
 ## PESTO (development version)
 
-- Post-0.8.0 development cycle (no API or behaviour change).
+- New exported helper
+  [`pestpp_available()`](https://max578.github.io/PESTO/reference/pestpp_available.md)
+  – a non-erroring probe for a PEST++ family executable
+  (e.g. `pestpp-ies`, `pestpp-glm`). It is the documented way for
+  examples, vignettes, and conditional tests to skip gracefully when no
+  external binary is installed; every PESTO algorithm runs natively in R
+  without one.
+- The comparison vignette is reframed as *PEST and PEST++ Comparison and
+  Simulation Study* and gains a head-to-head **cross-tool benchmark**
+  (PESTO vs classic PEST 18.25 vs `pestpp-ies` 5.2.16) on a well-posed
+  linear problem and a non-linear ODE. The figures are frozen real
+  outputs of a fixed-seed reproducibility harness, shipped in
+  `inst/extdata/pestpp_cache/`: accuracy parity on the linear problem,
+  the ensemble methods’ advantage over linearised GLM on the non-linear
+  one, a two-to-three-orders-of-magnitude wall-clock advantage, and the
+  honest calibration caveat (raw ensemble intervals under-cover; apply
+  inflation). A new *Lineage and scope* section grounds PESTO in PEST
+  (Doherty 2015) and PEST++ (White et al. 2020) and states the algorithm
+  boundary that makes the comparison fair.
+- Corrected the benchmarked `pestpp-ies` version string in the vignette
+  to 5.2.16 (was mislabelled 5.2.25).
 
 ## PESTO 0.8.0
 

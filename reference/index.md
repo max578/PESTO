@@ -42,6 +42,8 @@ Convenience wrappers driving PEST++ executables (`pestpp-ies`,
   : Surrogate-Accelerated IES Iteration
 - [`pesto_version()`](https://max578.github.io/PESTO/reference/pesto_version.md)
   : Get PESTO package version information
+- [`pestpp_available()`](https://max578.github.io/PESTO/reference/pestpp_available.md)
+  : Is a PEST++ Executable Available?
 
 ## Forward-model contract and multi-fidelity
 
