@@ -39,7 +39,7 @@ powerful tools natively into the R ecosystem.
 
 ```{r install, eval = FALSE}
 # From GitHub (development version):
-remotes::install_github("supremum-consulting/PESTO")
+remotes::install_github("max578/PESTO")
 
 # PEST++ binaries must be on your PATH or bundled with the package
 ```
