@@ -47,10 +47,11 @@ unfavourable regime before you commit.
 A nonlinear forward model inspired by groundwater flow, with a linear
 sensitivity and a nonlinear interaction term:
 
-$$y_j = \sum_k G_{jk}\theta_k + \alpha \sin\!\left(\sum_k G_{jk}\theta_k\right) \exp\!\left(-0.1\left|\sum_k G_{jk}\theta_k\right|\right) + \varepsilon_j$$
+$$y_j = \eta_j + \alpha \sin(\eta_j)\, e^{-0.1\,\lvert \eta_j \rvert} + \varepsilon_j,
+   \qquad \eta_j = \sum_k G_{jk}\theta_k .$$
 
-The parameter $\alpha$ controls nonlinearity: $\alpha = 0$ is linear, $\alpha =
-1$ is strongly nonlinear.
+Here $\eta_j$ is the linear predictor and $\alpha$ controls the nonlinearity:
+$\alpha = 0$ is linear, $\alpha = 1$ is strongly nonlinear.
 
 ```{r test-problem}
 library(PESTO)

@@ -230,10 +230,9 @@ $$t_{\text{file}} \approx N(T{+}1)\,(c_m + c_{io}), \qquad
 When the exchange dominates ($c_{io} \gtrsim c_m$, the cheap-model regime here)
 the speed-up approaches $1 + c_{io}/c_m \gg 1$: the same number of solves at far
 lower per-solve overhead, with a C++ update kernel and no loss of accuracy. The
-parity column
-($\mathrm{RMSE} = \sqrt{p^{-1}\sum_{j}(\hat\theta_j-\theta_j^{\text{true}})^2}$)
-and the *APSIM case study* -- which recovers a known truth and brackets the
-independent `apsimx` optimiser on real data -- both bear this out.
+parity column (root-mean-square error to the truth) and the *APSIM case study*
+-- which recovers a known truth and brackets the independent `apsimx` optimiser
+on real data -- both bear this out.
 
 **Evaluation economy (surrogates).** When the forward model itself is expensive,
 the cost shifts to the *number* of expensive solves. A Gaussian-process surrogate

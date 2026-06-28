@@ -1,0 +1,12 @@
+/* Mathematics (KaTeX) -------------------------------------------------------
+   KaTeX ships with `.katex { font-size: 1.21em }`, which renders maths
+   noticeably larger than the body text and reads as inflated. Bring it down to
+   sit with the prose, and let a wide display equation scroll within the column
+   rather than overflow it. */
+.katex { font-size: 1.05em; }
+
+.katex-display {
+  margin: 0.9em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
