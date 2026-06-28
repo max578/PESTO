@@ -14,9 +14,14 @@
 - [Countering Ensemble Collapse: Inflation and
   Localisation](https://max578.github.io/PESTO/articles/inflation-localisation.md):
 
-### In-process IES and ensemble manifest
+### APSIM coupling and case study
 
 - [Calibrating APSIM with PESTO (in-process
   callback)](https://max578.github.io/PESTO/articles/apsim-callback.md):
+- [Calibrating APSIM Wheat with PESTO: a recovery case
+  study](https://max578.github.io/PESTO/articles/apsim-case-study.md):
+
+### Ensemble manifest
+
 - [The Ensemble-Run Manifest: a Portable, Verifiable
   Record](https://max578.github.io/PESTO/articles/ensemble-manifest.md):

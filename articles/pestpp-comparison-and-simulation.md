@@ -897,7 +897,7 @@ mda_upgrade <- ensemble_solution_mda(
 )
 cat(sprintf("Scenario B: %d iter, %d real, %d par, %d obs in %.2fs\n",
             n_iter_B, n_real_B, n_par_B, n_obs_B, runtime_B))
-#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.67s
+#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.66s
 cat(sprintf("Phi reduction: %.2e -> %.2e  (factor %.1f)\n",
             phi_B[1L], phi_B[length(phi_B)], phi_B[1L] / phi_B[length(phi_B)]))
 #> Phi reduction: 1.69e+03 -> 3.51e+02  (factor 4.8)
@@ -1027,11 +1027,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 
 | rank | rSVD_ms | LAPACK_ms | speedup_rSVD |
 |-----:|--------:|----------:|-------------:|
-|    5 |   2.744 |    39.415 |        14.37 |
-|   20 |   5.906 |    39.413 |         6.67 |
-|   50 |  10.121 |    39.371 |         3.89 |
-|  100 |  34.606 |    39.375 |         1.14 |
-|  180 |  70.539 |    39.380 |         0.56 |
+|    5 |   2.898 |    42.413 |        14.63 |
+|   20 |   6.165 |    42.003 |         6.81 |
+|   50 |  10.922 |    41.378 |         3.79 |
+|  100 |  37.528 |    41.413 |         1.10 |
+|  180 |  74.163 |    41.379 |         0.56 |
 
 rSVD vs LAPACK on a 400 x 200 matrix as k varies. {.table}
 
@@ -1044,7 +1044,7 @@ auto_res <- adaptive_svd(A_bench, k = 20L, method = "auto")
 acc_res  <- accelerate_svd(A_bench, thin = TRUE)
 cat("auto chose:    ", auto_res$method_used,
     " in ", round(auto_res$time_ms, 2), "ms\n", sep = "")
-#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.91ms
+#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 6.19ms
 cat("LAPACK direct: ", round(length(acc_res$d), 0),
     " singular values returned\n", sep = "")
 #> LAPACK direct: 200 singular values returned
@@ -1244,7 +1244,7 @@ knitr::kable(sim_summary, caption = "Scenario C: aggregate diagnostics.")
 | Median phi reduction (1 iter) | 12.12 |
 | Mean surrogate savings (%)    |  0.00 |
 | Mean adaptive size            | 39.00 |
-| Median GPU-path time (ms)     |  0.24 |
+| Median GPU-path time (ms)     |  0.26 |
 | Replicates                    | 50.00 |
 
 Scenario C: aggregate diagnostics. {.table}
