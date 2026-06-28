@@ -11,57 +11,6 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// ensemble_solution
-Eigen::MatrixXd ensemble_solution(Eigen::MatrixXd par_diff, Eigen::MatrixXd obs_diff, Eigen::MatrixXd obs_resid, Eigen::MatrixXd par_resid, Eigen::VectorXd weights, Eigen::VectorXd parcov_inv, Eigen::MatrixXd Am, double cur_lam, double eigthresh, bool use_approx, bool use_prior_scaling, int iter, double reg_factor);
-RcppExport SEXP _PESTO_ensemble_solution(SEXP par_diffSEXP, SEXP obs_diffSEXP, SEXP obs_residSEXP, SEXP par_residSEXP, SEXP weightsSEXP, SEXP parcov_invSEXP, SEXP AmSEXP, SEXP cur_lamSEXP, SEXP eigthreshSEXP, SEXP use_approxSEXP, SEXP use_prior_scalingSEXP, SEXP iterSEXP, SEXP reg_factorSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type par_diff(par_diffSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_diff(obs_diffSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_resid(obs_residSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type par_resid(par_residSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type weights(weightsSEXP);
-    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parcov_inv(parcov_invSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type Am(AmSEXP);
-    Rcpp::traits::input_parameter< double >::type cur_lam(cur_lamSEXP);
-    Rcpp::traits::input_parameter< double >::type eigthresh(eigthreshSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_approx(use_approxSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_prior_scaling(use_prior_scalingSEXP);
-    Rcpp::traits::input_parameter< int >::type iter(iterSEXP);
-    Rcpp::traits::input_parameter< double >::type reg_factor(reg_factorSEXP);
-    rcpp_result_gen = Rcpp::wrap(ensemble_solution(par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh, use_approx, use_prior_scaling, iter, reg_factor));
-    return rcpp_result_gen;
-END_RCPP
-}
-// ensemble_solution_mda
-Eigen::MatrixXd ensemble_solution_mda(Eigen::MatrixXd par_diff, Eigen::MatrixXd obs_diff, Eigen::MatrixXd obs_resid, Eigen::MatrixXd obs_err, double cur_lam, double eigthresh);
-RcppExport SEXP _PESTO_ensemble_solution_mda(SEXP par_diffSEXP, SEXP obs_diffSEXP, SEXP obs_residSEXP, SEXP obs_errSEXP, SEXP cur_lamSEXP, SEXP eigthreshSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type par_diff(par_diffSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_diff(obs_diffSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_resid(obs_residSEXP);
-    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_err(obs_errSEXP);
-    Rcpp::traits::input_parameter< double >::type cur_lam(cur_lamSEXP);
-    Rcpp::traits::input_parameter< double >::type eigthresh(eigthreshSEXP);
-    rcpp_result_gen = Rcpp::wrap(ensemble_solution_mda(par_diff, obs_diff, obs_resid, obs_err, cur_lam, eigthresh));
-    return rcpp_result_gen;
-END_RCPP
-}
-// compute_phi
-Eigen::VectorXd compute_phi(const Eigen::MatrixXd& residuals, const Eigen::VectorXd& weights);
-RcppExport SEXP _PESTO_compute_phi(SEXP residualsSEXP, SEXP weightsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type residuals(residualsSEXP);
-    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
-    rcpp_result_gen = Rcpp::wrap(compute_phi(residuals, weights));
-    return rcpp_result_gen;
-END_RCPP
-}
 // rsvd
 Rcpp::List rsvd(const Eigen::MatrixXd& A, int k, int p, int q);
 RcppExport SEXP _PESTO_rsvd(SEXP ASEXP, SEXP kSEXP, SEXP pSEXP, SEXP qSEXP) {
@@ -123,6 +72,57 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::string >::type svd_method(svd_methodSEXP);
     Rcpp::traits::input_parameter< int >::type target_rank(target_rankSEXP);
     rcpp_result_gen = Rcpp::wrap(ensemble_solution_adaptive(par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh, use_approx, use_prior_scaling, iter, reg_factor, svd_method, target_rank));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ensemble_solution
+Eigen::MatrixXd ensemble_solution(Eigen::MatrixXd par_diff, Eigen::MatrixXd obs_diff, Eigen::MatrixXd obs_resid, Eigen::MatrixXd par_resid, Eigen::VectorXd weights, Eigen::VectorXd parcov_inv, Eigen::MatrixXd Am, double cur_lam, double eigthresh, bool use_approx, bool use_prior_scaling, int iter, double reg_factor);
+RcppExport SEXP _PESTO_ensemble_solution(SEXP par_diffSEXP, SEXP obs_diffSEXP, SEXP obs_residSEXP, SEXP par_residSEXP, SEXP weightsSEXP, SEXP parcov_invSEXP, SEXP AmSEXP, SEXP cur_lamSEXP, SEXP eigthreshSEXP, SEXP use_approxSEXP, SEXP use_prior_scalingSEXP, SEXP iterSEXP, SEXP reg_factorSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type par_diff(par_diffSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_diff(obs_diffSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_resid(obs_residSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type par_resid(par_residSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type weights(weightsSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type parcov_inv(parcov_invSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type Am(AmSEXP);
+    Rcpp::traits::input_parameter< double >::type cur_lam(cur_lamSEXP);
+    Rcpp::traits::input_parameter< double >::type eigthresh(eigthreshSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_approx(use_approxSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_prior_scaling(use_prior_scalingSEXP);
+    Rcpp::traits::input_parameter< int >::type iter(iterSEXP);
+    Rcpp::traits::input_parameter< double >::type reg_factor(reg_factorSEXP);
+    rcpp_result_gen = Rcpp::wrap(ensemble_solution(par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh, use_approx, use_prior_scaling, iter, reg_factor));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ensemble_solution_mda
+Eigen::MatrixXd ensemble_solution_mda(Eigen::MatrixXd par_diff, Eigen::MatrixXd obs_diff, Eigen::MatrixXd obs_resid, Eigen::MatrixXd obs_err, double cur_lam, double eigthresh);
+RcppExport SEXP _PESTO_ensemble_solution_mda(SEXP par_diffSEXP, SEXP obs_diffSEXP, SEXP obs_residSEXP, SEXP obs_errSEXP, SEXP cur_lamSEXP, SEXP eigthreshSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type par_diff(par_diffSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_diff(obs_diffSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_resid(obs_residSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type obs_err(obs_errSEXP);
+    Rcpp::traits::input_parameter< double >::type cur_lam(cur_lamSEXP);
+    Rcpp::traits::input_parameter< double >::type eigthresh(eigthreshSEXP);
+    rcpp_result_gen = Rcpp::wrap(ensemble_solution_mda(par_diff, obs_diff, obs_resid, obs_err, cur_lam, eigthresh));
+    return rcpp_result_gen;
+END_RCPP
+}
+// compute_phi
+Eigen::VectorXd compute_phi(const Eigen::MatrixXd& residuals, const Eigen::VectorXd& weights);
+RcppExport SEXP _PESTO_compute_phi(SEXP residualsSEXP, SEXP weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type residuals(residualsSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_phi(residuals, weights));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -271,13 +271,13 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_PESTO_ensemble_solution", (DL_FUNC) &_PESTO_ensemble_solution, 13},
-    {"_PESTO_ensemble_solution_mda", (DL_FUNC) &_PESTO_ensemble_solution_mda, 6},
-    {"_PESTO_compute_phi", (DL_FUNC) &_PESTO_compute_phi, 2},
     {"_PESTO_rsvd", (DL_FUNC) &_PESTO_rsvd, 4},
     {"_PESTO_accelerate_svd", (DL_FUNC) &_PESTO_accelerate_svd, 2},
     {"_PESTO_adaptive_svd", (DL_FUNC) &_PESTO_adaptive_svd, 3},
     {"_PESTO_ensemble_solution_adaptive", (DL_FUNC) &_PESTO_ensemble_solution_adaptive, 15},
+    {"_PESTO_ensemble_solution", (DL_FUNC) &_PESTO_ensemble_solution, 13},
+    {"_PESTO_ensemble_solution_mda", (DL_FUNC) &_PESTO_ensemble_solution_mda, 6},
+    {"_PESTO_compute_phi", (DL_FUNC) &_PESTO_compute_phi, 2},
     {"_PESTO_ensemble_spread_ess", (DL_FUNC) &_PESTO_ensemble_spread_ess, 1},
     {"_PESTO_gaspari_cohn", (DL_FUNC) &_PESTO_gaspari_cohn, 2},
     {"_PESTO_correlation_localisation", (DL_FUNC) &_PESTO_correlation_localisation, 6},

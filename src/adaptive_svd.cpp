@@ -1,7 +1,9 @@
 // PESTO: Adaptive SVD and Linear Algebra Kernels
 // Backends (CPU): randomised SVD, Apple Accelerate / LAPACK, Eigen.
-// An optional cuSOLVER path exists behind -DPESTO_USE_CUDA (off by default;
-// not built or advertised in standard installs).
+//
+// Planned future work: an optional GPU (cuSOLVER) backend. A flag-gated
+// prototype was removed pending a complete implementation and is preserved in
+// the project history.
 //
 // This module provides high-performance SVD computation with automatic
 // backend selection based on matrix size and available hardware.
@@ -28,14 +30,8 @@
 // The LAPACK routines are available via R's linked BLAS/LAPACK.
 #define PESTO_HAS_ACCELERATE 0
 
-// CUDA support (compile with -DPESTO_USE_CUDA)
-#ifdef PESTO_USE_CUDA
-#include <cusolverDn.h>
-#include <cuda_runtime.h>
-#define PESTO_HAS_CUDA 1
-#else
-#define PESTO_HAS_CUDA 0
-#endif
+// A GPU / cuSOLVER backend is planned future work; the prior flag-gated stub
+// was removed (see the project history for the previous implementation).
 
 using namespace Rcpp;
 using Eigen::MatrixXd;
@@ -295,7 +291,7 @@ Rcpp::List adaptive_svd(const Eigen::MatrixXd& A, int k = 0,
 
 
 // ============================================================================
-// GPU-accelerated ensemble solution using adaptive SVD
+// Ensemble solution using adaptive SVD backend selection
 // ============================================================================
 
 //' Ensemble Solution with Adaptive SVD Backend
