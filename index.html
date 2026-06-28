@@ -90,7 +90,7 @@
 </tr>
 <tr>
 <td><strong>Surrogate-accelerated IES</strong></td>
-<td>Gaussian Process surrogates reduce model evaluations by 50–90%</td>
+<td>Gaussian-process surrogates skip the model on confident realisations – regime-dependent savings (large on smooth responses; near-zero with graceful fallback otherwise)</td>
 </tr>
 <tr>
 <td><strong>Inflation &amp; localisation</strong></td>
@@ -110,6 +110,20 @@
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section level2">
+<h2 id="what-optimised-means-and-how-it-is-checked">What “optimised” means (and how it is checked)<a class="anchor" aria-label="anchor" href="#what-optimised-means-and-how-it-is-checked"></a>
+</h2>
+<p>The name is a claim, so each part is backed by a measured number, not an assertion (the full definitions and maths are in the <em>PEST and PEST++ Comparison</em> vignette):</p>
+<ul>
+<li>
+<strong>Faster, at matched accuracy.</strong> Against PEST 18.25 and <code>pestpp-ies</code> 5.2.16 on identical problems, PESTO is roughly <strong>40–860x faster in wall-clock</strong> (median per inversion) while matching their posterior accuracy – the cause is in-process evaluation and a C++ update kernel avoiding per-solve file exchange, not fewer model solves.</li>
+<li>
+<strong>Recovers the right answer.</strong> It recovers known-true parameters in a twin experiment and brackets the independent <code>apsimx</code> optimiser’s optimum on real observed data (the <em>APSIM case study</em> vignette).</li>
+<li>
+<strong>Fewer expensive solves when it can.</strong> The GP surrogate skips the model on confident realisations; the saving is measured and regime-dependent, with a graceful fall-back to full evaluation (the <em>Surrogate-accelerated IES</em> vignette).</li>
+</ul>
+<p>These are validated, not promised; where PESTO does <em>not</em> win (raw interval calibration; total solve count) is stated just as plainly in the vignettes.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>

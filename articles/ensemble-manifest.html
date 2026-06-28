@@ -117,17 +117,17 @@ guarantees, on every run.</p>
 <span>                 apsim_version <span class="op">=</span> <span class="cn">NA_character_</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
 <span><span class="co">#&gt; &lt;pesto_ensemble_manifest&gt; schema 1.1.0</span></span>
-<span><span class="co">#&gt;   run_id        : ies_callback_20260628_035413_3d7dd5ca</span></span>
+<span><span class="co">#&gt;   run_id        : ies_callback_20260628_040559_fe6542df</span></span>
 <span><span class="co">#&gt;   method        : ies_callback  (noptmax=4)</span></span>
 <span><span class="co">#&gt;   ensemble      : 60 realisations x 3 parameters | 6 observations</span></span>
 <span><span class="co">#&gt;   failure rate  : 0.00%</span></span>
 <span><span class="co">#&gt;   pesto version : 0.8.0.9000  apsim: NA</span></span>
-<span><span class="co">#&gt;   timestamp     : 2026-06-28T03:54:13+0000</span></span>
+<span><span class="co">#&gt;   timestamp     : 2026-06-28T04:05:59+0000</span></span>
 <span><span class="co">#&gt;   data hash     : sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6</span></span></code></pre></div>
 <p>Slots are reachable via the standard S7 <code>@</code> accessor:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span><span class="op">@</span><span class="va">run_id</span></span>
-<span><span class="co">#&gt; [1] "ies_callback_20260628_035413_3d7dd5ca"</span></span>
+<span><span class="co">#&gt; [1] "ies_callback_20260628_040559_fe6542df"</span></span>
 <span><span class="va">m</span><span class="op">@</span><span class="va">data_hash</span></span>
 <span><span class="co">#&gt; [1] "sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6"</span></span>
 <span><span class="va">m</span><span class="op">@</span><span class="va">noptmax</span></span>
@@ -166,7 +166,7 @@ otherwise trip on formatter precision loss:</p>
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">14</span><span class="op">]</span>,</span>
 <span>          collapse <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; schema_version: 1.1.0</span></span>
-<span><span class="co">#&gt; run_id: ies_callback_20260628_035413_3d7dd5ca</span></span>
+<span><span class="co">#&gt; run_id: ies_callback_20260628_040559_fe6542df</span></span>
 <span><span class="co">#&gt; data_hash: sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6</span></span>
 <span><span class="co">#&gt; format: rds</span></span>
 <span><span class="co">#&gt; integrity: verifiable</span></span>

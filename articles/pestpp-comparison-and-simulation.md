@@ -326,6 +326,71 @@ Monte-Carlo path were also benchmarked; their full rows are in the
 shipped summary object (`mt$summary`) and are explored in the
 *Surrogate-accelerated IES* vignette and the discussion below.
 
+### The “Optimised” in PESTO, quantified
+
+The name is *Parameter ESTimation Optimised* – the PEST approach,
+optimised. That is a claim, so it is worth stating precisely what is
+optimised, and checking each part against a measured number rather than
+an assertion.
+
+**1. Wall-clock speed, at preserved accuracy.** The speed-up is
+$`S = t_{\text{ref}} / t_{\text{PESTO}}`$ (median wall-clock per
+inversion); the table above measures $`S`$ from roughly $`40\times`$ to
+$`860\times`$. The mechanism is a cost model, not magic. An iterative
+ensemble smoother with $`N`$ realisations over $`T`$ iterations performs
+about $`N(T{+}1)`$ forward solves. A file-coupled engine pays, per
+solve, the model cost $`c_m`$*plus* an exchange overhead $`c_{io}`$
+(template write, output parse, process spawn); the in-process callback
+pays $`c_m`$ only:
+``` math
+t_{\text{file}} \approx N(T{+}1)\,(c_m + c_{io}), \qquad
+  t_{\text{PESTO}} \approx N(T{+}1)\,c_m + c_{\text{upd}} .
+```
+When the exchange dominates ($`c_{io} \gtrsim c_m`$, the cheap-model
+regime here) the speed-up approaches $`1 + c_{io}/c_m \gg 1`$. So PESTO
+runs the **same** number of solves with far lower per-solve overhead and
+a C++ update kernel – speed without trading accuracy, which the parity
+column
+($`\mathrm{RMSE} = \sqrt{p^{-1}\sum_{j}(\hat\theta_j-\theta_j^{\text{true}})^2}`$)
+confirms, and which the *case study* corroborates by recovering a known
+truth and by bracketing the independent `apsimx` optimiser on real data.
+
+**2. Model-evaluation economy (surrogates).** When the forward model
+itself is expensive, the optimisation shifts from per-solve overhead to
+the *number* of expensive solves. A Gaussian-process surrogate predicts
+cheap realisations and sends only the uncertain ones to the full model:
+``` math
+\text{savings} = 1 - \frac{n_{\text{model}}}{n_{\text{total}}},
+```
+realisation $`i`$ taking the full model only when its GP predictive
+standard deviation $`s_i`$ exceeds a threshold. The saving is
+**regime-dependent and measured, not promised**: large on smooth
+responses, and it degrades gracefully to near zero (the smoother falls
+back to full evaluation) on rough ones rather than corrupting the
+posterior – see the *Surrogate-accelerated IES* vignette.
+
+**3. Cost–accuracy trade (multi-fidelity).** With a cheap and an
+expensive fidelity correlated at $`\rho`$, the control-variate combiner
+(\[[`mf_control_variate()`](https://max578.github.io/PESTO/reference/mf_control_variate.md)\])
+attains
+$`\mathrm{Var}(\hat\mu_{\text{CV}}) = (1-\rho^2)\,\mathrm{Var}(\hat\mu_{\text{H}})`$,
+so a well-correlated cheap model cuts the expensive-evaluation budget
+for a target variance by about $`(1-\rho^2)`$.
+
+**4. Iteration economy (optional early stop).** With
+$`\phi(\theta) = \sum_i
+w_i\,(d_i - g_i(\theta))^2`$ the weighted objective, `phi_tol` stops
+once the relative reduction $`\,(\phi_{k-1}-\phi_k)/\phi_{k-1}\,`$ falls
+below the tolerance, spending no iterations on a plateau
+([`?pesto_ies_callback`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)).
+
+**What “optimised” does not claim.** It is not fewer forward solves in
+the base smoother (classic PEST, being gradient-based, uses the fewest),
+and it is not better-calibrated raw intervals (they under-cover until
+inflation is applied, above). The honest summary: *faster and cheaper to
+run, at matched accuracy, with the economy levers measured and their
+limits stated.*
+
 ------------------------------------------------------------------------
 
 ## Scenario A – low-dimensional, well-posed
@@ -897,7 +962,7 @@ mda_upgrade <- ensemble_solution_mda(
 )
 cat(sprintf("Scenario B: %d iter, %d real, %d par, %d obs in %.2fs\n",
             n_iter_B, n_real_B, n_par_B, n_obs_B, runtime_B))
-#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.66s
+#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.65s
 cat(sprintf("Phi reduction: %.2e -> %.2e  (factor %.1f)\n",
             phi_B[1L], phi_B[length(phi_B)], phi_B[1L] / phi_B[length(phi_B)]))
 #> Phi reduction: 1.69e+03 -> 3.51e+02  (factor 4.8)
@@ -1027,11 +1092,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 
 | rank | rSVD_ms | LAPACK_ms | speedup_rSVD |
 |-----:|--------:|----------:|-------------:|
-|    5 |   2.965 |    42.080 |        14.19 |
-|   20 |   6.198 |    41.778 |         6.74 |
-|   50 |  11.114 |    41.326 |         3.72 |
-|  100 |  37.454 |    41.142 |         1.10 |
-|  180 |  74.526 |    41.388 |         0.56 |
+|    5 |   2.716 |    40.057 |        14.75 |
+|   20 |   5.846 |    39.704 |         6.79 |
+|   50 |  10.197 |    39.223 |         3.85 |
+|  100 |  34.382 |    39.205 |         1.14 |
+|  180 |  70.323 |    39.323 |         0.56 |
 
 rSVD vs LAPACK on a 400 x 200 matrix as k varies. {.table}
 
@@ -1044,7 +1109,7 @@ auto_res <- adaptive_svd(A_bench, k = 20L, method = "auto")
 acc_res  <- accelerate_svd(A_bench, thin = TRUE)
 cat("auto chose:    ", auto_res$method_used,
     " in ", round(auto_res$time_ms, 2), "ms\n", sep = "")
-#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 6.19ms
+#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.9ms
 cat("LAPACK direct: ", round(length(acc_res$d), 0),
     " singular values returned\n", sep = "")
 #> LAPACK direct: 200 singular values returned
@@ -1244,7 +1309,7 @@ knitr::kable(sim_summary, caption = "Scenario C: aggregate diagnostics.")
 | Median phi reduction (1 iter) | 12.12 |
 | Mean surrogate savings (%)    |  0.00 |
 | Mean adaptive size            | 39.00 |
-| Median GPU-path time (ms)     |  0.26 |
+| Median GPU-path time (ms)     |  0.24 |
 | Replicates                    | 50.00 |
 
 Scenario C: aggregate diagnostics. {.table}
@@ -1468,7 +1533,7 @@ if (length(unknown_in_use) > 0L) {
 .vig_t1 <- proc.time()["elapsed"]
 cat(sprintf("Vignette wall-clock: %.1f s\n",
             as.numeric(.vig_t1 - .vig_t0)))
-#> Vignette wall-clock: 13.4 s
+#> Vignette wall-clock: 13.3 s
 ```
 
 ``` r
