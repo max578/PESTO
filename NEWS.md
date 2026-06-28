@@ -1,5 +1,11 @@
 # PESTO (development version)
 
+* **Name and title grounded in the lineage.** PESTO expands as *Parameter
+  ESTimation Optimised* -- the **PEST** approach (PEST = *Parameter ESTimation*,
+  Doherty 2015) brought to R and optimised -- rather than the earlier
+  letter-by-letter backronym. The package title is now *Parameter Estimation
+  Optimised, with APSIM Coupling*, and the website tagline, citation, and
+  GitHub description match.
 * New exported helper `pestpp_available()` -- a non-erroring probe for a
   PEST++ family executable (e.g. `pestpp-ies`, `pestpp-glm`). It is the
   documented way for examples, vignettes, and conditional tests to skip

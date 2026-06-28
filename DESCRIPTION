@@ -1,6 +1,6 @@
 Package: PESTO
 Type: Package
-Title: Parameter Estimation, Surrogates, and Tooling for Optimisation
+Title: Parameter Estimation Optimised, with APSIM Coupling
 Version: 0.8.0.9000
 Authors@R: c(
     person("Max", "Moldovan",

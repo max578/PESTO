@@ -1,6 +1,6 @@
 bibentry(
   bibtype  = "Manual",
-  title    = "PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation",
+  title    = "PESTO: Parameter ESTimation Optimised",
   author   = person("Max", "Moldovan"),
   year     = "2026",
   note     = "R package version 0.8.0",

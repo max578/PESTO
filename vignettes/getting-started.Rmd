@@ -18,8 +18,8 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-**PESTO** (**P**arameter **E**stimation, **S**urrogates, and **T**ooling for
-**O**ptimisation) is an R package for high-performance parameter estimation,
+**PESTO** (**P**arameter **EST**imation **O**ptimised -- the **PEST** approach
+brought to R) is an R package for high-performance parameter estimation,
 uncertainty quantification, and inverse modelling. It brings the algorithms of
 **PEST** (*Parameter ESTimation*; Doherty 2015) and its C++ successor
 **PEST++** (White et al. 2020) natively into the R ecosystem, and extends them

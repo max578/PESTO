@@ -15,8 +15,9 @@ coverage](https://codecov.io/gh/max578/PESTO/graph/badge.svg)](https://app.codec
 [![r-universe](https://max578.r-universe.dev/badges/PESTO)](https://max578.r-universe.dev/PESTO)
 <!-- badges: end -->
 
-**P**arameter **E**stimation, **S**urrogates, and **T**ooling for
-**O**ptimisation
+**P**arameter **EST**imation **O**ptimised – the **PEST** approach
+(Doherty 2015), brought to R and optimised, with **APSIM** as its
+flagship simulator partner.
 
 PESTO is a high-performance R package for model-independent parameter
 estimation and uncertainty quantification. It brings the algorithms of
@@ -216,9 +217,8 @@ by the [Code of Conduct](CODE_OF_CONDUCT.md).
 citation("PESTO")
 ```
 
-> Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and
-> Tooling for Optimisation. R package version 0.8.0.
-> <https://github.com/max578/PESTO>
+> Moldovan, M. (2026). PESTO: Parameter ESTimation Optimised. R package
+> version 0.8.0. <https://github.com/max578/PESTO>
 
 ## Acknowledgements
 
