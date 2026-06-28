@@ -101,9 +101,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// ensemble_solution_gpu
-Rcpp::List ensemble_solution_gpu(Eigen::MatrixXd par_diff, Eigen::MatrixXd obs_diff, Eigen::MatrixXd obs_resid, Eigen::MatrixXd par_resid, Eigen::VectorXd weights, Eigen::VectorXd parcov_inv, Eigen::MatrixXd Am, double cur_lam, double eigthresh, bool use_approx, bool use_prior_scaling, int iter, double reg_factor, std::string svd_method, int target_rank);
-RcppExport SEXP _PESTO_ensemble_solution_gpu(SEXP par_diffSEXP, SEXP obs_diffSEXP, SEXP obs_residSEXP, SEXP par_residSEXP, SEXP weightsSEXP, SEXP parcov_invSEXP, SEXP AmSEXP, SEXP cur_lamSEXP, SEXP eigthreshSEXP, SEXP use_approxSEXP, SEXP use_prior_scalingSEXP, SEXP iterSEXP, SEXP reg_factorSEXP, SEXP svd_methodSEXP, SEXP target_rankSEXP) {
+// ensemble_solution_adaptive
+Rcpp::List ensemble_solution_adaptive(Eigen::MatrixXd par_diff, Eigen::MatrixXd obs_diff, Eigen::MatrixXd obs_resid, Eigen::MatrixXd par_resid, Eigen::VectorXd weights, Eigen::VectorXd parcov_inv, Eigen::MatrixXd Am, double cur_lam, double eigthresh, bool use_approx, bool use_prior_scaling, int iter, double reg_factor, std::string svd_method, int target_rank);
+RcppExport SEXP _PESTO_ensemble_solution_adaptive(SEXP par_diffSEXP, SEXP obs_diffSEXP, SEXP obs_residSEXP, SEXP par_residSEXP, SEXP weightsSEXP, SEXP parcov_invSEXP, SEXP AmSEXP, SEXP cur_lamSEXP, SEXP eigthreshSEXP, SEXP use_approxSEXP, SEXP use_prior_scalingSEXP, SEXP iterSEXP, SEXP reg_factorSEXP, SEXP svd_methodSEXP, SEXP target_rankSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -122,7 +122,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type reg_factor(reg_factorSEXP);
     Rcpp::traits::input_parameter< std::string >::type svd_method(svd_methodSEXP);
     Rcpp::traits::input_parameter< int >::type target_rank(target_rankSEXP);
-    rcpp_result_gen = Rcpp::wrap(ensemble_solution_gpu(par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh, use_approx, use_prior_scaling, iter, reg_factor, svd_method, target_rank));
+    rcpp_result_gen = Rcpp::wrap(ensemble_solution_adaptive(par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh, use_approx, use_prior_scaling, iter, reg_factor, svd_method, target_rank));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -277,7 +277,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_PESTO_rsvd", (DL_FUNC) &_PESTO_rsvd, 4},
     {"_PESTO_accelerate_svd", (DL_FUNC) &_PESTO_accelerate_svd, 2},
     {"_PESTO_adaptive_svd", (DL_FUNC) &_PESTO_adaptive_svd, 3},
-    {"_PESTO_ensemble_solution_gpu", (DL_FUNC) &_PESTO_ensemble_solution_gpu, 15},
+    {"_PESTO_ensemble_solution_adaptive", (DL_FUNC) &_PESTO_ensemble_solution_adaptive, 15},
     {"_PESTO_ensemble_spread_ess", (DL_FUNC) &_PESTO_ensemble_spread_ess, 1},
     {"_PESTO_gaspari_cohn", (DL_FUNC) &_PESTO_gaspari_cohn, 2},
     {"_PESTO_correlation_localisation", (DL_FUNC) &_PESTO_correlation_localisation, 6},

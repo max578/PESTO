@@ -169,18 +169,16 @@ accelerate_svd <- function(A, thin = TRUE) {
 
 #' Adaptive SVD with Automatic Backend Selection
 #'
-#' Automatically selects the optimal SVD algorithm based on matrix
-#' dimensions and available hardware:
+#' Automatically selects the SVD algorithm from the matrix dimensions:
 #'
-#' - **Randomised SVD** (Halko et al., 2011): when target rank k << min(m,n)
-#' - **Apple Accelerate**: on macOS, for full SVD leveraging AMX coprocessor
-#' - **Eigen BDCSVD**: cross-platform fallback with divide-and-conquer
-#' - **CUDA cuSOLVER**: on GPU-equipped systems (when compiled with PESTO_USE_CUDA)
+#' - **Randomised SVD** (Halko et al., 2011): when target rank k << min(m, n)
+#' - **Apple Accelerate / LAPACK**: a full dense decomposition otherwise
+#' - **Eigen BDCSVD**: cross-platform divide-and-conquer fallback
 #'
 #' @param A Matrix (m x n). Input matrix.
 #' @param k Integer. Target rank. If 0 (default), computes full SVD.
 #' @param method Character. Force a specific method: "auto" (default),
-#'   "rsvd", "accelerate", "eigen", "cuda".
+#'   "rsvd", "accelerate", "eigen".
 #' @return A list with components U (m x k), d (k), V (n x k),
 #'   plus `method_used` and `time_ms`.
 #' @examples
@@ -196,10 +194,12 @@ adaptive_svd <- function(A, k = 0L, method = "auto") {
 
 #' Ensemble Solution with Adaptive SVD Backend
 #'
-#' Enhanced version of `ensemble_solution()` that uses the adaptive SVD
-#' backend for automatic hardware acceleration. On macOS, uses Apple
-#' Accelerate (AMX coprocessor). On CUDA systems, uses cuSOLVER.
-#' For low-rank problems, automatically switches to randomised SVD.
+#' A variant of `ensemble_solution()` that selects the SVD backend
+#' automatically -- a randomised SVD for low-rank problems, otherwise a dense
+#' LAPACK / Accelerate decomposition -- and returns the upgrade together with
+#' timing diagnostics. It is the convenient entry point when the best backend
+#' for a given problem size is not known in advance. All computation is on the
+#' CPU.
 #'
 #' @param par_diff Matrix (npar x nreal). Parameter anomalies.
 #' @param obs_diff Matrix (nobs x nreal). Observation anomalies.
@@ -229,7 +229,7 @@ adaptive_svd <- function(A, k = 0L, method = "auto") {
 #' weights    <- rep(1, nobs)
 #' parcov_inv <- rep(1, npar)
 #' Am         <- matrix(0, 0, 0)
-#' res <- ensemble_solution_gpu(
+#' res <- ensemble_solution_adaptive(
 #'   par_diff   = par_diff,
 #'   obs_diff   = obs_diff,
 #'   obs_resid  = obs_resid,
@@ -242,8 +242,8 @@ adaptive_svd <- function(A, k = 0L, method = "auto") {
 #' )
 #' dim(res$upgrade)
 #' @export
-ensemble_solution_gpu <- function(par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh = 1e-6, use_approx = TRUE, use_prior_scaling = FALSE, iter = 1L, reg_factor = -1.0, svd_method = "auto", target_rank = 0L) {
-    .Call(`_PESTO_ensemble_solution_gpu`, par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh, use_approx, use_prior_scaling, iter, reg_factor, svd_method, target_rank)
+ensemble_solution_adaptive <- function(par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh = 1e-6, use_approx = TRUE, use_prior_scaling = FALSE, iter = 1L, reg_factor = -1.0, svd_method = "auto", target_rank = 0L) {
+    .Call(`_PESTO_ensemble_solution_adaptive`, par_diff, obs_diff, obs_resid, par_resid, weights, parcov_inv, Am, cur_lam, eigthresh, use_approx, use_prior_scaling, iter, reg_factor, svd_method, target_rank)
 }
 
 #' Spectral Spread Effective Sample Size of a Parameter Ensemble

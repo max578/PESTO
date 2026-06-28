@@ -1,5 +1,7 @@
-// PESTO: GPU-Accelerated SVD and Linear Algebra Kernels
-// Supports: Apple Accelerate (macOS), cuSOLVER (CUDA), CPU fallback (Eigen)
+// PESTO: Adaptive SVD and Linear Algebra Kernels
+// Backends (CPU): randomised SVD, Apple Accelerate / LAPACK, Eigen.
+// An optional cuSOLVER path exists behind -DPESTO_USE_CUDA (off by default;
+// not built or advertised in standard installs).
 //
 // This module provides high-performance SVD computation with automatic
 // backend selection based on matrix size and available hardware.
@@ -205,18 +207,16 @@ Rcpp::List accelerate_svd(const Eigen::MatrixXd& A, bool thin = true) {
 
 //' Adaptive SVD with Automatic Backend Selection
 //'
-//' Automatically selects the optimal SVD algorithm based on matrix
-//' dimensions and available hardware:
+//' Automatically selects the SVD algorithm from the matrix dimensions:
 //'
-//' - **Randomised SVD** (Halko et al., 2011): when target rank k << min(m,n)
-//' - **Apple Accelerate**: on macOS, for full SVD leveraging AMX coprocessor
-//' - **Eigen BDCSVD**: cross-platform fallback with divide-and-conquer
-//' - **CUDA cuSOLVER**: on GPU-equipped systems (when compiled with PESTO_USE_CUDA)
+//' - **Randomised SVD** (Halko et al., 2011): when target rank k << min(m, n)
+//' - **Apple Accelerate / LAPACK**: a full dense decomposition otherwise
+//' - **Eigen BDCSVD**: cross-platform divide-and-conquer fallback
 //'
 //' @param A Matrix (m x n). Input matrix.
 //' @param k Integer. Target rank. If 0 (default), computes full SVD.
 //' @param method Character. Force a specific method: "auto" (default),
-//'   "rsvd", "accelerate", "eigen", "cuda".
+//'   "rsvd", "accelerate", "eigen".
 //' @return A list with components U (m x k), d (k), V (n x k),
 //'   plus `method_used` and `time_ms`.
 //' @examples
@@ -300,10 +300,12 @@ Rcpp::List adaptive_svd(const Eigen::MatrixXd& A, int k = 0,
 
 //' Ensemble Solution with Adaptive SVD Backend
 //'
-//' Enhanced version of `ensemble_solution()` that uses the adaptive SVD
-//' backend for automatic hardware acceleration. On macOS, uses Apple
-//' Accelerate (AMX coprocessor). On CUDA systems, uses cuSOLVER.
-//' For low-rank problems, automatically switches to randomised SVD.
+//' A variant of `ensemble_solution()` that selects the SVD backend
+//' automatically -- a randomised SVD for low-rank problems, otherwise a dense
+//' LAPACK / Accelerate decomposition -- and returns the upgrade together with
+//' timing diagnostics. It is the convenient entry point when the best backend
+//' for a given problem size is not known in advance. All computation is on the
+//' CPU.
 //'
 //' @param par_diff Matrix (npar x nreal). Parameter anomalies.
 //' @param obs_diff Matrix (nobs x nreal). Observation anomalies.
@@ -333,7 +335,7 @@ Rcpp::List adaptive_svd(const Eigen::MatrixXd& A, int k = 0,
 //' weights    <- rep(1, nobs)
 //' parcov_inv <- rep(1, npar)
 //' Am         <- matrix(0, 0, 0)
-//' res <- ensemble_solution_gpu(
+//' res <- ensemble_solution_adaptive(
 //'   par_diff   = par_diff,
 //'   obs_diff   = obs_diff,
 //'   obs_resid  = obs_resid,
@@ -347,7 +349,7 @@ Rcpp::List adaptive_svd(const Eigen::MatrixXd& A, int k = 0,
 //' dim(res$upgrade)
 //' @export
 // [[Rcpp::export]]
-Rcpp::List ensemble_solution_gpu(
+Rcpp::List ensemble_solution_adaptive(
     Eigen::MatrixXd par_diff,
     Eigen::MatrixXd obs_diff,
     Eigen::MatrixXd obs_resid,

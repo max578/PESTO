@@ -12,22 +12,20 @@ adaptive_svd(A, k = 0L, method = "auto")
 \item{k}{Integer. Target rank. If 0 (default), computes full SVD.}
 
 \item{method}{Character. Force a specific method: "auto" (default),
-"rsvd", "accelerate", "eigen", "cuda".}
+"rsvd", "accelerate", "eigen".}
 }
 \value{
 A list with components U (m x k), d (k), V (n x k),
 plus \code{method_used} and \code{time_ms}.
 }
 \description{
-Automatically selects the optimal SVD algorithm based on matrix
-dimensions and available hardware:
+Automatically selects the SVD algorithm from the matrix dimensions:
 }
 \details{
 \itemize{
-\item \strong{Randomised SVD} (Halko et al., 2011): when target rank k << min(m,n)
-\item \strong{Apple Accelerate}: on macOS, for full SVD leveraging AMX coprocessor
-\item \strong{Eigen BDCSVD}: cross-platform fallback with divide-and-conquer
-\item \strong{CUDA cuSOLVER}: on GPU-equipped systems (when compiled with PESTO_USE_CUDA)
+\item \strong{Randomised SVD} (Halko et al., 2011): when target rank k << min(m, n)
+\item \strong{Apple Accelerate / LAPACK}: a full dense decomposition otherwise
+\item \strong{Eigen BDCSVD}: cross-platform divide-and-conquer fallback
 }
 }
 \examples{
