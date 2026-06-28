@@ -191,7 +191,8 @@ R-package dependencies are declared in `DESCRIPTION` (Imports: `Rcpp`,
 - `vignette("apsim-callback", package = "PESTO")` – Coupling APSIM (and
   other simulators) via the in-process callback
 - `vignette("apsim-case-study", package = "PESTO")` – Publication-grade
-  APSIM wheat calibration (parameter recovery + uncertainty)
+  APSIM wheat calibration: synthetic-truth recovery + real-data
+  calibration with uncertainty
 - `vignette("inflation-localisation", package = "PESTO")` –
   Finite-ensemble countermeasures
 - `vignette("surrogate-ies", package = "PESTO")` – Surrogate-accelerated

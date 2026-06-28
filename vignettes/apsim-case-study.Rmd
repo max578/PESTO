@@ -1,8 +1,8 @@
 ---
-title: "Calibrating APSIM Wheat with PESTO: a recovery case study"
+title: "Calibrating APSIM Wheat with PESTO: a case study"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Calibrating APSIM Wheat with PESTO: a recovery case study}
+  %\VignetteIndexEntry{Calibrating APSIM Wheat with PESTO: a case study}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -35,6 +35,11 @@ is verifiable without any field data -- the honest way to show a calibration
 method works before confronting real observations. The forward model is the
 **bundled APSIM Wheat example** (a multi-decade run at a single site), driven
 in-process through `apsim_callback()`.
+
+This study has two parts. **Part 1** (the bulk below) is that synthetic-truth
+recovery. **Part 2** then calibrates physiological parameters to *real*
+observed wheat biomass and cross-checks PESTO against the established `apsimx`
+optimiser.
 
 ```{r load}
 rds <- system.file("extdata", "apsim_case_study",
@@ -239,6 +244,94 @@ man@method
 man@schema_version
 ```
 
+# Part 2 -- calibration to real observed data
+
+Part 1 proved correctness against a *known* truth. Part 2 confronts **real
+field observations**: the `obsWheat` dataset shipped with the `apsimx` package
+(Miguez 2025) -- ten dates of measured wheat above-ground biomass over a
+2016--2017 season, with `Ames.met` weather. There is no known truth here, so
+the test is different: does the calibrated model *fit* the observations and
+*predict* held-out ones, and does PESTO agree with an independent calibrator?
+
+We calibrate the two genuinely uncertain physiological parameters of the
+bundled `Wheat-opt-ex.apsimx` model -- radiation-use efficiency (`RUE`) and the
+cultivar `BasePhyllochron` (phenology) -- the same parameters, model, and data
+that the `apsimx` package's own `optim_apsimx()` example optimises. That gives
+an **independent cross-check**: PESTO's ensemble posterior against `apsimx`'s
+point optimum.
+
+```{r p2-load}
+prd <- system.file("extdata", "apsim_case_study",
+                   "apsim_realdata_result.rds", package = "PESTO")
+if (!nzchar(prd)) {
+  prd <- file.path("..", "inst", "extdata", "apsim_case_study",
+                   "apsim_realdata_result.rds")
+}
+P <- readRDS(prd); P_spec <- P$spec; P_pnm <- P$pnm
+```
+
+```{r p2-obs, fig.height = 3.4, fig.alt = "Observed wheat above-ground biomass at ten dates through the season, with calibration and held-out validation dates distinguished; biomass rises from zero to roughly 1200 g/m2."}
+po <- data.table(date = P$obs_dates, biomass = P$y_obs,
+                 set = ifelse(seq_along(P$y_obs) %in% P$cal_idx,
+                              "calibration", "held-out"))
+ggplot(po, aes(date, biomass, colour = set)) +
+  geom_line(colour = "grey70", linewidth = 0.3) + geom_point(size = 2) +
+  scale_colour_manual(values = c(calibration = PAL[1], `held-out` = PAL[2])) +
+  labs(x = NULL, y = "Observed biomass (g/m2)", colour = NULL,
+       title = "obsWheat: real measured above-ground biomass") +
+  theme_minimal(base_size = 11)
+```
+
+### Estimates, with an independent cross-check
+
+```{r p2-estimates}
+est <- rbindlist(lapply(P_pnm, function(p) {
+  q <- stats::quantile(P$post[, p], c(.05, .5, .95), na.rm = TRUE)
+  data.table(Parameter = p, Role = P_spec[[p]]$role,
+             `PESTO mean` = round(mean(P$post[, p], na.rm = TRUE), 2),
+             `5%` = round(q[1], 2), `95%` = round(q[3], 2),
+             `apsimx optimum` = P_spec[[p]]$apsimx_opt,
+             Default = P_spec[[p]]$default)
+}))
+knitr::kable(est, caption = paste(
+  "PESTO posterior vs apsimx optim_apsimx() optimum (independent calibrator)",
+  "and the model default."))
+```
+
+For both parameters the `apsimx` point optimum lies **inside** PESTO's 90%
+credible interval, and both calibrators move the same direction away from the
+default (higher `RUE`, lower `BasePhyllochron`). Two independent calibration
+engines agree -- and PESTO additionally reports the uncertainty the point
+optimiser does not.
+
+```{r p2-fit, fig.height = 3.8, fig.alt = "Posterior predictive 90 percent band for biomass at each observation date with the observed points overlaid; the band tracks the observations across the season and brackets the held-out points."}
+qb <- function(i) stats::quantile(P$obs_ensemble[, i], c(.05, .95), na.rm = TRUE)
+fitb <- data.table(
+  date = P$obs_dates, obs = P$y_obs,
+  lo = vapply(seq_along(P$obs_dates), function(i) qb(i)[1], 0),
+  hi = vapply(seq_along(P$obs_dates), function(i) qb(i)[2], 0),
+  set = ifelse(seq_along(P$y_obs) %in% P$cal_idx, "calibration", "held-out"))
+ggplot(fitb, aes(date)) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), fill = PAL[1], alpha = 0.25) +
+  geom_point(aes(y = obs, shape = set), colour = PAL[2], size = 2) +
+  scale_shape_manual(values = c(calibration = 16, `held-out` = 1)) +
+  labs(x = NULL, y = "Biomass (g/m2)", shape = NULL,
+       title = "Posterior predictive band vs observed biomass") +
+  theme_minimal(base_size = 11)
+```
+
+```{r p2-coverage, echo = FALSE}
+vl <- vapply(P$val_idx, function(i) stats::quantile(P$obs_ensemble[, i], .05, na.rm = TRUE), 0)
+vh <- vapply(P$val_idx, function(i) stats::quantile(P$obs_ensemble[, i], .95, na.rm = TRUE), 0)
+p2_cov <- mean(P$y_obs[P$val_idx] >= vl & P$y_obs[P$val_idx] <= vh)
+```
+
+The held-out dates (excluded from the fit) fall within the posterior
+predictive band: out-of-sample coverage is
+`r sprintf("%.0f%%", 100 * p2_cov)` of the `r length(P$val_idx)` held-out
+points. (With so few held-out points this is indicative, not a precise
+coverage estimate.)
+
 ## Reproducibility
 
 Every number here is reproducible. The driver
@@ -248,12 +341,15 @@ machine paths: point it at an APSIM install with the `PESTO_APSIM_EXE` /
 build needs an explicit runtime), then:
 
 ```{r repro, eval = FALSE}
-script <- system.file("case_studies/apsim_wheat_calibration.R", package = "PESTO")
-source(script)   # writes apsim_wheat_calibration_result.rds
+# Part 1 (synthetic-truth recovery):
+source(system.file("case_studies/apsim_wheat_calibration.R", package = "PESTO"))
+# Part 2 (real obsWheat data):
+source(system.file("case_studies/apsim_wheat_realdata.R", package = "PESTO"))
 ```
 
 Provenance: `r R$apsim_version`, `apsimx` `r R$apsimx_version`, PESTO
-`r R$pesto_version`, seed `r R$seed`, generated `r R$generated_on`.
+`r R$pesto_version`, seed `r R$seed`, generated `r R$generated_on`. Part 2 uses
+the `obsWheat` data and `Wheat-opt-ex.apsimx` model shipped with `apsimx`.
 
 ## Honest reading
 
@@ -265,7 +361,19 @@ Provenance: `r R$apsim_version`, `apsimx` `r R$apsimx_version`, PESTO
 - **Raw intervals under-cover.** Out-of-sample coverage is below nominal until
   inflation is applied -- a real property of finite-ensemble smoothers,
   surfaced rather than hidden.
-- **It is a twin experiment.** Recovery against a known truth demonstrates the
-  method; calibrating against real field observations (with an independent
-  validation dataset) is the natural next step.
+- **From synthetic to real (Part 2).** On real `obsWheat` biomass, PESTO
+  calibrates the physiological parameters (`RUE`, phenology), fits the observed
+  season, and predicts held-out dates -- and its posterior brackets the
+  independent `apsimx` optimiser's optimum for both parameters, adding the
+  uncertainty the point optimiser does not report.
+
+## References
+
+- Miguez, F. (2025). *apsimx: Inspect, Read, Edit and Run APSIM Next
+  Generation and APSIM Classic.* R package version 2.8.235.
+  <https://doi.org/10.32614/CRAN.package.apsimx> (source of the `obsWheat`
+  data and `Wheat-opt-ex.apsimx` model used in Part 2).
+- Holzworth, D. et al. (2014). APSIM -- evolution towards a new generation of
+  agricultural systems simulation. *Environmental Modelling & Software* 62,
+  327--350.
 ```

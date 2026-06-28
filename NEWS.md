@@ -37,6 +37,11 @@
   with PESTO* vignette (frozen real outputs, so it builds without APSIM) plus
   a path-free reproducible driver at
   `system.file("case_studies/apsim_wheat_calibration.R", package = "PESTO")`.
+  A second part calibrates physiological parameters (RUE, phenology) to the
+  **real observed biomass** in `apsimx::obsWheat`: PESTO's posterior brackets
+  the independent `apsimx::optim_apsimx()` optimum for both parameters and
+  predicts held-out dates, adding the uncertainty the point optimiser lacks
+  (driver `apsim_wheat_realdata.R`).
 
 # PESTO 0.8.0
 
