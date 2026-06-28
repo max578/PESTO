@@ -244,10 +244,11 @@ plot_ensemble <- function(ensemble,
 
 #' Plot Parameter Identifiability
 #'
-#' Creates a bar plot of parameter identifiability based on
+#' Creates a ranked lollipop plot of parameter identifiability based on
 #' the singular value decomposition of the Jacobian matrix. Accepts
 #' either a numeric Jacobian matrix in memory or a path to a `.jco`
-#' (PEST binary) file.
+#' (PEST binary) file. High-dimensional problems are kept legible by
+#' showing only the most identifiable parameters (see `top_n`).
 #'
 #' @param jacobian Numeric matrix (n_obs x n_par). The Jacobian / sensitivity
 #'   matrix. Column names, if present, are used as parameter labels;
@@ -258,6 +259,11 @@ plot_ensemble <- function(ensemble,
 #' @param pst A `pesto_pst` object for parameter names. Optional; only
 #'   used when reading from a `.jco` file and column names are absent.
 #' @param n_sv Integer. Number of singular values to retain.
+#' @param top_n Integer. Maximum number of parameters to display, ranked by
+#'   identifiability. Defaults to all parameters when there are at most 40 and
+#'   to the 40 most identifiable otherwise, so high-dimensional problems stay
+#'   legible. Set explicitly to override; a subtitle records how many of the
+#'   total are shown.
 #' @param title Character. Plot title.
 #' @return A ggplot2 object.
 #' @examples
@@ -272,6 +278,7 @@ plot_identifiability <- function(jacobian = NULL,
                                  jco_file = NULL,
                                  pst = NULL,
                                  n_sv = NULL,
+                                 top_n = NULL,
                                  title = "Parameter Identifiability") {
   .check_identifiability_inputs(jacobian, jco_file)
 
@@ -302,20 +309,47 @@ plot_identifiability <- function(jacobian = NULL,
     identifiability = ident
   )
   data.table::setorder(ident_dt, -identifiability)
-  ident_dt[, parameter := factor(parameter, levels = parameter)]
 
-  p <- ggplot2::ggplot(ident_dt, ggplot2::aes(x = parameter, y = identifiability)) +
-    ggplot2::geom_col(fill = "steelblue", alpha = 0.8) +
+  # Cap the display so a high-dimensional Jacobian stays legible: show the
+  # most identifiable parameters and record the total in a subtitle.
+  n_total <- nrow(ident_dt)
+  if (is.null(top_n)) {
+    top_n <- if (n_total > 40L) 40L else n_total
+  }
+  top_n <- min(as.integer(top_n), n_total)
+  shown <- ident_dt[seq_len(top_n)]
+  # Ascending factor order so the most identifiable sits at the top after flip.
+  shown[, parameter := factor(parameter, levels = rev(parameter))]
+
+  subtitle <- if (top_n < n_total) {
+    sprintf("The %d most identifiable of %d parameters", top_n, n_total)
+  } else {
+    NULL
+  }
+  # Shrink labels as the displayed count grows, so dense axes stay readable.
+  lab_size <- if (top_n > 30L) 7 else if (top_n > 20L) 8.5 else 11
+
+  p <- ggplot2::ggplot(
+    shown, ggplot2::aes(x = parameter, y = identifiability)
+  ) +
+    ggplot2::geom_segment(
+      ggplot2::aes(xend = parameter, y = 0, yend = identifiability),
+      colour = "steelblue", linewidth = 0.6
+    ) +
+    ggplot2::geom_point(colour = "steelblue", size = 2) +
     ggplot2::geom_hline(yintercept = 0.5, linetype = "dashed", colour = "red") +
     ggplot2::labs(
       title = title,
+      subtitle = subtitle,
       x = "Parameter",
       y = "Identifiability (0-1)"
     ) +
     ggplot2::coord_flip() +
-    ggplot2::theme_minimal(base_size = 14) +
+    ggplot2::theme_minimal(base_size = 13) +
     ggplot2::theme(
-      plot.title = ggplot2::element_text(face = "bold")
+      plot.title = ggplot2::element_text(face = "bold"),
+      axis.text.y = ggplot2::element_text(size = lab_size),
+      panel.grid.minor = ggplot2::element_blank()
     )
 
   p

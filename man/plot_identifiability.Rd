@@ -9,6 +9,7 @@ plot_identifiability(
   jco_file = NULL,
   pst = NULL,
   n_sv = NULL,
+  top_n = NULL,
   title = "Parameter Identifiability"
 )
 }
@@ -26,16 +27,23 @@ used when reading from a \code{.jco} file and column names are absent.}
 
 \item{n_sv}{Integer. Number of singular values to retain.}
 
+\item{top_n}{Integer. Maximum number of parameters to display, ranked by
+identifiability. Defaults to all parameters when there are at most 40 and
+to the 40 most identifiable otherwise, so high-dimensional problems stay
+legible. Set explicitly to override; a subtitle records how many of the
+total are shown.}
+
 \item{title}{Character. Plot title.}
 }
 \value{
 A ggplot2 object.
 }
 \description{
-Creates a bar plot of parameter identifiability based on
+Creates a ranked lollipop plot of parameter identifiability based on
 the singular value decomposition of the Jacobian matrix. Accepts
 either a numeric Jacobian matrix in memory or a path to a \code{.jco}
-(PEST binary) file.
+(PEST binary) file. High-dimensional problems are kept legible by
+showing only the most identifiable parameters (see \code{top_n}).
 }
 \examples{
 J <- matrix(rnorm(30 * 8), nrow = 30, ncol = 8)
