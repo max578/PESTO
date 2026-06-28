@@ -2,6 +2,7 @@ url: https://max578.github.io/PESTO/
 
 template:
   bootstrap: 5
+  math-rendering: katex
 
 reference:
 - title: Core ensemble solvers
@@ -9,7 +10,7 @@ reference:
   contents:
   - ensemble_solution
   - ensemble_solution_mda
-  - ensemble_solution_gpu
+  - ensemble_solution_adaptive
   - compute_phi
 
 - title: SVD backends
@@ -115,6 +116,11 @@ reference:
   - plot_ensemble
   - plot_identifiability
   - plot_surrogate_diagnostics
+
+- title: Deprecated
+  desc: Retained for backward compatibility; scheduled for removal in a future release.
+  contents:
+  - ensemble_solution_gpu
 
 articles:
 - title: Get started

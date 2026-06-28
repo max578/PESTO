@@ -1,21 +1,38 @@
 # PESTO (development version)
 
+* **Vignettes brought to publication quality.** *Benchmarking PESTO against PEST
+  and PEST++* (formerly the "comparison and simulation study") is reduced from
+  roughly 1300 lines to a focused benchmark -- comparative estimates, the notable
+  deviations explained, and compute times -- plus one worked example; its
+  coverage-driving simulation study moved into `tests/`
+  (`test-export-surface.R`). The pkgdown site now renders maths with KaTeX
+  (resolving a `\boldsymbol` extension-load failure), all vignettes use
+  sentence-case headings and verified references (the PEST citation is corrected
+  to the 2015 *Calibration and Uncertainty Analysis* book), and
+  `plot_identifiability()` gains a `top_n` cap with a ranked-lollipop layout so
+  high-dimensional problems stay legible. A `tools/check_publication_quality.R`
+  guard blocks internal-flag words from shipped prose.
 * **Name and title grounded in the lineage.** PESTO expands as *Parameter
   ESTimation Optimised* -- the **PEST** approach (PEST = *Parameter ESTimation*,
   Doherty 2015) brought to R and optimised -- rather than the earlier
   letter-by-letter backronym. The package title is now *Parameter Estimation
   Optimised, with APSIM Coupling*, and the website tagline, citation, and
   GitHub description match.
-* **The "Optimised" claim is now validated in the docs.** A new section in the
-  *PEST and PEST++ Comparison* vignette ("The 'Optimised' in PESTO, quantified")
-  states precisely what is optimised, each backed by a measured number and its
-  maths: wall-clock speed-up (reference time / PESTO time) at matched accuracy,
-  with the per-solve cost model behind it; surrogate evaluation-economy; the
-  multi-fidelity control-variate variance reduction; and convergence-based early
-  stopping. It also states the limits plainly (not fewer solves than classic
-  PEST; raw intervals under-cover until inflation). The README's surrogate
-  feature is corrected from a flat "50-90%" to the measured, regime-dependent
-  saving.
+* **A "Performance characteristics" section** in *Benchmarking PESTO against PEST
+  and PEST++* documents the four levers behind the speed and evaluation economy:
+  the in-process cost model (wall-clock speed-up at matched accuracy), surrogate
+  evaluation-economy, the multi-fidelity control-variate variance reduction
+  (Kennedy & O'Hagan 2000; Glasserman 2003), and convergence-based early stopping
+  -- each with its maths and a measured outcome, and with the limits stated
+  plainly (not fewer solves than classic PEST; raw intervals under-cover until
+  inflation). The README's surrogate feature is corrected from a flat "50-90%"
+  to the measured, regime-dependent saving.
+* **`ensemble_solution_gpu()` renamed to `ensemble_solution_adaptive()`.** The
+  former name implied GPU computation; the function performs CPU adaptive-SVD
+  backend selection (randomised SVD versus a dense LAPACK / Accelerate
+  decomposition), and its documentation no longer claims CUDA / cuSOLVER support.
+  `ensemble_solution_gpu()` is retained as a deprecated alias that warns and
+  forwards, and will be removed in a future release.
 * New exported helper `pestpp_available()` -- a non-erroring probe for a
   PEST++ family executable (e.g. `pestpp-ies`, `pestpp-glm`). It is the
   documented way for examples, vignettes, and conditional tests to skip
@@ -29,7 +46,7 @@
   `inst/extdata/pestpp_cache/`: accuracy parity on the linear problem,
   the ensemble methods' advantage over linearised GLM on the non-linear
   one, a two-to-three-orders-of-magnitude wall-clock advantage, and the
-  honest calibration caveat (raw ensemble intervals under-cover; apply
+  calibration caveat (raw ensemble intervals under-cover; apply
   inflation). A new *Lineage and scope* section grounds PESTO in PEST
   (Doherty 2015) and PEST++ (White et al. 2020) and states the algorithm
   boundary that makes the comparison fair.
@@ -574,10 +591,9 @@ canon recipes on the `max578/PESTO` channel.
   (`pesto_ies`, `pesto_glm`, `pesto_sweep`, `pesto_sensitivity`) and
   `pesto_surrogate_ies` use guarded `\donttest{}` (no `\dontrun{}`).
 * Vignettes acquire a "Regime of applicability" subsection
-  (`surrogate-ies.Rmd`) and an "Honest reading — surrogate savings in
-  this regime" defence paragraph (`pestpp-comparison-and-simulation.Rmd`
-  Section 3) covering the curse-of-dimensionality finding from
-  investigation I3.
+  (`surrogate-ies.Rmd`) and a "surrogate savings in this regime" note
+  (`pestpp-comparison-and-simulation.Rmd`) covering the
+  curse-of-dimensionality finding from investigation I3.
 * Kernel docstring `?ensemble_solution` now states the `sim - obs`
   convention with a full GLM-derivation rationale.
 * New `cran-comments.md` with per-NOTE justification.
@@ -635,8 +651,9 @@ canon recipes on the `max578/PESTO` channel.
   faster rank-k approximations.
 * `accelerate_svd()` — Direct LAPACK SVD leveraging platform-optimised BLAS
   (Apple Accelerate/AMX on macOS, MKL or OpenBLAS on Linux).
-* `ensemble_solution_gpu()` — GPU-ready ensemble solution with adaptive SVD
-  backend and performance diagnostics.
+* `ensemble_solution_gpu()` — ensemble solution with adaptive SVD backend
+  selection and performance diagnostics (renamed to
+  `ensemble_solution_adaptive()` in the development version).
 
 ### Surrogate-Accelerated IES (Novel)
 * `train_gp_surrogate()` — Gaussian Process surrogate model training with

@@ -18,8 +18,8 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-**PESTO** (**P**arameter **EST**imation **O**ptimised -- the **PEST** approach
-brought to R) is an R package for high-performance parameter estimation,
+**PESTO** (*Parameter ESTimation Optimised* -- the PEST approach brought to R)
+is an R package for high-performance parameter estimation,
 uncertainty quantification, and inverse modelling. It brings the algorithms of
 **PEST** (*Parameter ESTimation*; Doherty 2015) and its C++ successor
 **PEST++** (White et al. 2020) natively into the R ecosystem, and extends them
@@ -33,7 +33,7 @@ package -- see the *Calibrating APSIM with PESTO* vignette -- while the same
 callback couples hydrological models, other crop models, and ODE systems
 equally.
 
-### Key Features
+### Key features
 
 - **Iterative Ensemble Smoother (IES)**: Ensemble-based parameter
   estimation that scales to 100,000+ parameters without computing
@@ -55,7 +55,7 @@ remotes::install_github("max578/PESTO")
 # PEST++ binaries must be on your PATH or bundled with the package
 ```
 
-## Quick Start: Creating a Model Scenario
+## Quick start: creating a model scenario
 
 Rather than requiring a pre-existing PEST control file, PESTO lets you
 define problems programmatically:
@@ -94,7 +94,7 @@ pst <- create_pest_scenario(
 print(pst)
 ```
 
-## Core Computational Kernel
+## Core computational kernel
 
 PESTO provides the `ensemble_solution()` function -- a high-performance
 C++ implementation of the IES update equation. This is the computational
@@ -131,7 +131,7 @@ cat("Upgrade matrix dimensions:", dim(upgrade), "\n")
 cat("Mean absolute upgrade:", mean(abs(upgrade)), "\n")
 ```
 
-## Performance Benchmarking
+## Performance benchmarking
 
 The C++ kernel is significantly faster than equivalent R code:
 
@@ -149,7 +149,7 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 }
 ```
 
-## Computing Phi (Objective Function)
+## Computing phi (the objective function)
 
 ```{r phi}
 phi_values <- compute_phi(obs_resid, weights)
@@ -201,7 +201,7 @@ plot_ensemble(posterior, prior_ensemble = prior,
               title = "Prior vs Posterior Parameter Distributions")
 ```
 
-## Adaptive SVD Backends
+## Adaptive SVD backends
 
 PESTO automatically selects the fastest SVD algorithm for your problem.
 For low-rank decompositions (typical in IES where ensemble size << observations),
@@ -222,12 +222,14 @@ res_rsvd <- rsvd(A, k = 20)
 cat("\nrSVD dimensions: U =", dim(res_rsvd$u), ", V =", dim(res_rsvd$v), "\n")
 ```
 
-## GPU-Accelerated Ensemble Solution
+## Adaptive-backend ensemble solution
 
-The `ensemble_solution_gpu()` function wraps the IES kernel with
-adaptive SVD backend selection and returns performance diagnostics:
+`ensemble_solution_adaptive()` wraps the IES kernel with automatic SVD backend
+selection -- a randomised SVD for low-rank problems, otherwise a dense LAPACK /
+Accelerate decomposition -- and returns timing diagnostics. It is the convenient
+entry point when the best backend for a problem size is not known in advance.
 
-```{r gpu-solution}
+```{r adaptive-solution}
 set.seed(42)
 npar <- 100; nobs <- 500; nreal <- 50
 
@@ -238,7 +240,7 @@ pr <- matrix(rnorm(npar * nreal), npar, nreal)
 w <- rep(1.0, nobs); pc <- rep(1.0, npar)
 Am <- matrix(rnorm(npar * (nreal - 1)), npar, nreal - 1)
 
-result <- ensemble_solution_gpu(
+result <- ensemble_solution_adaptive(
   pd, od, or_, pr, w, pc, Am,
   cur_lam = 1.0, svd_method = "auto"
 )
@@ -249,7 +251,7 @@ cat("Total time:", round(result$total_time_ms, 2), "ms\n")
 cat("Singular values used:", result$singular_values_used, "\n")
 ```
 
-## Surrogate-Accelerated IES
+## Surrogate-accelerated IES
 
 PESTO includes a Gaussian Process surrogate that can replace expensive
 model evaluations during IES iterations. See `vignette("surrogate-ies")`
@@ -273,7 +275,7 @@ cat("Surrogate evaluations:", result$n_surrogate_runs, "\n")
 cat("Savings:", sprintf("%.0f%%", result$savings_pct), "\n")
 ```
 
-## Adaptive Ensemble Sizing
+## Adaptive ensemble sizing
 
 Monitor ensemble health and get sizing recommendations:
 
@@ -286,7 +288,7 @@ cat("ESS:", round(sizing$ess, 1), "/", sizing$current_size, "\n")
 cat("Reason:", sizing$reasoning, "\n")
 ```
 
-## Next Steps
+## Next steps
 
 - See `vignette("surrogate-ies")` for the full surrogate-accelerated workflow
 - See `?pesto_ies` for the high-level IES interface (wraps pestpp-ies)
@@ -294,8 +296,8 @@ cat("Reason:", sizing$reasoning, "\n")
 
 ## References
 
-- Doherty, J. (2015). *PEST: Model-Independent Parameter Estimation --
-  User Manual* (6th ed.). Watermark Numerical Computing, Brisbane.
+- Doherty, J. (2015). *Calibration and Uncertainty Analysis for Complex
+  Environmental Models*. Watermark Numerical Computing, Brisbane.
 - White, J.T., Hunt, R.J., Fienen, M.N., & Doherty, J.E. (2020).
   Approaches to Highly Parameterized Inversion: PEST++ Version 5.
   USGS Techniques and Methods 7-C26.

@@ -25,13 +25,13 @@ PESTO's flagship partner is **APSIM**, the agricultural-systems simulator
 (see the *Calibrating APSIM with PESTO* vignette for the coupling
 mechanics). This case study is the calibration counterpart: a complete,
 reproducible demonstration that PESTO's iterative ensemble smoother (IES)
-recovers known APSIM parameters and quantifies their uncertainty honestly.
+recovers known APSIM parameters and quantifies their uncertainty.
 
 It is deliberately a **synthetic-truth recovery experiment** (an OSSE, or
 "twin experiment"): we fix known-true APSIM parameters, simulate per-season
 wheat yields, add measurement noise, and then try to recover the truth from
 the noisy yields. Because the truth is known *by construction*, correctness
-is verifiable without any field data -- the honest way to show a calibration
+is verifiable without any field data -- the cleanest way to show a calibration
 method works before confronting real observations. The forward model is the
 **bundled APSIM Wheat example** (a multi-decade run at a single site), driven
 in-process through `apsim_callback()`.
@@ -164,7 +164,7 @@ ggplot(dens, aes(value, fill = dist)) +
   theme_minimal(base_size = 10)
 ```
 
-### Identifiability -- honest about what the data can constrain
+### Identifiability -- what the data can constrain
 
 A parameter is well-identified when conditioning on the data collapses its
 spread far below the prior. The ratio of posterior to prior standard
@@ -194,7 +194,7 @@ teach you.
 ## Out-of-sample validation -- and the under-dispersion caveat
 
 Using the posterior ensemble to predict the **held-out** seasons tests
-genuine out-of-sample skill. The honest finding is that the *raw* ensemble's
+genuine out-of-sample skill. The key finding is that the *raw* ensemble's
 predictive band is too narrow:
 
 ```{r validation, fig.height = 3.8, fig.alt = "Held-out seasonal yields with the posterior 90 percent predictive band, without and with covariance inflation: the raw band is too narrow and misses several points, the inflated band covers more of them."}
@@ -351,7 +351,7 @@ Provenance: `r R$apsim_version`, `apsimx` `r R$apsimx_version`, PESTO
 `r R$pesto_version`, seed `r R$seed`, generated `r R$generated_on`. Part 2 uses
 the `obsWheat` data and `Wheat-opt-ex.apsimx` model shipped with `apsimx`.
 
-## Honest reading
+## What this study shows
 
 - **Strong parameters recovered.** Soil runoff and fertiliser nitrogen are
   recovered with the truth inside the 90% credible interval.

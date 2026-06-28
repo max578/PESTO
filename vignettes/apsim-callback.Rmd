@@ -178,7 +178,7 @@ wrong, in a way that fails silently. The failure mode is
 far tighter than the data deserve. The smoother then drives every
 realisation onto the same point, the posterior spread collapses, and the
 run reports an answer with a credible interval far too narrow to be
-honest -- confidently wrong.
+credible -- confident and wrong.
 
 The usual route into this trap is statistical, not a typo. Suppose each
 target observation is itself the mean of $m$ field replicates. The
@@ -240,8 +240,8 @@ data.frame(
 ```
 
 The over-precise run's posterior spread is a small fraction of the
-honest run's, and its 90 per-cent credible band has stopped covering the
-truth entirely. The ensemble is confident and wrong.
+well-specified run's, and its 90 per-cent credible band has stopped covering
+the truth entirely. The ensemble is confident and wrong.
 
 PESTO records the collapse directly. `ensemble_spread_ess()` -- the
 spectral participation ratio of the parameter anomaly covariance, the
@@ -278,8 +278,8 @@ spread, never the standard error of an average:
 When over-determination is unavoidable -- many observations, few
 realisations -- the covariance inflation and localisation countermeasures
 (`vignette("inflation-localisation")`) actively replenish the collapsing
-spread rather than only diagnosing it. The honest `obs_sd` is the first
-line of defence, those countermeasures the second.
+spread rather than only diagnosing it. A correctly specified `obs_sd` is the
+first line of defence, those countermeasures the second.
 
 ## Driving APSIM through `apsim_callback()`
 

@@ -7,7 +7,7 @@
 # measurement noise, then recover the parameters with PESTO's iterative
 # ensemble smoother driving APSIM in-process via apsim_callback(). Because the
 # truth is known by construction, correctness is verifiable without any field
-# data -- the honest way to demonstrate a calibration method.
+# data -- the cleanest way to demonstrate a calibration method.
 #
 # This is the runnable companion to the "Calibrating APSIM with PESTO"
 # case-study vignette; the vignette ships the frozen output this script writes.
