@@ -17,7 +17,11 @@ Description: High-performance parameter estimation, uncertainty quantification,
     Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen),
     and convergence-aware adaptive ensemble sizing. Designed for
     large-scale environmental, hydrological, and agricultural models with
-    support for highly-parameterised problems (>100,000 parameters).
+    support for highly-parameterised problems (>100,000 parameters). The
+    toolkit is model-independent -- any R function can serve as the forward
+    model -- with first-class in-process coupling to the APSIM
+    agricultural-systems model via the 'apsimx' package as its flagship
+    simulator partner.
 License: GPL (>= 3)
 URL: https://github.com/max578/PESTO,
     https://max578.github.io/PESTO

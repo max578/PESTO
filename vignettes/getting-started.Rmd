@@ -26,6 +26,13 @@ uncertainty quantification, and inverse modelling. It brings the algorithms of
 with a typed forward-model contract, an in-process simulator callback,
 multi-fidelity acceleration, and surrogate methods.
 
+PESTO is model-independent: any R function mapping parameters to outputs can be
+the forward model. Its flagship partner is the **APSIM** agricultural-systems
+simulator, coupled in-process through `apsim_callback()` and the `apsimx`
+package -- see the *Calibrating APSIM with PESTO* vignette -- while the same
+callback couples hydrological models, other crop models, and ODE systems
+equally.
+
 ### Key Features
 
 - **Iterative Ensemble Smoother (IES)**: Ensemble-based parameter
@@ -35,6 +42,8 @@ multi-fidelity acceleration, and surrogate methods.
   estimation with SVD regularisation
 - **Global Sensitivity Analysis**: Morris and Sobol methods
 - **Parametric Sweep**: Embarrassingly parallel model evaluations
+- **APSIM coupling**: `apsim_callback()` drives `apsimx` ensembles in-process
+  -- PESTO's flagship simulator partner
 - **Publication-quality diagnostics**: ggplot2-based visualisations
 
 ## Installation

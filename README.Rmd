@@ -34,12 +34,21 @@ implementation of that algorithm family. It adds a typed forward-model contract,
 an in-process simulator callback, multi-fidelity acceleration, covariance
 inflation / localisation, and surrogate methods.
 
+PESTO is model-independent: any R function mapping parameters to outputs can be
+the forward model. Its **flagship partner is [APSIM](https://www.apsim.info)**,
+the agricultural-systems simulator, coupled in-process through the
+[`apsimx`](https://cran.r-project.org/package=apsimx) package -- the use case
+PESTO's callback was built for. The same callback couples any other process-based
+simulator just as directly: the groundwater / hydrology models of PEST's own
+heritage, other crop models, and compartmental ODE systems.
+
 ## Key Features
 
 | Feature | Description |
 |---------|-------------|
 | **Fast ensemble solvers** | C++ (RcppEigen) implementation of IES and GLM update equations |
 | **In-process callback** | Couple any R forward model directly -- no file-exchange overhead |
+| **APSIM coupling** | First-class `apsim_callback()` adapter drives `apsimx` ensembles in-process -- PESTO's flagship simulator partner |
 | **Adaptive SVD** | Automatic backend selection: randomised SVD, LAPACK, or Eigen BDCSVD |
 | **Surrogate-accelerated IES** | Gaussian Process surrogates reduce model evaluations by 50--90% |
 | **Inflation & localisation** | Counter finite-ensemble under-dispersion and spurious correlations |
@@ -102,6 +111,31 @@ Optional convergence-based early stopping (`phi_tol`), covariance inflation
 (`pesto_inflation()`), and localisation (`pesto_localisation()`) are documented
 in `?pesto_ies_callback` and the *Getting started* vignette.
 
+## Coupling to a simulator (APSIM)
+
+The forward model above is a plain R function. To calibrate a process-based
+simulator, supply an adapter that maps a parameter vector to that simulator's
+outputs. PESTO's flagship partner is **APSIM**: `apsim_callback()` turns an
+`.apsimx` model file plus a parameter map into exactly the forward-model
+callable the IES driver expects, running the ensemble in-process via `apsimx`.
+
+```{r apsim, eval = FALSE}
+# Requires the apsimx package and a working APSIM installation.
+fm <- apsim_callback(
+  template         = "wheat.apsimx",
+  param_map        = list(rue = "[Wheat].Leaf.Photosynthesis.RUE.FixedValue"),
+  output_extractor = function(sim) sim$Wheat.AboveGround.Wt
+)
+fit <- pesto_ies_callback(fm, prior, obs, obs_sd = 0.05, noptmax = 6)
+```
+
+The full worked example is in the *Calibrating APSIM with PESTO* vignette (it
+needs APSIM installed, so its run blocks are disabled on CRAN). The same
+`pesto_ies_callback()` pattern couples any other simulator: a CRAN-safe,
+fully-runnable agricultural demonstration using the built-in
+`crop_growth_forward_model()` is in that vignette, and the
+`apsim-callback` article shows Python-bridge and multi-fidelity variants.
+
 ## Low-level kernels
 
 The C++ update kernels are exported for advanced use (no PEST++ binary needed):
@@ -150,6 +184,7 @@ R-package dependencies are declared in `DESCRIPTION` (Imports: `Rcpp`,
 ## Documentation
 
 - `vignette("getting-started", package = "PESTO")` -- Introduction and basic usage
+- `vignette("apsim-callback", package = "PESTO")` -- Calibrating APSIM (and other simulators) via the in-process callback
 - `vignette("inflation-localisation", package = "PESTO")` -- Finite-ensemble countermeasures
 - `vignette("surrogate-ies", package = "PESTO")` -- Surrogate-accelerated IES
 - `vignette("pestpp-comparison-and-simulation", package = "PESTO")` -- Benchmark vs PEST/PEST++
