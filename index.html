@@ -140,9 +140,12 @@
 <span>  <span class="st">"https://cloud.r-project.org"</span></span>
 <span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>CRAN submission is in preparation.</p>
+<blockquote>
+<p><strong>Vignettes.</strong> GitHub source installs (<code>pak</code>, <code>install_github</code>) do not build vignettes by default, so <code>browseVignettes("PESTO")</code> will be empty. Install from r-universe (above) for pre-built vignettes, or add <code>build_vignettes = TRUE</code> to an <code>install_github()</code> call. All articles are also on the <a href="https://max578.github.io/PESTO/">package website</a>.</p>
+</blockquote>
 </div>
 <div class="section level2">
-<h2 id="ensemble-bayesian-inference-ies">Ensemble Bayesian inference (IES)<a class="anchor" aria-label="anchor" href="#ensemble-bayesian-inference-ies"></a>
+<h2 id="bayesian-inference-with-the-iterative-ensemble-smoother-ies">Bayesian inference with the Iterative Ensemble Smoother (IES)<a class="anchor" aria-label="anchor" href="#bayesian-inference-with-the-iterative-ensemble-smoother-ies"></a>
 </h2>
 <p>PESTO performs approximate Bayesian inference for parameter estimation. You specify a <strong>prior as a parameter ensemble</strong> – a matrix of draws encoding your prior belief about each parameter (rows are realisations, columns are parameters) – together with the observations and their error standard deviation. PESTO conditions the ensemble on the observations through the IES update and returns an approximate <strong>posterior ensemble</strong> with uncertainty diagnostics. Any R function mapping a parameter matrix to an observation matrix can be the forward model.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -167,7 +170,7 @@
 <p>Optional convergence-based early stopping (<code>phi_tol</code>), covariance inflation (<code><a href="reference/pesto_inflation.html">pesto_inflation()</a></code>), and localisation (<code><a href="reference/pesto_localisation.html">pesto_localisation()</a></code>) are documented in <code><a href="reference/pesto_ies_callback.html">?pesto_ies_callback</a></code> and the <em>Getting started</em> vignette.</p>
 </div>
 <div class="section level2">
-<h2 id="coupling-to-a-simulator-apsim">Coupling to a simulator (APSIM)<a class="anchor" aria-label="anchor" href="#coupling-to-a-simulator-apsim"></a>
+<h2 id="coupling-to-apsim-and-other-simulators">Coupling to APSIM and other simulators<a class="anchor" aria-label="anchor" href="#coupling-to-apsim-and-other-simulators"></a>
 </h2>
 <p>The forward model above is a plain R function. To calibrate a process-based simulator, supply an adapter that maps a parameter vector to that simulator’s outputs. PESTO’s flagship partner is <strong>APSIM</strong>: <code><a href="reference/apsim_callback.html">apsim_callback()</a></code> turns an <code>.apsimx</code> model file plus a parameter map into exactly the forward-model callable the IES driver expects, running the ensemble in-process via <code>apsimx</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">

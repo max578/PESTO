@@ -962,7 +962,7 @@ mda_upgrade <- ensemble_solution_mda(
 )
 cat(sprintf("Scenario B: %d iter, %d real, %d par, %d obs in %.2fs\n",
             n_iter_B, n_real_B, n_par_B, n_obs_B, runtime_B))
-#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.65s
+#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.66s
 cat(sprintf("Phi reduction: %.2e -> %.2e  (factor %.1f)\n",
             phi_B[1L], phi_B[length(phi_B)], phi_B[1L] / phi_B[length(phi_B)]))
 #> Phi reduction: 1.69e+03 -> 3.51e+02  (factor 4.8)
@@ -1092,11 +1092,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 
 | rank | rSVD_ms | LAPACK_ms | speedup_rSVD |
 |-----:|--------:|----------:|-------------:|
-|    5 |   2.716 |    40.057 |        14.75 |
-|   20 |   5.846 |    39.704 |         6.79 |
-|   50 |  10.197 |    39.223 |         3.85 |
-|  100 |  34.382 |    39.205 |         1.14 |
-|  180 |  70.323 |    39.323 |         0.56 |
+|    5 |   2.691 |    39.450 |        14.66 |
+|   20 |   5.865 |    39.970 |         6.81 |
+|   50 |  10.173 |    39.256 |         3.86 |
+|  100 |  34.374 |    39.379 |         1.15 |
+|  180 |  70.115 |    39.419 |         0.56 |
 
 rSVD vs LAPACK on a 400 x 200 matrix as k varies. {.table}
 
@@ -1109,7 +1109,7 @@ auto_res <- adaptive_svd(A_bench, k = 20L, method = "auto")
 acc_res  <- accelerate_svd(A_bench, thin = TRUE)
 cat("auto chose:    ", auto_res$method_used,
     " in ", round(auto_res$time_ms, 2), "ms\n", sep = "")
-#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.9ms
+#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.84ms
 cat("LAPACK direct: ", round(length(acc_res$d), 0),
     " singular values returned\n", sep = "")
 #> LAPACK direct: 200 singular values returned
