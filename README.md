@@ -97,7 +97,13 @@ install.packages("PESTO", repos = c(
 
 CRAN submission is in preparation.
 
-## Ensemble Bayesian inference (IES)
+> **Vignettes.** GitHub source installs (`pak`, `install_github`) do not
+> build vignettes by default, so `browseVignettes("PESTO")` will be
+> empty. Install from r-universe (above) for pre-built vignettes, or add
+> `build_vignettes = TRUE` to an `install_github()` call. All articles
+> are also on the [package website](https://max578.github.io/PESTO/).
+
+## Bayesian inference with the Iterative Ensemble Smoother (IES)
 
 PESTO performs approximate Bayesian inference for parameter estimation.
 You specify a **prior as a parameter ensemble** – a matrix of draws
@@ -134,7 +140,7 @@ inflation (`pesto_inflation()`), and localisation
 (`pesto_localisation()`) are documented in `?pesto_ies_callback` and the
 *Getting started* vignette.
 
-## Coupling to a simulator (APSIM)
+## Coupling to APSIM and other simulators
 
 The forward model above is a plain R function. To calibrate a
 process-based simulator, supply an adapter that maps a parameter vector

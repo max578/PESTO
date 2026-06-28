@@ -41,7 +41,7 @@
 #' @srrstats {BS1.0} "hyperparameter" is used only for the GP-surrogate kernel parameters (length-scale, input-scale), defined in train_gp_surrogate_tuned() documentation.
 #' @srrstats {BS1.1} Data entry (a prior parameter ensemble, a named observation vector, obs_sd) is shown in the pesto_ies_callback() examples, the README, and the getting-started vignette.
 #' @srrstats {BS1.2} The prior is supplied as a prior parameter ensemble; how to specify it is documented at the prior_ensemble parameter with worked examples.
-#' @srrstats {BS1.2a} Prior specification is described, with example code, in the README ("Ensemble Bayesian inference (IES)" section).
+#' @srrstats {BS1.2a} Prior specification is described, with example code, in the README ("Bayesian inference with the Iterative Ensemble Smoother (IES)" section).
 #' @srrstats {BS1.2b} The getting-started vignette shows prior vs posterior ensembles via plot_ensemble().
 #' @srrstats {BS1.2c} pesto_ies_callback() examples construct a prior ensemble and run the smoother.
 #' @srrstats {BS1.3} The computational-process parameters (noptmax, lambda, phi_tol, parcov, eigthresh, use_approx) are each documented in roxygen.
