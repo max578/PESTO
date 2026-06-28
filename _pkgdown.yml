@@ -128,9 +128,13 @@ articles:
   - surrogate-ies
   - inflation-localisation
 
-- title: In-process IES and ensemble manifest
+- title: APSIM coupling and case study
   contents:
   - apsim-callback
+  - apsim-case-study
+
+- title: Ensemble manifest
+  contents:
   - ensemble-manifest
 
 navbar:

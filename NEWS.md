@@ -27,6 +27,16 @@
   models, other crop models, and ODE systems. The APSIM vignette is
   retitled *Calibrating APSIM with PESTO* and was previously missing from
   the README documentation list (now fixed). No code or API change.
+* **New publication-grade APSIM case study.** A synthetic-truth recovery
+  experiment (OSSE) calibrating real APSIM Wheat parameters with the IES:
+  it recovers two strong, mechanistically distinct parameters (soil runoff
+  and fertiliser nitrogen) with the truth inside the 90% credible interval,
+  correctly flags a third (sowing depth) as weakly identifiable, demonstrates
+  out-of-sample under-coverage and its correction by covariance inflation, and
+  emits a `pesto_ensemble_manifest`. Shipped as the *Calibrating APSIM Wheat
+  with PESTO* vignette (frozen real outputs, so it builds without APSIM) plus
+  a path-free reproducible driver at
+  `system.file("case_studies/apsim_wheat_calibration.R", package = "PESTO")`.
 
 # PESTO 0.8.0
 
