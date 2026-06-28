@@ -325,7 +325,7 @@ print(fit)
 #> 
 #> 
 #> $runtime_seconds
-#> [1] 0.003
+#> [1] 0.007
 #> 
 #> $n_forward_evals
 #> [1] 250

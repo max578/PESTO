@@ -18,7 +18,7 @@
 
 - [Calibrating APSIM with PESTO (in-process
   callback)](https://max578.github.io/PESTO/articles/apsim-callback.md):
-- [Calibrating APSIM Wheat with PESTO: a recovery case
+- [Calibrating APSIM Wheat with PESTO: a case
   study](https://max578.github.io/PESTO/articles/apsim-case-study.md):
 
 ### Ensemble manifest

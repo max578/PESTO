@@ -188,8 +188,8 @@ R-package dependencies are declared in `DESCRIPTION` (Imports: `Rcpp`,
 - [`vignette("apsim-callback", package = "PESTO")`](https://max578.github.io/PESTO/articles/apsim-callback.md)
   – Coupling APSIM (and other simulators) via the in-process callback
 - [`vignette("apsim-case-study", package = "PESTO")`](https://max578.github.io/PESTO/articles/apsim-case-study.md)
-  – Publication-grade APSIM wheat calibration (parameter recovery +
-  uncertainty)
+  – Publication-grade APSIM wheat calibration: synthetic-truth
+  recovery + real-data calibration with uncertainty
 - [`vignette("inflation-localisation", package = "PESTO")`](https://max578.github.io/PESTO/articles/inflation-localisation.md)
   – Finite-ensemble countermeasures
 - [`vignette("surrogate-ies", package = "PESTO")`](https://max578.github.io/PESTO/articles/surrogate-ies.md)
