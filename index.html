@@ -11,8 +11,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Parameter Estimation, Surrogates, and Tooling for Optimisation">
-<meta name="description" content="High-performance parameter estimation, uncertainty quantification, and inverse modelling toolkit built on modernised PEST++ algorithms. Provides native R interfaces to iterative ensemble smoothers (IES), Gauss-Levenberg-Marquardt (GLM) solvers, global sensitivity analysis, and multi-objective optimisation under uncertainty. Includes surrogate-accelerated IES via Gaussian Process and Random Fourier Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen), and convergence-aware adaptive ensemble sizing. Designed for large-scale environmental, hydrological, and agricultural models with support for highly-parameterised problems (&gt;100,000 parameters).">
-<meta property="og:description" content="High-performance parameter estimation, uncertainty quantification, and inverse modelling toolkit built on modernised PEST++ algorithms. Provides native R interfaces to iterative ensemble smoothers (IES), Gauss-Levenberg-Marquardt (GLM) solvers, global sensitivity analysis, and multi-objective optimisation under uncertainty. Includes surrogate-accelerated IES via Gaussian Process and Random Fourier Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen), and convergence-aware adaptive ensemble sizing. Designed for large-scale environmental, hydrological, and agricultural models with support for highly-parameterised problems (&gt;100,000 parameters).">
+<meta name="description" content="High-performance parameter estimation, uncertainty quantification, and inverse modelling toolkit built on modernised PEST++ algorithms. Provides native R interfaces to iterative ensemble smoothers (IES), Gauss-Levenberg-Marquardt (GLM) solvers, global sensitivity analysis, and multi-objective optimisation under uncertainty. Includes surrogate-accelerated IES via Gaussian Process and Random Fourier Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen), and convergence-aware adaptive ensemble sizing. Designed for large-scale environmental, hydrological, and agricultural models with support for highly-parameterised problems (&gt;100,000 parameters). The toolkit is model-independent -- any R function can serve as the forward model -- with first-class in-process coupling to the APSIM agricultural-systems model via the apsimx package as its flagship simulator partner.">
+<meta property="og:description" content="High-performance parameter estimation, uncertainty quantification, and inverse modelling toolkit built on modernised PEST++ algorithms. Provides native R interfaces to iterative ensemble smoothers (IES), Gauss-Levenberg-Marquardt (GLM) solvers, global sensitivity analysis, and multi-objective optimisation under uncertainty. Includes surrogate-accelerated IES via Gaussian Process and Random Fourier Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen), and convergence-aware adaptive ensemble sizing. Designed for large-scale environmental, hydrological, and agricultural models with support for highly-parameterised problems (&gt;100,000 parameters). The toolkit is model-independent -- any R function can serve as the forward model -- with first-class in-process coupling to the APSIM agricultural-systems model via the apsimx package as its flagship simulator partner.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -58,6 +58,7 @@
 
 <p><strong>P</strong>arameter <strong>E</strong>stimation, <strong>S</strong>urrogates, and <strong>T</strong>ooling for <strong>O</strong>ptimisation</p>
 <p>PESTO is a high-performance R package for model-independent parameter estimation and uncertainty quantification. It brings the algorithms of <strong>PEST</strong> (<em>Parameter ESTimation</em>; Doherty 2015) and its C++ successor <a href="https://github.com/usgs/pestpp" class="external-link"><strong>PEST++</strong></a> (White et al. 2020) – notably the iterative ensemble smoother (IES) – natively into R, and is the first R-native implementation of that algorithm family. It adds a typed forward-model contract, an in-process simulator callback, multi-fidelity acceleration, covariance inflation / localisation, and surrogate methods.</p>
+<p>PESTO is model-independent: any R function mapping parameters to outputs can be the forward model. Its <strong>flagship partner is <a href="https://www.apsim.info" class="external-link">APSIM</a></strong>, the agricultural-systems simulator, coupled in-process through the <a href="https://cran.r-project.org/package=apsimx" class="external-link"><code>apsimx</code></a> package – the use case PESTO’s callback was built for. The same callback couples any other process-based simulator just as directly: the groundwater / hydrology models of PEST’s own heritage, other crop models, and compartmental ODE systems.</p>
 <div class="section level2">
 <h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h2>
@@ -78,6 +79,10 @@
 <tr>
 <td><strong>In-process callback</strong></td>
 <td>Couple any R forward model directly – no file-exchange overhead</td>
+</tr>
+<tr>
+<td><strong>APSIM coupling</strong></td>
+<td>First-class <code><a href="reference/apsim_callback.html">apsim_callback()</a></code> adapter drives <code>apsimx</code> ensembles in-process – PESTO’s flagship simulator partner</td>
 </tr>
 <tr>
 <td><strong>Adaptive SVD</strong></td>
@@ -148,10 +153,24 @@
 <p>Optional convergence-based early stopping (<code>phi_tol</code>), covariance inflation (<code><a href="reference/pesto_inflation.html">pesto_inflation()</a></code>), and localisation (<code><a href="reference/pesto_localisation.html">pesto_localisation()</a></code>) are documented in <code><a href="reference/pesto_ies_callback.html">?pesto_ies_callback</a></code> and the <em>Getting started</em> vignette.</p>
 </div>
 <div class="section level2">
+<h2 id="coupling-to-a-simulator-apsim">Coupling to a simulator (APSIM)<a class="anchor" aria-label="anchor" href="#coupling-to-a-simulator-apsim"></a>
+</h2>
+<p>The forward model above is a plain R function. To calibrate a process-based simulator, supply an adapter that maps a parameter vector to that simulator’s outputs. PESTO’s flagship partner is <strong>APSIM</strong>: <code><a href="reference/apsim_callback.html">apsim_callback()</a></code> turns an <code>.apsimx</code> model file plus a parameter map into exactly the forward-model callable the IES driver expects, running the ensemble in-process via <code>apsimx</code>.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Requires the apsimx package and a working APSIM installation.</span></span>
+<span><span class="va">fm</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/apsim_callback.html">apsim_callback</a></span><span class="op">(</span></span>
+<span>  template         <span class="op">=</span> <span class="st">"wheat.apsimx"</span>,</span>
+<span>  param_map        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>rue <span class="op">=</span> <span class="st">"[Wheat].Leaf.Photosynthesis.RUE.FixedValue"</span><span class="op">)</span>,</span>
+<span>  output_extractor <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">sim</span><span class="op">)</span> <span class="va">sim</span><span class="op">$</span><span class="va">Wheat.AboveGround.Wt</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span><span class="va">fm</span>, <span class="va">prior</span>, <span class="va">obs</span>, obs_sd <span class="op">=</span> <span class="fl">0.05</span>, noptmax <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span></code></pre></div>
+<p>The full worked example is in the <em>Calibrating APSIM with PESTO</em> vignette (it needs APSIM installed, so its run blocks are disabled on CRAN). The same <code><a href="reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> pattern couples any other simulator: a CRAN-safe, fully-runnable agricultural demonstration using the built-in <code><a href="reference/crop_growth_forward_model.html">crop_growth_forward_model()</a></code> is in that vignette, and the <code>apsim-callback</code> article shows Python-bridge and multi-fidelity variants.</p>
+</div>
+<div class="section level2">
 <h2 id="low-level-kernels">Low-level kernels<a class="anchor" aria-label="anchor" href="#low-level-kernels"></a>
 </h2>
 <p>The C++ update kernels are exported for advanced use (no PEST++ binary needed):</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">npar</span> <span class="op">&lt;-</span> <span class="fl">100</span>; <span class="va">nobs</span> <span class="op">&lt;-</span> <span class="fl">200</span>; <span class="va">nreal</span> <span class="op">&lt;-</span> <span class="fl">50</span></span>
 <span><span class="va">upgrade</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ensemble_solution.html">ensemble_solution</a></span><span class="op">(</span></span>
@@ -167,7 +186,7 @@
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">upgrade</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1]  50 100</span></span></code></pre></div>
 <p>The classical <code>.pst</code>-file path is also supported:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pars</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
 <span>  parnme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"k"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span>, partrans <span class="op">=</span> <span class="st">"log"</span>, parchglim <span class="op">=</span> <span class="st">"factor"</span>,</span>
 <span>  parval1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">0.1</span>, <span class="fl">10</span><span class="op">)</span>, parlbnd <span class="op">=</span> <span class="fl">0.001</span>, parubnd <span class="op">=</span> <span class="fl">1000</span>,</span>
@@ -197,6 +216,8 @@
 <li>
 <code><a href="articles/getting-started.html">vignette("getting-started", package = "PESTO")</a></code> – Introduction and basic usage</li>
 <li>
+<code><a href="articles/apsim-callback.html">vignette("apsim-callback", package = "PESTO")</a></code> – Calibrating APSIM (and other simulators) via the in-process callback</li>
+<li>
 <code><a href="articles/inflation-localisation.html">vignette("inflation-localisation", package = "PESTO")</a></code> – Finite-ensemble countermeasures</li>
 <li>
 <code><a href="articles/surrogate-ies.html">vignette("surrogate-ies", package = "PESTO")</a></code> – Surrogate-accelerated IES</li>
@@ -214,7 +235,7 @@
 <div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"PESTO"</span><span class="op">)</span></span></code></pre></div>
 <blockquote>
 <p>Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.8.0. <a href="https://github.com/max578/PESTO" class="external-link uri">https://github.com/max578/PESTO</a></p>

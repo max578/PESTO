@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>In-Process IES via R Callback -- apsimx Adapter • PESTO</title>
+<title>Calibrating APSIM with PESTO (in-process callback) • PESTO</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="In-Process IES via R Callback -- apsimx Adapter">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Calibrating APSIM with PESTO (in-process callback)">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -55,7 +55,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>In-Process IES via R Callback -- apsimx Adapter</h1>
+      <h1>Calibrating APSIM with PESTO (in-process callback)</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/max578/PESTO/blob/main/vignettes/apsim-callback.Rmd" class="external-link"><code>vignettes/apsim-callback.Rmd</code></a></small>
@@ -64,17 +64,26 @@
 
     
     
+<p>PESTO was built to calibrate process-based simulators from R, and its
+flagship partner is <strong>APSIM</strong> – the agricultural-systems
+model – coupled through the <code>apsimx</code> package by
+<code><a href="../reference/apsim_callback.html">apsim_callback()</a></code>. This vignette shows that coupling, the
+in-process callback driver behind it, and how the same pattern serves
+any other simulator.</p>
 <div class="section level2">
 <h2 id="why-a-callback-driver">Why a callback driver?<a class="anchor" aria-label="anchor" href="#why-a-callback-driver"></a>
 </h2>
 <p><code><a href="../reference/pesto_ies.html">pesto_ies()</a></code> shells out to the <code>pestpp-ies</code>
 binary, which writes and reads <code>.pst</code> / ensemble /
 observation files between every realisation. For an in-process R forward
-model (an <code>apsimx</code> wrapper, a Python bridge, or a fast
-synthetic test problem), that file round-trip is pure overhead.
+model – an <code>apsimx</code> wrapper for APSIM, a Python bridge, or a
+fast synthetic test problem – that file round-trip is pure overhead.
 <code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> keeps the same C++ ensemble kernel
 (<code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code>, Chen &amp; Oliver 2013) but drives
-the outer loop in R, calling the forward model in-process.</p>
+the outer loop in R, calling the forward model in-process. For APSIM
+this is the difference between re-reading an <code>.apsimx</code> file
+every realisation and holding the model in memory across the whole
+ensemble.</p>
 <p>This document shows:</p>
 <ol style="list-style-type: decimal">
 <li>The driver on a synthetic linear-Gaussian problem (recovers

@@ -23,6 +23,16 @@
   boundary that makes the comparison fair.
 - Corrected the benchmarked `pestpp-ies` version string in the vignette
   to 5.2.16 (was mislabelled 5.2.25).
+- **APSIM positioned as PESTO’s flagship simulator partner** across the
+  public surface, without narrowing the model-independent identity. The
+  README, the *Getting started* vignette, and the package DESCRIPTION
+  now name APSIM (coupled in-process via
+  [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
+  and the `apsimx` package) as the primary worked partnership, alongside
+  hydrological models, other crop models, and ODE systems. The APSIM
+  vignette is retitled *Calibrating APSIM with PESTO* and was previously
+  missing from the README documentation list (now fixed). No code or API
+  change.
 
 ## PESTO 0.8.0
 

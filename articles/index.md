@@ -16,7 +16,7 @@
 
 ### In-process IES and ensemble manifest
 
-- [In-Process IES via R Callback -- apsimx
-  Adapter](https://max578.github.io/PESTO/articles/apsim-callback.md):
+- [Calibrating APSIM with PESTO (in-process
+  callback)](https://max578.github.io/PESTO/articles/apsim-callback.md):
 - [The Ensemble-Run Manifest: a Portable, Verifiable
   Record](https://max578.github.io/PESTO/articles/ensemble-manifest.md):

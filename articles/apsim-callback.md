@@ -1,17 +1,27 @@
-# In-Process IES via R Callback -- apsimx Adapter
+# Calibrating APSIM with PESTO (in-process callback)
+
+PESTO was built to calibrate process-based simulators from R, and its
+flagship partner is **APSIM** – the agricultural-systems model – coupled
+through the `apsimx` package by
+[`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md).
+This vignette shows that coupling, the in-process callback driver behind
+it, and how the same pattern serves any other simulator.
 
 ## Why a callback driver?
 
 [`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md)
 shells out to the `pestpp-ies` binary, which writes and reads `.pst` /
 ensemble / observation files between every realisation. For an
-in-process R forward model (an `apsimx` wrapper, a Python bridge, or a
-fast synthetic test problem), that file round-trip is pure overhead.
+in-process R forward model – an `apsimx` wrapper for APSIM, a Python
+bridge, or a fast synthetic test problem – that file round-trip is pure
+overhead.
 [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
 keeps the same C++ ensemble kernel
 ([`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md),
 Chen & Oliver 2013) but drives the outer loop in R, calling the forward
-model in-process.
+model in-process. For APSIM this is the difference between re-reading an
+`.apsimx` file every realisation and holding the model in memory across
+the whole ensemble.
 
 This document shows:
 

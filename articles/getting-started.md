@@ -11,6 +11,14 @@ ecosystem, and extends them with a typed forward-model contract, an
 in-process simulator callback, multi-fidelity acceleration, and
 surrogate methods.
 
+PESTO is model-independent: any R function mapping parameters to outputs
+can be the forward model. Its flagship partner is the **APSIM**
+agricultural-systems simulator, coupled in-process through
+[`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
+and the `apsimx` package – see the *Calibrating APSIM with PESTO*
+vignette – while the same callback couples hydrological models, other
+crop models, and ODE systems equally.
+
 ### Key Features
 
 - **Iterative Ensemble Smoother (IES)**: Ensemble-based parameter
@@ -20,6 +28,10 @@ surrogate methods.
   estimation with SVD regularisation
 - **Global Sensitivity Analysis**: Morris and Sobol methods
 - **Parametric Sweep**: Embarrassingly parallel model evaluations
+- **APSIM coupling**:
+  [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
+  drives `apsimx` ensembles in-process – PESTO’s flagship simulator
+  partner
 - **Publication-quality diagnostics**: ggplot2-based visualisations
 
 ## Installation
@@ -202,8 +214,8 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
   print(bench)
 }
 #> Unit: microseconds
-#>       expr     min      lq     mean   median      uq     max neval
-#>  PESTO_cpp 430.033 432.922 443.4298 442.3355 446.568 567.419   100
+#>       expr     min     lq     mean  median      uq     max neval
+#>  PESTO_cpp 429.852 431.67 440.9388 436.219 444.339 539.897   100
 ```
 
 ## Computing Phi (Objective Function)
@@ -290,7 +302,7 @@ res_auto <- adaptive_svd(A, k = 20L, method = "auto")
 cat("Method:", res_auto$method_used, "\n")
 #> Method: rsvd (Halko-Martinsson-Tropp)
 cat("Time:", round(res_auto$time_ms, 2), "ms\n")
-#> Time: 17.61 ms
+#> Time: 17.43 ms
 cat("Singular values (top 5):", round(res_auto$d[1:5], 3), "\n")
 #> Singular values (top 5): 50.643 50.283 49.956 49.689 49.454
 
@@ -328,9 +340,9 @@ result <- ensemble_solution_gpu(
 cat("SVD method:", result$svd_method, "\n")
 #> SVD method: LAPACK (platform-optimised)
 cat("SVD time:", round(result$svd_time_ms, 2), "ms\n")
-#> SVD time: 2.26 ms
+#> SVD time: 2.13 ms
 cat("Total time:", round(result$total_time_ms, 2), "ms\n")
-#> Total time: 2.7 ms
+#> Total time: 2.56 ms
 cat("Singular values used:", result$singular_values_used, "\n")
 #> Singular values used: 50
 ```
