@@ -2,8 +2,8 @@
 
 ## Introduction
 
-**PESTO** (**P**arameter **E**stimation, **S**urrogates, and **T**ooling
-for **O**ptimisation) is an R package for high-performance parameter
+**PESTO** (**P**arameter **EST**imation **O**ptimised – the **PEST**
+approach brought to R) is an R package for high-performance parameter
 estimation, uncertainty quantification, and inverse modelling. It brings
 the algorithms of **PEST** (*Parameter ESTimation*; Doherty 2015) and
 its C++ successor **PEST++** (White et al. 2020) natively into the R
@@ -214,8 +214,8 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
   print(bench)
 }
 #> Unit: microseconds
-#>       expr     min      lq     mean  median       uq     max neval
-#>  PESTO_cpp 428.599 430.878 438.7343 433.638 442.5095 532.923   100
+#>       expr     min      lq     mean  median      uq     max neval
+#>  PESTO_cpp 472.234 475.554 486.4879 482.464 488.262 602.368   100
 ```
 
 ## Computing Phi (Objective Function)
@@ -302,7 +302,7 @@ res_auto <- adaptive_svd(A, k = 20L, method = "auto")
 cat("Method:", res_auto$method_used, "\n")
 #> Method: rsvd (Halko-Martinsson-Tropp)
 cat("Time:", round(res_auto$time_ms, 2), "ms\n")
-#> Time: 17.43 ms
+#> Time: 18.66 ms
 cat("Singular values (top 5):", round(res_auto$d[1:5], 3), "\n")
 #> Singular values (top 5): 50.643 50.283 49.956 49.689 49.454
 
@@ -342,7 +342,7 @@ cat("SVD method:", result$svd_method, "\n")
 cat("SVD time:", round(result$svd_time_ms, 2), "ms\n")
 #> SVD time: 2.18 ms
 cat("Total time:", round(result$total_time_ms, 2), "ms\n")
-#> Total time: 2.6 ms
+#> Total time: 2.66 ms
 cat("Singular values used:", result$singular_values_used, "\n")
 #> Singular values used: 50
 ```

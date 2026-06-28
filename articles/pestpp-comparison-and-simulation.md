@@ -897,7 +897,7 @@ mda_upgrade <- ensemble_solution_mda(
 )
 cat(sprintf("Scenario B: %d iter, %d real, %d par, %d obs in %.2fs\n",
             n_iter_B, n_real_B, n_par_B, n_obs_B, runtime_B))
-#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.67s
+#> Scenario B: 4 iter, 60 real, 100 par, 200 obs in 0.66s
 cat(sprintf("Phi reduction: %.2e -> %.2e  (factor %.1f)\n",
             phi_B[1L], phi_B[length(phi_B)], phi_B[1L] / phi_B[length(phi_B)]))
 #> Phi reduction: 1.69e+03 -> 3.51e+02  (factor 4.8)
@@ -1027,11 +1027,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
 
 | rank | rSVD_ms | LAPACK_ms | speedup_rSVD |
 |-----:|--------:|----------:|-------------:|
-|    5 |   2.774 |    40.143 |        14.47 |
-|   20 |   5.933 |    39.399 |         6.64 |
-|   50 |  10.218 |    39.721 |         3.89 |
-|  100 |  34.503 |    39.308 |         1.14 |
-|  180 |  70.435 |    39.450 |         0.56 |
+|    5 |   2.965 |    42.080 |        14.19 |
+|   20 |   6.198 |    41.778 |         6.74 |
+|   50 |  11.114 |    41.326 |         3.72 |
+|  100 |  37.454 |    41.142 |         1.10 |
+|  180 |  74.526 |    41.388 |         0.56 |
 
 rSVD vs LAPACK on a 400 x 200 matrix as k varies. {.table}
 
@@ -1044,7 +1044,7 @@ auto_res <- adaptive_svd(A_bench, k = 20L, method = "auto")
 acc_res  <- accelerate_svd(A_bench, thin = TRUE)
 cat("auto chose:    ", auto_res$method_used,
     " in ", round(auto_res$time_ms, 2), "ms\n", sep = "")
-#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 5.87ms
+#> auto chose:    rsvd (Halko-Martinsson-Tropp) in 6.19ms
 cat("LAPACK direct: ", round(length(acc_res$d), 0),
     " singular values returned\n", sep = "")
 #> LAPACK direct: 200 singular values returned
@@ -1244,7 +1244,7 @@ knitr::kable(sim_summary, caption = "Scenario C: aggregate diagnostics.")
 | Median phi reduction (1 iter) | 12.12 |
 | Mean surrogate savings (%)    |  0.00 |
 | Mean adaptive size            | 39.00 |
-| Median GPU-path time (ms)     |  0.25 |
+| Median GPU-path time (ms)     |  0.26 |
 | Replicates                    | 50.00 |
 
 Scenario C: aggregate diagnostics. {.table}
@@ -1468,7 +1468,7 @@ if (length(unknown_in_use) > 0L) {
 .vig_t1 <- proc.time()["elapsed"]
 cat(sprintf("Vignette wall-clock: %.1f s\n",
             as.numeric(.vig_t1 - .vig_t0)))
-#> Vignette wall-clock: 13.5 s
+#> Vignette wall-clock: 13.4 s
 ```
 
 ``` r

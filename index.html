@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Parameter Estimation, Surrogates, and Tooling for Optimisation • PESTO</title>
+<title>Parameter Estimation Optimised, with APSIM Coupling • PESTO</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Parameter Estimation, Surrogates, and Tooling for Optimisation">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Parameter Estimation Optimised, with APSIM Coupling">
 <meta name="description" content="High-performance parameter estimation, uncertainty quantification, and inverse modelling toolkit built on modernised PEST++ algorithms. Provides native R interfaces to iterative ensemble smoothers (IES), Gauss-Levenberg-Marquardt (GLM) solvers, global sensitivity analysis, and multi-objective optimisation under uncertainty. Includes surrogate-accelerated IES via Gaussian Process and Random Fourier Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen), and convergence-aware adaptive ensemble sizing. Designed for large-scale environmental, hydrological, and agricultural models with support for highly-parameterised problems (&gt;100,000 parameters). The toolkit is model-independent -- any R function can serve as the forward model -- with first-class in-process coupling to the APSIM agricultural-systems model via the apsimx package as its flagship simulator partner.">
 <meta property="og:description" content="High-performance parameter estimation, uncertainty quantification, and inverse modelling toolkit built on modernised PEST++ algorithms. Provides native R interfaces to iterative ensemble smoothers (IES), Gauss-Levenberg-Marquardt (GLM) solvers, global sensitivity analysis, and multi-objective optimisation under uncertainty. Includes surrogate-accelerated IES via Gaussian Process and Random Fourier Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen), and convergence-aware adaptive ensemble sizing. Designed for large-scale environmental, hydrological, and agricultural models with support for highly-parameterised problems (&gt;100,000 parameters). The toolkit is model-independent -- any R function can serve as the forward model -- with first-class in-process coupling to the APSIM agricultural-systems model via the apsimx package as its flagship simulator partner.">
 </head>
@@ -56,7 +56,7 @@
 </h1></div>
 <!-- badges: start -->
 
-<p><strong>P</strong>arameter <strong>E</strong>stimation, <strong>S</strong>urrogates, and <strong>T</strong>ooling for <strong>O</strong>ptimisation</p>
+<p><strong>P</strong>arameter <strong>EST</strong>imation <strong>O</strong>ptimised – the <strong>PEST</strong> approach (Doherty 2015), brought to R and optimised, with <strong>APSIM</strong> as its flagship simulator partner.</p>
 <p>PESTO is a high-performance R package for model-independent parameter estimation and uncertainty quantification. It brings the algorithms of <strong>PEST</strong> (<em>Parameter ESTimation</em>; Doherty 2015) and its C++ successor <a href="https://github.com/usgs/pestpp" class="external-link"><strong>PEST++</strong></a> (White et al. 2020) – notably the iterative ensemble smoother (IES) – natively into R, and is the first R-native implementation of that algorithm family. It adds a typed forward-model contract, an in-process simulator callback, multi-fidelity acceleration, covariance inflation / localisation, and surrogate methods.</p>
 <p>PESTO is model-independent: any R function mapping parameters to outputs can be the forward model. Its <strong>flagship partner is <a href="https://www.apsim.info" class="external-link">APSIM</a></strong>, the agricultural-systems simulator, coupled in-process through the <a href="https://cran.r-project.org/package=apsimx" class="external-link"><code>apsimx</code></a> package – the use case PESTO’s callback was built for. The same callback couples any other process-based simulator just as directly: the groundwater / hydrology models of PEST’s own heritage, other crop models, and compartmental ODE systems.</p>
 <div class="section level2">
@@ -240,7 +240,7 @@
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"PESTO"</span><span class="op">)</span></span></code></pre></div>
 <blockquote>
-<p>Moldovan, M. (2026). PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation. R package version 0.8.0. <a href="https://github.com/max578/PESTO" class="external-link uri">https://github.com/max578/PESTO</a></p>
+<p>Moldovan, M. (2026). PESTO: Parameter ESTimation Optimised. R package version 0.8.0. <a href="https://github.com/max578/PESTO" class="external-link uri">https://github.com/max578/PESTO</a></p>
 </blockquote>
 </div>
 <div class="section level2">

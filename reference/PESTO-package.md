@@ -1,4 +1,4 @@
-# PESTO: Parameter Estimation, Surrogates, and Tooling for Optimisation
+# PESTO: Parameter Estimation Optimised, with APSIM Coupling
 
 High-performance parameter estimation, uncertainty quantification, and
 inverse modelling toolkit built on modernised PEST++ algorithms.
@@ -9,7 +9,10 @@ surrogate-accelerated IES via Gaussian Process and Random Fourier
 Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen), and
 convergence-aware adaptive ensemble sizing. Designed for large-scale
 environmental, hydrological, and agricultural models with support for
-highly-parameterised problems (\>100,000 parameters).
+highly-parameterised problems (\>100,000 parameters). The toolkit is
+model-independent – any R function can serve as the forward model – with
+first-class in-process coupling to the APSIM agricultural-systems model
+via the 'apsimx' package as its flagship simulator partner.
 
 ## See also
 
