@@ -6,6 +6,16 @@
   letter-by-letter backronym. The package title is now *Parameter Estimation
   Optimised, with APSIM Coupling*, and the website tagline, citation, and
   GitHub description match.
+* **The "Optimised" claim is now validated in the docs.** A new section in the
+  *PEST and PEST++ Comparison* vignette ("The 'Optimised' in PESTO, quantified")
+  states precisely what is optimised, each backed by a measured number and its
+  maths: wall-clock speed-up (reference time / PESTO time) at matched accuracy,
+  with the per-solve cost model behind it; surrogate evaluation-economy; the
+  multi-fidelity control-variate variance reduction; and convergence-based early
+  stopping. It also states the limits plainly (not fewer solves than classic
+  PEST; raw intervals under-cover until inflation). The README's surrogate
+  feature is corrected from a flat "50-90%" to the measured, regime-dependent
+  saving.
 * New exported helper `pestpp_available()` -- a non-erroring probe for a
   PEST++ family executable (e.g. `pestpp-ies`, `pestpp-glm`). It is the
   documented way for examples, vignettes, and conditional tests to skip

@@ -277,6 +277,60 @@ Monte-Carlo path were also benchmarked; their full rows are in the
 shipped summary object (`mt$summary`) and are explored in the
 *Surrogate-accelerated IES* vignette and the discussion below.
 
+### The "Optimised" in PESTO, quantified
+
+The name is *Parameter ESTimation Optimised* -- the PEST approach, optimised.
+That is a claim, so it is worth stating precisely what is optimised, and
+checking each part against a measured number rather than an assertion.
+
+**1. Wall-clock speed, at preserved accuracy.** The speed-up is
+$S = t_{\text{ref}} / t_{\text{PESTO}}$ (median wall-clock per inversion); the
+table above measures $S$ from roughly $40\times$ to $860\times$. The mechanism
+is a cost model, not magic. An iterative ensemble smoother with $N$
+realisations over $T$ iterations performs about $N(T{+}1)$ forward solves. A
+file-coupled engine pays, per solve, the model cost $c_m$ *plus* an exchange
+overhead $c_{io}$ (template write, output parse, process spawn); the in-process
+callback pays $c_m$ only:
+$$t_{\text{file}} \approx N(T{+}1)\,(c_m + c_{io}), \qquad
+  t_{\text{PESTO}} \approx N(T{+}1)\,c_m + c_{\text{upd}} .$$
+When the exchange dominates ($c_{io} \gtrsim c_m$, the cheap-model regime here)
+the speed-up approaches $1 + c_{io}/c_m \gg 1$. So PESTO runs the **same** number
+of solves with far lower per-solve overhead and a C++ update kernel -- speed
+without trading accuracy, which the parity column
+($\mathrm{RMSE} = \sqrt{p^{-1}\sum_{j}(\hat\theta_j-\theta_j^{\text{true}})^2}$)
+confirms, and which the *case study* corroborates by recovering a known truth
+and by bracketing the independent `apsimx` optimiser on real data.
+
+**2. Model-evaluation economy (surrogates).** When the forward model itself is
+expensive, the optimisation shifts from per-solve overhead to the *number* of
+expensive solves. A Gaussian-process surrogate predicts cheap realisations and
+sends only the uncertain ones to the full model:
+$$\text{savings} = 1 - \frac{n_{\text{model}}}{n_{\text{total}}},$$
+realisation $i$ taking the full model only when its GP predictive standard
+deviation $s_i$ exceeds a threshold. The saving is **regime-dependent and
+measured, not promised**: large on smooth responses, and it degrades
+gracefully to near zero (the smoother falls back to full evaluation) on rough
+ones rather than corrupting the posterior -- see the *Surrogate-accelerated
+IES* vignette.
+
+**3. Cost--accuracy trade (multi-fidelity).** With a cheap and an expensive
+fidelity correlated at $\rho$, the control-variate combiner
+([`mf_control_variate()`]) attains
+$\mathrm{Var}(\hat\mu_{\text{CV}}) = (1-\rho^2)\,\mathrm{Var}(\hat\mu_{\text{H}})$,
+so a well-correlated cheap model cuts the expensive-evaluation budget for a
+target variance by about $(1-\rho^2)$.
+
+**4. Iteration economy (optional early stop).** With $\phi(\theta) = \sum_i
+w_i\,(d_i - g_i(\theta))^2$ the weighted objective, `phi_tol` stops once the
+relative reduction $\,(\phi_{k-1}-\phi_k)/\phi_{k-1}\,$ falls below the
+tolerance, spending no iterations on a plateau (`?pesto_ies_callback`).
+
+**What "optimised" does not claim.** It is not fewer forward solves in the base
+smoother (classic PEST, being gradient-based, uses the fewest), and it is not
+better-calibrated raw intervals (they under-cover until inflation is applied,
+above). The honest summary: *faster and cheaper to run, at matched accuracy,
+with the economy levers measured and their limits stated.*
+
 ---
 
 ## Scenario A -- low-dimensional, well-posed

@@ -47,11 +47,34 @@ systems.
 | **In-process callback** | Couple any R forward model directly – no file-exchange overhead |
 | **APSIM coupling** | First-class `apsim_callback()` adapter drives `apsimx` ensembles in-process – PESTO’s flagship simulator partner |
 | **Adaptive SVD** | Automatic backend selection: randomised SVD, LAPACK, or Eigen BDCSVD |
-| **Surrogate-accelerated IES** | Gaussian Process surrogates reduce model evaluations by 50–90% |
+| **Surrogate-accelerated IES** | Gaussian-process surrogates skip the model on confident realisations – regime-dependent savings (large on smooth responses; near-zero with graceful fallback otherwise) |
 | **Inflation & localisation** | Counter finite-ensemble under-dispersion and spurious correlations |
 | **Adaptive ensemble sizing** | ESS-based diagnostics prevent over/under-sampling |
 | **PEST++ integration** | Read/write .pst control files, run PEST++ executables from R |
 | **Publication-ready plots** | Convergence, ensemble distributions, identifiability, surrogate diagnostics |
+
+## What “optimised” means (and how it is checked)
+
+The name is a claim, so each part is backed by a measured number, not an
+assertion (the full definitions and maths are in the *PEST and PEST++
+Comparison* vignette):
+
+- **Faster, at matched accuracy.** Against PEST 18.25 and `pestpp-ies`
+  5.2.16 on identical problems, PESTO is roughly **40–860x faster in
+  wall-clock** (median per inversion) while matching their posterior
+  accuracy – the cause is in-process evaluation and a C++ update kernel
+  avoiding per-solve file exchange, not fewer model solves.
+- **Recovers the right answer.** It recovers known-true parameters in a
+  twin experiment and brackets the independent `apsimx` optimiser’s
+  optimum on real observed data (the *APSIM case study* vignette).
+- **Fewer expensive solves when it can.** The GP surrogate skips the
+  model on confident realisations; the saving is measured and
+  regime-dependent, with a graceful fall-back to full evaluation (the
+  *Surrogate-accelerated IES* vignette).
+
+These are validated, not promised; where PESTO does *not* win (raw
+interval calibration; total solve count) is stated just as plainly in
+the vignettes.
 
 ## Installation
 
