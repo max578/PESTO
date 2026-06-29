@@ -1,9 +1,13 @@
 /* Mathematics (KaTeX) -------------------------------------------------------
-   KaTeX ships with `.katex { font-size: 1.21em }`, which renders maths
-   noticeably larger than the body text and reads as inflated. Bring it down to
-   sit with the prose, and let a wide display equation scroll within the column
-   rather than overflow it. */
-.katex { font-size: 1.05em; }
+   KaTeX ships with `.katex { font-size: 1.21em }`. Its Computer-Modern glyphs
+   read appreciably larger than pkgdown's sans body font even at 1em, so the
+   maths looks inflated against the prose. MathJax avoids this by matching the
+   body x-height (`matchFontHeight`); KaTeX does not, so we scale it down by
+   hand. 0.88em makes the rendered maths sit at body size (measured visually
+   against the paragraph text). `!important` beats KaTeX's `font` shorthand
+   regardless of stylesheet load order. Wide display equations scroll within
+   the column rather than overflow it. */
+.katex { font-size: 0.88em !important; }
 
 .katex-display {
   margin: 0.9em 0;
