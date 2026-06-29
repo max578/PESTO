@@ -1,6 +1,9 @@
 ---
 title: "Benchmarking PESTO against PEST and PEST++"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    mathjax: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    pandoc_args: ["--include-in-header=mathjax-config.html"]
 vignette: >
   %\VignetteIndexEntry{Benchmarking PESTO against PEST and PEST++}
   %\VignetteEngine{knitr::rmarkdown}

@@ -1,6 +1,9 @@
 ---
 title: "Surrogate-accelerated iterative ensemble smoother"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    mathjax: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    pandoc_args: ["--include-in-header=mathjax-config.html"]
 vignette: >
   %\VignetteIndexEntry{Surrogate-accelerated iterative ensemble smoother}
   %\VignetteEngine{knitr::rmarkdown}

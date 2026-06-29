@@ -1,6 +1,9 @@
 ---
 title: "Calibrating APSIM Wheat with PESTO: a case study"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    mathjax: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    pandoc_args: ["--include-in-header=mathjax-config.html"]
 vignette: >
   %\VignetteIndexEntry{Calibrating APSIM Wheat with PESTO: a case study}
   %\VignetteEngine{knitr::rmarkdown}

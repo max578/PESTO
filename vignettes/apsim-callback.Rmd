@@ -1,6 +1,9 @@
 ---
 title: "Calibrating APSIM with PESTO (in-process callback)"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    mathjax: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
+    pandoc_args: ["--include-in-header=mathjax-config.html"]
 vignette: >
   %\VignetteIndexEntry{Calibrating APSIM with PESTO (in-process callback)}
   %\VignetteEngine{knitr::rmarkdown}
