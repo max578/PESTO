@@ -45,6 +45,11 @@ jobs:
             )
           )
           covr::to_cobertura(cov)
+          ## Emit the headline number into the job log so coverage stays visible
+          ## even when the Codecov upload is token-less (the badge is otherwise
+          ## reported as "unknown"). Grep the log for "PESTO TOTAL COVERAGE".
+          print(cov)
+          cat(sprintf("PESTO TOTAL COVERAGE: %.2f%%\n", covr::percent_coverage(cov)))
         shell: Rscript {0}
 
       - uses: codecov/codecov-action@v4
