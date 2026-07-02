@@ -1,54 +1,46 @@
-# Surrogate-Accelerated Iterative Ensemble Smoother
+# Surrogate-accelerated iterative ensemble smoother
 
 ## Overview
 
-The surrogate-accelerated IES is PESTO’s approach to reducing the number
-of expensive forward model evaluations during iterative parameter
-estimation. It embeds an online Gaussian Process (GP) surrogate within
-the IES update loop, using uncertainty-driven switching to decide which
-ensemble members require full model evaluation and which can use the
-cheaper surrogate prediction.
-
-This vignette demonstrates the full workflow on a nonlinear test
-problem.
+The surrogate-accelerated IES reduces the number of expensive
+forward-model evaluations during iterative parameter estimation. It
+embeds an online Gaussian process (GP) surrogate in the IES update loop
+and uses uncertainty-driven switching to decide which ensemble members
+need a full model evaluation and which can use the cheaper surrogate
+prediction. This vignette demonstrates the workflow, states where it
+pays off, and shows the savings on a real run.
 
 ### Regime of applicability
 
-The Gaussian-process surrogate inside PESTO is a tool with a clearly
-bounded operating envelope, and it is worth stating that envelope before
-the demo. As an empirical soft floor we recommend
-`n_train >= 5 * n_params` – below that ratio the GP posterior variance
-rarely drops far enough for the uncertainty-driven switching rule to
-fire, and the surrogate honestly defers to the full model on most
-realisations. The second axis is the smoothness of the forward model:
-smooth, near-linear responses are well-approximated by an RBF-kernel GP
-and yield large savings, whereas rough or near-discontinuous responses
-(sharp wetting fronts, threshold activations, regime switches) defeat
-the kernel and savings collapse. The third axis is ensemble size –
-larger ensembles improve the GP fit roughly as $`\mathcal{O}(n^{-1})`$
-in posterior variance, and ensembles of fewer than about twenty
-realisations rarely produce a usable surrogate at any dimensionality. If
-your problem falls outside this envelope (high `n_params / n_train`
-ratio, rough forward model, or tiny ensemble), the right thing to do is
-run pure IES via
-[`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
-–
+The GP surrogate has a bounded operating envelope, worth stating before
+the demo. As a soft floor, use `n_train >= 5 * n_params`: below that
+ratio the GP posterior variance rarely drops far enough for the
+switching rule to fire, and the surrogate defers to the full model on
+most realisations. The second axis is smoothness: smooth, near-linear
+responses are well approximated by an RBF-kernel GP and yield large
+savings, whereas rough or near-discontinuous responses (sharp wetting
+fronts, threshold activations, regime switches) defeat the kernel and
+savings collapse. The third is ensemble size: larger ensembles improve
+the GP fit roughly as \mathcal{O}(n^{-1}) in posterior variance, and
+fewer than about twenty realisations rarely produce a usable surrogate.
+Outside this envelope, run pure IES via
+[`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md):
 [`surrogate_ensemble_update()`](https://max578.github.io/PESTO/reference/surrogate_ensemble_update.md)
-will report near-zero savings rather than degrading the posterior, but
-you pay the GP training cost for no return.
+reports near-zero savings rather than degrading the posterior, but you
+pay the GP training cost for no return. The
+[`check_surrogate_regime()`](https://max578.github.io/PESTO/reference/check_surrogate_regime.md)
+helper flags an unfavourable regime before you commit.
 
-## The Test Problem
+## The test problem
 
-We define a nonlinear forward model inspired by groundwater flow, where
-the response includes both linear sensitivity and a nonlinear
-interaction term:
+A nonlinear forward model inspired by groundwater flow, with a linear
+sensitivity and a nonlinear interaction term:
 
-``` math
-y_j = \sum_k G_{jk}\theta_k + \alpha \sin\!\left(\sum_k G_{jk}\theta_k\right) \exp\!\left(-0.1\left|\sum_k G_{jk}\theta_k\right|\right) + \varepsilon_j
-```
+y_j = \eta_j + \alpha \sin(\eta_j)\\ e^{-0.1\\\lvert \eta_j \rvert} +
+\varepsilon_j, \qquad \eta_j = \sum_k G\_{jk}\theta_k .
 
-The parameter $`\alpha`$ controls nonlinearity: $`\alpha = 0`$ is
-linear, $`\alpha = 1`$ is strongly nonlinear.
+Here \eta_j is the linear predictor and \alpha controls the
+nonlinearity: \alpha = 0 is linear, \alpha = 1 is strongly nonlinear.
 
 ``` r
 
@@ -77,13 +69,13 @@ G <- matrix(rnorm(n_obs * n_par, sd = 1 / sqrt(n_par)), n_obs, n_par)
 y_obs <- forward_model(theta_true, G, alpha = 0.3) + rnorm(n_obs, sd = 0.1)
 ```
 
-## Step 1: Generate Prior Ensemble
+## Step 1: generate the prior ensemble
 
 ``` r
 
 par_ens <- matrix(rnorm(n_real * n_par, sd = 1.5), n_real, n_par)
 
-# Run forward model for each realisation
+# Run the forward model for each realisation
 obs_ens <- t(apply(par_ens, 1, function(p) {
   forward_model(p, G, alpha = 0.3) + rnorm(n_obs, sd = 0.1)
 }))
@@ -94,7 +86,7 @@ cat("Observation ensemble:", nrow(obs_ens), "realisations x", ncol(obs_ens), "ob
 #> Observation ensemble: 50 realisations x 50 observations
 ```
 
-## Step 2: Train the GP Surrogate
+## Step 2: train the GP surrogate
 
 PESTO trains a GP with an RBF kernel directly from the ensemble:
 
@@ -116,7 +108,7 @@ cat("Log marginal likelihood:", round(gp$log_marginal_likelihood, 1), "\n")
 #> Log marginal likelihood: -3043.3
 ```
 
-## Step 3: Evaluate Surrogate Predictions
+## Step 3: evaluate surrogate predictions
 
 ``` r
 
@@ -138,17 +130,16 @@ cat("Prediction RMSE:", round(pred_error, 6), "\n")
 The GP achieves near-zero prediction error because it is interpolating
 within its training set – this is by design, not an artefact.
 
-## Step 4: Surrogate-Assisted IES Update
+## Step 4: surrogate-assisted IES update
 
-The
 [`surrogate_ensemble_update()`](https://max578.github.io/PESTO/reference/surrogate_ensemble_update.md)
-function performs the full algorithm:
+performs the full algorithm:
 
-1.  Train GP from current ensemble
-2.  Predict model outputs for all realisations
-3.  Classify by uncertainty: high → full model, low → surrogate
-4.  Apply control-variate bias correction
-5.  Compute IES update on blended ensemble
+1.  Train a GP from the current ensemble.
+2.  Predict model outputs for all realisations.
+3.  Classify by uncertainty: high -\> full model, low -\> surrogate.
+4.  Apply the control-variate bias correction.
+5.  Compute the IES update on the blended ensemble.
 
 ``` r
 
@@ -179,7 +170,13 @@ cat("GP length scale:", round(result$gp_length_scale, 4), "\n")
 #> GP length scale: 9.2136
 ```
 
-## Comparison: Standard vs Surrogate
+This twenty-parameter problem with a fifty-member ensemble sits *below*
+the `n_train >= 5 * n_params` floor, so the GP variance rarely clears
+the switching threshold and the savings here are modest by design. The
+next section places the same machinery in a favourable regime, where it
+pays off.
+
+## Comparison: standard vs surrogate
 
 ``` r
 
@@ -210,7 +207,48 @@ cat("Upgrade correlation:", round(upgrade_corr, 6), "\n")
 #> Upgrade correlation: 1
 ```
 
-## Effect of Nonlinearity
+## When the surrogate pays off
+
+The saving is the fraction of realisations the surrogate handles, 1 -
+n\_{\text{model}}/n\_{\text{total}}. Because the GP is trained on the
+current ensemble and predicts at those same points, in a smooth regime
+it is confident enough to handle essentially the whole ensemble at the
+default threshold – so the saving is high *by construction*. What
+decides whether the surrogate is worth using is therefore not how many
+realisations it handles but whether its answer stays accurate, which the
+*Effect of nonlinearity* section measures next.
+
+``` r
+
+set.seed(7)
+np_f  <- 4L
+no_f  <- 12L
+nr_f  <- 120L
+G_f   <- matrix(rnorm(no_f * np_f, sd = 1 / sqrt(np_f)), no_f, np_f)
+fwd_f <- function(theta) as.numeric(G_f %*% theta)   # smooth, linear response
+th_f  <- rnorm(np_f)
+y_f   <- fwd_f(th_f) + rnorm(no_f, sd = 0.05)
+pe_f  <- matrix(rnorm(nr_f * np_f, sd = 1.0), nr_f, np_f)
+oe_f  <- t(apply(pe_f, 1L, function(p) fwd_f(p) + rnorm(no_f, sd = 0.05)))
+
+r_f    <- surrogate_ensemble_update(pe_f, oe_f, y_f, rep(1 / 0.05, no_f),
+                                    rep(1, np_f), uncertainty_threshold = 0.1)
+post_f <- pe_f + r_f$upgrade
+cat(sprintf(
+  "Smooth 4-parameter problem: %.0f%% of evaluations handled by the surrogate; posterior RMSE %.3f\n",
+  r_f$savings_pct, sqrt(mean((colMeans(post_f) - th_f)^2))))
+#> Smooth 4-parameter problem: 100% of evaluations handled by the surrogate; posterior RMSE 0.014
+```
+
+The corollary matters as much: in the curse-of-dimensionality regime
+(parameters outnumbering the ensemble) the surrogate still predicts the
+whole ensemble, but its answer degrades – high savings with a poor
+posterior. That is why
+[`check_surrogate_regime()`](https://max578.github.io/PESTO/reference/check_surrogate_regime.md)
+warns before you commit, and why the accuracy check below is the one
+that counts.
+
+## Effect of nonlinearity
 
 How does surrogate accuracy vary with model nonlinearity?
 
@@ -247,7 +285,7 @@ ggplot(results_dt, aes(x = alpha)) +
   geom_point(aes(y = ratio), colour = "#009E73", size = 3) +
   geom_hline(yintercept = 1.0, linetype = "dashed", colour = "grey50") +
   scale_y_continuous(limits = c(0.95, 1.05)) +
-  labs(title = "Surrogate Accuracy Across Nonlinearity Levels",
+  labs(title = "Surrogate accuracy across nonlinearity levels",
        x = expression(paste("Nonlinearity strength ", alpha)),
        y = "RMSE ratio (surrogate / standard)",
        caption = "Ratio = 1.0 means identical posterior quality") +
@@ -260,11 +298,11 @@ levels.](surrogate-ies_files/figure-html/nonlinearity-sweep-1.png)
 
 Surrogate RMSE ratio across nonlinearity levels.
 
-## Random Fourier Features for Large Ensembles
+## Random Fourier features for large ensembles
 
-The exact GP has $`O(n^3)`$ training cost. For large ensembles
-($`n > 300`$), the Random Fourier Feature (RFF) approximation scales as
-$`O(nD^2)`$ where $`D`$ is the number of random features:
+The exact GP has O(n^3) training cost. For large ensembles (n \> 300),
+the random Fourier feature (RFF) approximation scales as O(nD^2), where
+D is the number of random features:
 
 ``` r
 
@@ -287,7 +325,7 @@ cat("RFF / GP error ratio:", round(rff_error / max(gp_error, 1e-10), 1), "x\n")
 #> RFF / GP error ratio: 4.5 x
 ```
 
-## Scaling Comparison
+## Scaling comparison
 
 ``` r
 
@@ -308,44 +346,45 @@ ggplot(scaling_long, aes(x = n, y = pmax(time_ms, 0.01), colour = method)) +
   geom_line(linewidth = 1) + geom_point(size = 2.5) +
   scale_y_log10() +
   scale_colour_manual(values = c("Exact GP" = "#D55E00", "RFF (D=200)" = "#0072B2")) +
-  labs(title = "GP Surrogate Training Time",
+  labs(title = "GP surrogate training time",
        x = "Ensemble size", y = "Training time (ms, log scale)",
        colour = "Method") +
   theme_minimal(base_size = 14) +
   theme(plot.title = element_text(face = "bold"), legend.position = "bottom")
 ```
 
-![GP vs RFF training time
+![GP vs RFF training-time
 scaling.](surrogate-ies_files/figure-html/scaling-1.png)
 
-GP vs RFF training time scaling.
+GP vs RFF training-time scaling.
 
-## When Does the Surrogate Help?
+## When does the surrogate help?
 
 The surrogate is most effective when:
 
-- The ensemble occupies a **compact region** of parameter space (GP
-  interpolation is accurate)
-- The forward model varies **smoothly** over the parameter range
-- The ensemble is **large enough** to train the GP (practically
-  $`n \geq 20`$)
+- the ensemble occupies a **compact region** of parameter space (GP
+  interpolation is accurate);
+- the forward model varies **smoothly** over the parameter range;
+- the ensemble is **large enough** to train the GP (practically n \geq
+  20).
 
 It degrades gracefully when:
 
-- The parameter space is very high-dimensional ($`n_p \gg 100`$)
-- The model has **sharp discontinuities** or bifurcations
-- The ensemble spans a very **wide region** (uninformative prior)
+- the parameter space is very high-dimensional (n_p \gg 100);
+- the model has **sharp discontinuities** or bifurcations;
+- the ensemble spans a very **wide region** (uninformative prior).
 
-In all cases, the uncertainty threshold $`\tau`$ ensures the algorithm
-falls back to full model evaluations when the surrogate is unreliable.
+In all cases, the uncertainty threshold \tau makes the algorithm fall
+back to full model evaluations when the surrogate is unreliable.
 
 ## References
 
-- Rasmussen, C.E. & Williams, C.K.I. (2006). *Gaussian Processes for
+- Rasmussen, C. E. & Williams, C. K. I. (2006). *Gaussian Processes for
   Machine Learning*. MIT Press.
 - Rahimi, A. & Recht, B. (2007). Random features for large-scale kernel
-  machines. *NeurIPS*.
-- Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
-  iterative ensemble smoother. *Computational Geosciences*, 17(4).
+  machines. *Advances in Neural Information Processing Systems* 20.
+- Chen, Y. & Oliver, D. S. (2013). Levenberg-Marquardt forms of the
+  iterative ensemble smoother. *Computational Geosciences*, 17(4),
+  689–703.
 - Glasserman, P. (2003). *Monte Carlo Methods in Financial Engineering*.
   Springer.

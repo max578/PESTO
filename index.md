@@ -1,4 +1,4 @@
-# PESTO ![](reference/figures/logo.png)
+# PESTO
 
 **P**arameter **EST**imation **O**ptimised – the **PEST** approach
 (Doherty 2015), brought to R and optimised, with **APSIM** as its
@@ -38,11 +38,11 @@ systems.
 | **PEST++ integration** | Read/write .pst control files, run PEST++ executables from R |
 | **Publication-ready plots** | Convergence, ensemble distributions, identifiability, surrogate diagnostics |
 
-## What “optimised” means (and how it is checked)
+## Performance
 
-The name is a claim, so each part is backed by a measured number, not an
-assertion (the full definitions and maths are in the *PEST and PEST++
-Comparison* vignette):
+The *optimised* in the name is concrete – three measured properties,
+with the full definitions and maths in the *Benchmarking PESTO against
+PEST and PEST++* vignette:
 
 - **Faster, at matched accuracy.** Against PEST 18.25 and `pestpp-ies`
   5.2.16 on identical problems, PESTO is roughly **40–860x faster in
@@ -57,9 +57,8 @@ Comparison* vignette):
   regime-dependent, with a graceful fall-back to full evaluation (the
   *Surrogate-accelerated IES* vignette).
 
-These are validated, not promised; where PESTO does *not* win (raw
-interval calibration; total solve count) is stated just as plainly in
-the vignettes.
+Where PESTO does *not* win – raw-interval calibration, total solve count
+– is stated just as plainly in the vignettes.
 
 ## Installation
 

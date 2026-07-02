@@ -9,7 +9,7 @@ objective.
   : Ensemble Solution Kernel (GLM form)
 - [`ensemble_solution_mda()`](https://max578.github.io/PESTO/reference/ensemble_solution_mda.md)
   : Ensemble Solution Kernel (MDA / Evensen form)
-- [`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
+- [`ensemble_solution_adaptive()`](https://max578.github.io/PESTO/reference/ensemble_solution_adaptive.md)
   : Ensemble Solution with Adaptive SVD Backend
 - [`compute_phi()`](https://max578.github.io/PESTO/reference/compute_phi.md)
   : Compute Phi (Objective Function) for Ensemble
@@ -206,3 +206,11 @@ surrogate diagnostics.
   : Plot Parameter Identifiability
 - [`plot_surrogate_diagnostics()`](https://max578.github.io/PESTO/reference/plot_surrogate_diagnostics.md)
   : Plot Surrogate Diagnostics
+
+## Deprecated
+
+Retained for backward compatibility; scheduled for removal in a future
+release.
+
+- [`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
+  : Deprecated: ensemble solution with adaptive SVD backend

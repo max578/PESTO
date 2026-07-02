@@ -2,11 +2,11 @@
 
 ## Introduction
 
-**PESTO** (**P**arameter **EST**imation **O**ptimised – the **PEST**
-approach brought to R) is an R package for high-performance parameter
-estimation, uncertainty quantification, and inverse modelling. It brings
-the algorithms of **PEST** (*Parameter ESTimation*; Doherty 2015) and
-its C++ successor **PEST++** (White et al. 2020) natively into the R
+**PESTO** (*Parameter ESTimation Optimised* – the PEST approach brought
+to R) is an R package for high-performance parameter estimation,
+uncertainty quantification, and inverse modelling. It brings the
+algorithms of **PEST** (*Parameter ESTimation*; Doherty 2015) and its
+C++ successor **PEST++** (White et al. 2020) natively into the R
 ecosystem, and extends them with a typed forward-model contract, an
 in-process simulator callback, multi-fidelity acceleration, and
 surrogate methods.
@@ -19,7 +19,7 @@ and the `apsimx` package – see the *Calibrating APSIM with PESTO*
 vignette – while the same callback couples hydrological models, other
 crop models, and ODE systems equally.
 
-### Key Features
+### Key features
 
 - **Iterative Ensemble Smoother (IES)**: Ensemble-based parameter
   estimation that scales to 100,000+ parameters without computing
@@ -44,7 +44,7 @@ remotes::install_github("max578/PESTO")
 # PEST++ binaries must be on your PATH or bundled with the package
 ```
 
-## Quick Start: Creating a Model Scenario
+## Quick start: creating a model scenario
 
 Rather than requiring a pre-existing PEST control file, PESTO lets you
 define problems programmatically:
@@ -155,7 +155,7 @@ print(pst)
 #> [1] "pesto_pst"
 ```
 
-## Core Computational Kernel
+## Core computational kernel
 
 PESTO provides the
 [`ensemble_solution()`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
@@ -196,7 +196,7 @@ cat("Mean absolute upgrade:", mean(abs(upgrade)), "\n")
 #> Mean absolute upgrade: 0.01283321
 ```
 
-## Performance Benchmarking
+## Performance benchmarking
 
 The C++ kernel is significantly faster than equivalent R code:
 
@@ -214,11 +214,11 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
   print(bench)
 }
 #> Unit: microseconds
-#>       expr     min      lq     mean  median      uq     max neval
-#>  PESTO_cpp 428.269 429.922 438.8013 433.894 442.811 549.795   100
+#>       expr     min      lq     mean   median       uq     max neval
+#>  PESTO_cpp 430.803 434.395 444.9889 440.4665 450.6495 576.855   100
 ```
 
-## Computing Phi (Objective Function)
+## Computing phi (the objective function)
 
 ``` r
 
@@ -286,7 +286,7 @@ distributions.](getting-started_files/figure-html/plot-ensemble-1.png)
 
 Prior vs posterior parameter distributions.
 
-## Adaptive SVD Backends
+## Adaptive SVD backends
 
 PESTO automatically selects the fastest SVD algorithm for your problem.
 For low-rank decompositions (typical in IES where ensemble size \<\<
@@ -302,7 +302,7 @@ res_auto <- adaptive_svd(A, k = 20L, method = "auto")
 cat("Method:", res_auto$method_used, "\n")
 #> Method: rsvd (Halko-Martinsson-Tropp)
 cat("Time:", round(res_auto$time_ms, 2), "ms\n")
-#> Time: 17.4 ms
+#> Time: 17.99 ms
 cat("Singular values (top 5):", round(res_auto$d[1:5], 3), "\n")
 #> Singular values (top 5): 50.643 50.283 49.956 49.689 49.454
 
@@ -313,12 +313,14 @@ cat("\nrSVD dimensions: U =", dim(res_rsvd$u), ", V =", dim(res_rsvd$v), "\n")
 #> rSVD dimensions: U = 1000 20 , V = 500 20
 ```
 
-## GPU-Accelerated Ensemble Solution
+## Adaptive-backend ensemble solution
 
-The
-[`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
-function wraps the IES kernel with adaptive SVD backend selection and
-returns performance diagnostics:
+[`ensemble_solution_adaptive()`](https://max578.github.io/PESTO/reference/ensemble_solution_adaptive.md)
+wraps the IES kernel with automatic SVD backend selection – a randomised
+SVD for low-rank problems, otherwise a dense LAPACK / Accelerate
+decomposition – and returns timing diagnostics. It is the convenient
+entry point when the best backend for a problem size is not known in
+advance.
 
 ``` r
 
@@ -332,7 +334,7 @@ pr <- matrix(rnorm(npar * nreal), npar, nreal)
 w <- rep(1.0, nobs); pc <- rep(1.0, npar)
 Am <- matrix(rnorm(npar * (nreal - 1)), npar, nreal - 1)
 
-result <- ensemble_solution_gpu(
+result <- ensemble_solution_adaptive(
   pd, od, or_, pr, w, pc, Am,
   cur_lam = 1.0, svd_method = "auto"
 )
@@ -340,14 +342,14 @@ result <- ensemble_solution_gpu(
 cat("SVD method:", result$svd_method, "\n")
 #> SVD method: LAPACK (platform-optimised)
 cat("SVD time:", round(result$svd_time_ms, 2), "ms\n")
-#> SVD time: 2.21 ms
+#> SVD time: 2.3 ms
 cat("Total time:", round(result$total_time_ms, 2), "ms\n")
-#> Total time: 2.62 ms
+#> Total time: 2.72 ms
 cat("Singular values used:", result$singular_values_used, "\n")
 #> Singular values used: 50
 ```
 
-## Surrogate-Accelerated IES
+## Surrogate-accelerated IES
 
 PESTO includes a Gaussian Process surrogate that can replace expensive
 model evaluations during IES iterations. See
@@ -376,7 +378,7 @@ cat("Savings:", sprintf("%.0f%%", result$savings_pct), "\n")
 #> Savings: 100%
 ```
 
-## Adaptive Ensemble Sizing
+## Adaptive ensemble sizing
 
 Monitor ensemble health and get sizing recommendations:
 
@@ -394,7 +396,7 @@ cat("Reason:", sizing$reasoning, "\n")
 #> Reason: High CV (0.573522 > 0.450000): increasing ensemble size
 ```
 
-## Next Steps
+## Next steps
 
 - See
   [`vignette("surrogate-ies")`](https://max578.github.io/PESTO/articles/surrogate-ies.md)
@@ -408,8 +410,8 @@ cat("Reason:", sizing$reasoning, "\n")
 
 ## References
 
-- Doherty, J. (2015). *PEST: Model-Independent Parameter Estimation –
-  User Manual* (6th ed.). Watermark Numerical Computing, Brisbane.
+- Doherty, J. (2015). *Calibration and Uncertainty Analysis for Complex
+  Environmental Models*. Watermark Numerical Computing, Brisbane.
 - White, J.T., Hunt, R.J., Fienen, M.N., & Doherty, J.E. (2020).
   Approaches to Highly Parameterized Inversion: PEST++ Version 5. USGS
   Techniques and Methods 7-C26.

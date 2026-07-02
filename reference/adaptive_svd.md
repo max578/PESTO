@@ -1,7 +1,6 @@
 # Adaptive SVD with Automatic Backend Selection
 
-Automatically selects the optimal SVD algorithm based on matrix
-dimensions and available hardware:
+Automatically selects the SVD algorithm from the matrix dimensions:
 
 ## Usage
 
@@ -22,7 +21,7 @@ adaptive_svd(A, k = 0L, method = "auto")
 - method:
 
   Character. Force a specific method: "auto" (default), "rsvd",
-  "accelerate", "eigen", "cuda".
+  "accelerate", "eigen".
 
 ## Value
 
@@ -32,15 +31,11 @@ and `time_ms`.
 ## Details
 
 - **Randomised SVD** (Halko et al., 2011): when target rank k \<\<
-  min(m,n)
+  min(m, n)
 
-- **Apple Accelerate**: on macOS, for full SVD leveraging AMX
-  coprocessor
+- **Apple Accelerate / LAPACK**: a full dense decomposition otherwise
 
-- **Eigen BDCSVD**: cross-platform fallback with divide-and-conquer
-
-- **CUDA cuSOLVER**: on GPU-equipped systems (when compiled with
-  PESTO_USE_CUDA)
+- **Eigen BDCSVD**: cross-platform divide-and-conquer fallback
 
 ## Examples
 

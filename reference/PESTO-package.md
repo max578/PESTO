@@ -20,7 +20,7 @@ Useful links:
 
 - <https://github.com/max578/PESTO>
 
-- <https://max578.github.io/PESTO>
+- <https://max578.github.io/PESTO/>
 
 - Report bugs at <https://github.com/max578/PESTO/issues>
 

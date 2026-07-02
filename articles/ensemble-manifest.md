@@ -54,12 +54,12 @@ m <- as_manifest(fit, seed = 20260516L,
                  apsim_version = NA_character_)
 print(m)
 #> <pesto_ensemble_manifest> schema 1.1.0
-#>   run_id        : ies_callback_20260628_075120_fe6542df
+#>   run_id        : ies_callback_20260702_235746_3d7dd5ca
 #>   method        : ies_callback  (noptmax=4)
 #>   ensemble      : 60 realisations x 3 parameters | 6 observations
 #>   failure rate  : 0.00%
-#>   pesto version : 0.8.0.9000  apsim: NA
-#>   timestamp     : 2026-06-28T07:51:20+0000
+#>   pesto version : 0.9.0  apsim: NA
+#>   timestamp     : 2026-07-02T23:57:46+0000
 #>   data hash     : sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
 ```
 
@@ -68,7 +68,7 @@ Slots are reachable via the standard S7 `@` accessor:
 ``` r
 
 m@run_id
-#> [1] "ies_callback_20260628_075120_fe6542df"
+#> [1] "ies_callback_20260702_235746_3d7dd5ca"
 m@data_hash
 #> [1] "sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6"
 m@noptmax
@@ -117,7 +117,7 @@ A peek at what the YAML actually looks like (truncated):
 cat(paste(readLines(file.path(dir, "wagga_2026_run01.yaml"))[1:14],
           collapse = "\n"))
 #> schema_version: 1.1.0
-#> run_id: ies_callback_20260628_075120_fe6542df
+#> run_id: ies_callback_20260702_235746_3d7dd5ca
 #> data_hash: sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
 #> format: rds
 #> integrity: verifiable
@@ -129,7 +129,7 @@ cat(paste(readLines(file.path(dir, "wagga_2026_run01.yaml"))[1:14],
 #> seed: 20260516
 #> fidelity: ~
 #> apsim_version: ~
-#> pesto_version: 0.8.0.9000
+#> pesto_version: 0.9.0
 ```
 
 ### Inspection CSVs (optional)
@@ -249,7 +249,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.8.0.9000
+#> [1] PESTO_0.9.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       

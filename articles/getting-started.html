@@ -6,11 +6,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Getting Started with PESTO • PESTO</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Getting Started with PESTO">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
+<meta property="og:title" content="Getting Started with PESTO">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -20,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,12 +69,11 @@
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p><strong>PESTO</strong> (<strong>P</strong>arameter
-<strong>EST</strong>imation <strong>O</strong>ptimised – the
-<strong>PEST</strong> approach brought to R) is an R package for
-high-performance parameter estimation, uncertainty quantification, and
-inverse modelling. It brings the algorithms of <strong>PEST</strong>
-(<em>Parameter ESTimation</em>; Doherty 2015) and its C++ successor
+<p><strong>PESTO</strong> (<em>Parameter ESTimation Optimised</em> – the
+PEST approach brought to R) is an R package for high-performance
+parameter estimation, uncertainty quantification, and inverse modelling.
+It brings the algorithms of <strong>PEST</strong> (<em>Parameter
+ESTimation</em>; Doherty 2015) and its C++ successor
 <strong>PEST++</strong> (White et al. 2020) natively into the R
 ecosystem, and extends them with a typed forward-model contract, an
 in-process simulator callback, multi-fidelity acceleration, and
@@ -85,7 +86,7 @@ in-process through <code><a href="../reference/apsim_callback.html">apsim_callba
 PESTO</em> vignette – while the same callback couples hydrological
 models, other crop models, and ODE systems equally.</p>
 <div class="section level3">
-<h3 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
+<h3 id="key-features">Key features<a class="anchor" aria-label="anchor" href="#key-features"></a>
 </h3>
 <ul>
 <li>
@@ -121,7 +122,7 @@ visualisations</li>
 <span><span class="co"># PEST++ binaries must be on your PATH or bundled with the package</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="quick-start-creating-a-model-scenario">Quick Start: Creating a Model Scenario<a class="anchor" aria-label="anchor" href="#quick-start-creating-a-model-scenario"></a>
+<h2 id="quick-start-creating-a-model-scenario">Quick start: creating a model scenario<a class="anchor" aria-label="anchor" href="#quick-start-creating-a-model-scenario"></a>
 </h2>
 <p>Rather than requiring a pre-existing PEST control file, PESTO lets
 you define problems programmatically:</p>
@@ -230,7 +231,7 @@ you define problems programmatically:</p>
 <span><span class="co">#&gt; [1] "pesto_pst"</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="core-computational-kernel">Core Computational Kernel<a class="anchor" aria-label="anchor" href="#core-computational-kernel"></a>
+<h2 id="core-computational-kernel">Core computational kernel<a class="anchor" aria-label="anchor" href="#core-computational-kernel"></a>
 </h2>
 <p>PESTO provides the <code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code> function – a
 high-performance C++ implementation of the IES update equation. This is
@@ -268,7 +269,7 @@ the computational heart of the package:</p>
 <span><span class="co">#&gt; Mean absolute upgrade: 0.01283321</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="performance-benchmarking">Performance Benchmarking<a class="anchor" aria-label="anchor" href="#performance-benchmarking"></a>
+<h2 id="performance-benchmarking">Performance benchmarking<a class="anchor" aria-label="anchor" href="#performance-benchmarking"></a>
 </h2>
 <p>The C++ kernel is significantly faster than equivalent R code:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -284,11 +285,11 @@ the computational heart of the package:</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">bench</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; Unit: microseconds</span></span>
-<span><span class="co">#&gt;       expr     min      lq     mean  median      uq     max neval</span></span>
-<span><span class="co">#&gt;  PESTO_cpp 428.269 429.922 438.8013 433.894 442.811 549.795   100</span></span></code></pre></div>
+<span><span class="co">#&gt;       expr     min      lq     mean   median       uq     max neval</span></span>
+<span><span class="co">#&gt;  PESTO_cpp 430.803 434.395 444.9889 440.4665 450.6495 576.855   100</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="computing-phi-objective-function">Computing Phi (Objective Function)<a class="anchor" aria-label="anchor" href="#computing-phi-objective-function"></a>
+<h2 id="computing-phi-the-objective-function">Computing phi (the objective function)<a class="anchor" aria-label="anchor" href="#computing-phi-the-objective-function"></a>
 </h2>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">phi_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_phi.html">compute_phi</a></span><span class="op">(</span><span class="va">obs_resid</span>, <span class="va">weights</span><span class="op">)</span></span>
@@ -350,7 +351,7 @@ Prior vs posterior parameter distributions.
 </div>
 </div>
 <div class="section level2">
-<h2 id="adaptive-svd-backends">Adaptive SVD Backends<a class="anchor" aria-label="anchor" href="#adaptive-svd-backends"></a>
+<h2 id="adaptive-svd-backends">Adaptive SVD backends<a class="anchor" aria-label="anchor" href="#adaptive-svd-backends"></a>
 </h2>
 <p>PESTO automatically selects the fastest SVD algorithm for your
 problem. For low-rank decompositions (typical in IES where ensemble size
@@ -365,7 +366,7 @@ speedups:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Method:"</span>, <span class="va">res_auto</span><span class="op">$</span><span class="va">method_used</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Method: rsvd (Halko-Martinsson-Tropp)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_auto</span><span class="op">$</span><span class="va">time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Time: 17.4 ms</span></span>
+<span><span class="co">#&gt; Time: 17.99 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Singular values (top 5):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_auto</span><span class="op">$</span><span class="va">d</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Singular values (top 5): 50.643 50.283 49.956 49.689 49.454</span></span>
 <span></span>
@@ -376,11 +377,13 @@ speedups:</p>
 <span><span class="co">#&gt; rSVD dimensions: U = 1000 20 , V = 500 20</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="gpu-accelerated-ensemble-solution">GPU-Accelerated Ensemble Solution<a class="anchor" aria-label="anchor" href="#gpu-accelerated-ensemble-solution"></a>
+<h2 id="adaptive-backend-ensemble-solution">Adaptive-backend ensemble solution<a class="anchor" aria-label="anchor" href="#adaptive-backend-ensemble-solution"></a>
 </h2>
-<p>The <code><a href="../reference/ensemble_solution_gpu.html">ensemble_solution_gpu()</a></code> function wraps the IES
-kernel with adaptive SVD backend selection and returns performance
-diagnostics:</p>
+<p><code><a href="../reference/ensemble_solution_adaptive.html">ensemble_solution_adaptive()</a></code> wraps the IES kernel with
+automatic SVD backend selection – a randomised SVD for low-rank
+problems, otherwise a dense LAPACK / Accelerate decomposition – and
+returns timing diagnostics. It is the convenient entry point when the
+best backend for a problem size is not known in advance.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">npar</span> <span class="op">&lt;-</span> <span class="fl">100</span>; <span class="va">nobs</span> <span class="op">&lt;-</span> <span class="fl">500</span>; <span class="va">nreal</span> <span class="op">&lt;-</span> <span class="fl">50</span></span>
@@ -392,7 +395,7 @@ diagnostics:</p>
 <span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1.0</span>, <span class="va">nobs</span><span class="op">)</span>; <span class="va">pc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1.0</span>, <span class="va">npar</span><span class="op">)</span></span>
 <span><span class="va">Am</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">npar</span> <span class="op">*</span> <span class="op">(</span><span class="va">nreal</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span>, <span class="va">npar</span>, <span class="va">nreal</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ensemble_solution_gpu.html">ensemble_solution_gpu</a></span><span class="op">(</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ensemble_solution_adaptive.html">ensemble_solution_adaptive</a></span><span class="op">(</span></span>
 <span>  <span class="va">pd</span>, <span class="va">od</span>, <span class="va">or_</span>, <span class="va">pr</span>, <span class="va">w</span>, <span class="va">pc</span>, <span class="va">Am</span>,</span>
 <span>  cur_lam <span class="op">=</span> <span class="fl">1.0</span>, svd_method <span class="op">=</span> <span class="st">"auto"</span></span>
 <span><span class="op">)</span></span>
@@ -400,14 +403,14 @@ diagnostics:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"SVD method:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">svd_method</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; SVD method: LAPACK (platform-optimised)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"SVD time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">svd_time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; SVD time: 2.21 ms</span></span>
+<span><span class="co">#&gt; SVD time: 2.3 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Total time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">total_time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Total time: 2.62 ms</span></span>
+<span><span class="co">#&gt; Total time: 2.72 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Singular values used:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">singular_values_used</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Singular values used: 50</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="surrogate-accelerated-ies">Surrogate-Accelerated IES<a class="anchor" aria-label="anchor" href="#surrogate-accelerated-ies"></a>
+<h2 id="surrogate-accelerated-ies">Surrogate-accelerated IES<a class="anchor" aria-label="anchor" href="#surrogate-accelerated-ies"></a>
 </h2>
 <p>PESTO includes a Gaussian Process surrogate that can replace
 expensive model evaluations during IES iterations. See
@@ -433,7 +436,7 @@ expensive model evaluations during IES iterations. See
 <span><span class="co">#&gt; Savings: 100%</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="adaptive-ensemble-sizing">Adaptive Ensemble Sizing<a class="anchor" aria-label="anchor" href="#adaptive-ensemble-sizing"></a>
+<h2 id="adaptive-ensemble-sizing">Adaptive ensemble sizing<a class="anchor" aria-label="anchor" href="#adaptive-ensemble-sizing"></a>
 </h2>
 <p>Monitor ensemble health and get sizing recommendations:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
@@ -449,7 +452,7 @@ expensive model evaluations during IES iterations. See
 <span><span class="co">#&gt; Reason: High CV (0.573522 &gt; 0.450000): increasing ensemble size</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="next-steps">Next Steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <ul>
 <li>See <code><a href="../articles/surrogate-ies.html">vignette("surrogate-ies")</a></code> for the full
@@ -464,8 +467,8 @@ Gauss-Levenberg-Marquardt estimation</li>
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <ul>
-<li>Doherty, J. (2015). <em>PEST: Model-Independent Parameter Estimation
-– User Manual</em> (6th ed.). Watermark Numerical Computing,
+<li>Doherty, J. (2015). <em>Calibration and Uncertainty Analysis for
+Complex Environmental Models</em>. Watermark Numerical Computing,
 Brisbane.</li>
 <li>White, J.T., Hunt, R.J., Fienen, M.N., &amp; Doherty, J.E. (2020).
 Approaches to Highly Parameterized Inversion: PEST++ Version 5. USGS

@@ -6,11 +6,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Calibrating APSIM with PESTO (in-process callback) • PESTO</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Calibrating APSIM with PESTO (in-process callback)">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
+<meta property="og:title" content="Calibrating APSIM with PESTO (in-process callback)">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -20,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -230,31 +232,23 @@ standard error<a class="anchor" aria-label="anchor" href="#guard-calibrate-to-fi
 </h2>
 <p>The single most consequential number you hand
 <code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> is <code>obs_sd</code> – the
-observation standard deviation, which sets the IES weights
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi><mo>=</mo><mn>1</mn><mi>/</mi><msub><mi>σ</mi><mrow><mi mathvariant="normal">o</mi><mi mathvariant="normal">b</mi><mi mathvariant="normal">s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">w = 1/\sigma_{\mathrm{obs}}</annotation></semantics></math>.
-It is also the easiest to get wrong, in a way that fails silently. The
-failure mode is <em>over-determination</em>: conditioning the ensemble
-on a likelihood that is far tighter than the data deserve. The smoother
-then drives every realisation onto the same point, the posterior spread
-collapses, and the run reports an answer with a credible interval far
-too narrow to be honest – confidently wrong.</p>
+observation standard deviation, which sets the IES weights <span class="math inline">w = 1/\sigma_{\mathrm{obs}}</span>. It is also the
+easiest to get wrong, in a way that fails silently. The failure mode is
+<em>over-determination</em>: conditioning the ensemble on a likelihood
+that is far tighter than the data deserve. The smoother then drives
+every realisation onto the same point, the posterior spread collapses,
+and the run reports an answer with a credible interval far too narrow to
+be credible – confident and wrong.</p>
 <p>The usual route into this trap is statistical, not a typo. Suppose
-each target observation is itself the mean of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
-field replicates. The <em>replicate</em> spread – the genuine
-measurement-plus-process noise a single modelled value must match – is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>σ</mi><annotation encoding="application/x-tex">\sigma</annotation></semantics></math>.
-The <em>standard error of that mean</em> is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mi>/</mi><msqrt><mi>m</mi></msqrt></mrow><annotation encoding="application/x-tex">\sigma/\sqrt{m}</annotation></semantics></math>,
-which is smaller by a factor of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><mi>m</mi></msqrt><annotation encoding="application/x-tex">\sqrt{m}</annotation></semantics></math>
-and shrinks further as you average more plots. Passing the standard
-error as <code>obs_sd</code> tells the smoother the data pin the model
-roughly
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msqrt><mi>m</mi></msqrt><annotation encoding="application/x-tex">\sqrt{m}</annotation></semantics></math>
-times more sharply than they really do. The forward model cannot be that
-right, so the ensemble has nowhere to go but onto a single collapsed
-point.</p>
+each target observation is itself the mean of <span class="math inline">m</span> field replicates. The <em>replicate</em>
+spread – the genuine measurement-plus-process noise a single modelled
+value must match – is <span class="math inline">\sigma</span>. The
+<em>standard error of that mean</em> is <span class="math inline">\sigma/\sqrt{m}</span>, which is smaller by a factor
+of <span class="math inline">\sqrt{m}</span> and shrinks further as you
+average more plots. Passing the standard error as <code>obs_sd</code>
+tells the smoother the data pin the model roughly <span class="math inline">\sqrt{m}</span> times more sharply than they really
+do. The forward model cannot be that right, so the ensemble has nowhere
+to go but onto a single collapsed point.</p>
 <p>The contrast below runs the same synthetic problem twice. The first
 call passes the field-realistic replicate spread <code>sigma</code>; the
 second passes the standard error of a mean over <code>m = 40</code>
@@ -301,8 +295,8 @@ whether the credible interval still covers the truth:</p>
 <span><span class="co">#&gt; 1 0.050000000           field-realistic 3.560357e-03              50</span></span>
 <span><span class="co">#&gt; 2 0.007905694 over-precise (SE of mean) 9.266982e-05               0</span></span></code></pre></div>
 <p>The over-precise run’s posterior spread is a small fraction of the
-honest run’s, and its 90 per-cent credible band has stopped covering the
-truth entirely. The ensemble is confident and wrong.</p>
+well-specified run’s, and its 90 per-cent credible band has stopped
+covering the truth entirely. The ensemble is confident and wrong.</p>
 <p>PESTO records the collapse directly.
 <code><a href="../reference/ensemble_spread_ess.html">ensemble_spread_ess()</a></code> – the spectral participation ratio of
 the parameter anomaly covariance, the effective number of
@@ -328,13 +322,8 @@ value must actually reproduce – the replicate-level
 measurement-plus-process spread, never the standard error of an
 average:</p>
 <ul>
-<li>Use the replicate standard deviation
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>σ</mi><annotation encoding="application/x-tex">\sigma</annotation></semantics></math>,
-not
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mi>/</mi><msqrt><mi>m</mi></msqrt></mrow><annotation encoding="application/x-tex">\sigma/\sqrt{m}</annotation></semantics></math>,
-when the target is a mean over
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>m</mi><annotation encoding="application/x-tex">m</annotation></semantics></math>
-measurements.</li>
+<li>Use the replicate standard deviation <span class="math inline">\sigma</span>, not <span class="math inline">\sigma/\sqrt{m}</span>, when the target is a mean
+over <span class="math inline">m</span> measurements.</li>
 <li>Fold structural model-discrepancy into <code>obs_sd</code> – the
 forward model is an approximation, and the likelihood should not pretend
 it matches reality more tightly than the model can.</li>
@@ -345,7 +334,7 @@ over-narrow one destroys the ensemble and reports false confidence.</li>
 <p>When over-determination is unavoidable – many observations, few
 realisations – the covariance inflation and localisation countermeasures
 (<code><a href="../articles/inflation-localisation.html">vignette("inflation-localisation")</a></code>) actively replenish the
-collapsing spread rather than only diagnosing it. The honest
+collapsing spread rather than only diagnosing it. A correctly specified
 <code>obs_sd</code> is the first line of defence, those countermeasures
 the second.</p>
 </div>
@@ -520,10 +509,8 @@ observed biomass-over-time series.</p>
 Susceptible-Exposed-Infectious-Recovered epidemic model, calibrating the
 transmission, latency, and recovery rates <code>beta</code>,
 <code>sigma</code>, and <code>gamma</code> against an observed
-infectious-prevalence curve. The reproduction number
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mn>0</mn></msub><mo>=</mo><mi>β</mi><mi>/</mi><mi>γ</mi></mrow><annotation encoding="application/x-tex">R_0 = \beta / \gamma</annotation></semantics></math>
-is the recoverable summary an outbreak curve identifies most
-sharply:</p>
+infectious-prevalence curve. The reproduction number <span class="math inline">R_0 = \beta / \gamma</span> is the recoverable
+summary an outbreak curve identifies most sharply:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">days</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">60</span>, by <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">seir</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/seir_forward_model.html">seir_forward_model</a></span><span class="op">(</span>times <span class="op">=</span> <span class="va">days</span>, n_pop <span class="op">=</span> <span class="fl">1000</span>, i0 <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
@@ -644,7 +631,7 @@ and avoids per-realisation file I/O entirely.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] PESTO_0.8.0.9000</span></span>
+<span><span class="co">#&gt; [1] PESTO_0.9.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       </span></span>

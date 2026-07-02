@@ -189,24 +189,24 @@ collapsing ensemble.
 The single most consequential number you hand
 [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
 is `obs_sd` – the observation standard deviation, which sets the IES
-weights $`w = 1/\sigma_{\mathrm{obs}}`$. It is also the easiest to get
+weights w = 1/\sigma\_{\mathrm{obs}}. It is also the easiest to get
 wrong, in a way that fails silently. The failure mode is
 *over-determination*: conditioning the ensemble on a likelihood that is
 far tighter than the data deserve. The smoother then drives every
 realisation onto the same point, the posterior spread collapses, and the
 run reports an answer with a credible interval far too narrow to be
-honest – confidently wrong.
+credible – confident and wrong.
 
 The usual route into this trap is statistical, not a typo. Suppose each
-target observation is itself the mean of $`m`$ field replicates. The
+target observation is itself the mean of m field replicates. The
 *replicate* spread – the genuine measurement-plus-process noise a single
-modelled value must match – is $`\sigma`$. The *standard error of that
-mean* is $`\sigma/\sqrt{m}`$, which is smaller by a factor of
-$`\sqrt{m}`$ and shrinks further as you average more plots. Passing the
-standard error as `obs_sd` tells the smoother the data pin the model
-roughly $`\sqrt{m}`$ times more sharply than they really do. The forward
-model cannot be that right, so the ensemble has nowhere to go but onto a
-single collapsed point.
+modelled value must match – is \sigma. The *standard error of that mean*
+is \sigma/\sqrt{m}, which is smaller by a factor of \sqrt{m} and shrinks
+further as you average more plots. Passing the standard error as
+`obs_sd` tells the smoother the data pin the model roughly \sqrt{m}
+times more sharply than they really do. The forward model cannot be that
+right, so the ensemble has nowhere to go but onto a single collapsed
+point.
 
 The contrast below runs the same synthetic problem twice. The first call
 passes the field-realistic replicate spread `sigma`; the second passes
@@ -262,8 +262,8 @@ data.frame(
 ```
 
 The over-precise run’s posterior spread is a small fraction of the
-honest run’s, and its 90 per-cent credible band has stopped covering the
-truth entirely. The ensemble is confident and wrong.
+well-specified run’s, and its 90 per-cent credible band has stopped
+covering the truth entirely. The ensemble is confident and wrong.
 
 PESTO records the collapse directly.
 [`ensemble_spread_ess()`](https://max578.github.io/PESTO/reference/ensemble_spread_ess.md)
@@ -293,9 +293,8 @@ The fix is to set `obs_sd` to the uncertainty the modelled value must
 actually reproduce – the replicate-level measurement-plus-process
 spread, never the standard error of an average:
 
-- Use the replicate standard deviation $`\sigma`$, not
-  $`\sigma/\sqrt{m}`$, when the target is a mean over $`m`$
-  measurements.
+- Use the replicate standard deviation \sigma, not \sigma/\sqrt{m}, when
+  the target is a mean over m measurements.
 - Fold structural model-discrepancy into `obs_sd` – the forward model is
   an approximation, and the likelihood should not pretend it matches
   reality more tightly than the model can.
@@ -307,8 +306,8 @@ When over-determination is unavoidable – many observations, few
 realisations – the covariance inflation and localisation countermeasures
 ([`vignette("inflation-localisation")`](https://max578.github.io/PESTO/articles/inflation-localisation.md))
 actively replenish the collapsing spread rather than only diagnosing it.
-The honest `obs_sd` is the first line of defence, those countermeasures
-the second.
+A correctly specified `obs_sd` is the first line of defence, those
+countermeasures the second.
 
 ## Driving APSIM through `apsim_callback()`
 
@@ -499,9 +498,9 @@ rbind(truth = theta_crop, posterior = round(post_crop, 3))
 is the closed-population Susceptible-Exposed-Infectious-Recovered
 epidemic model, calibrating the transmission, latency, and recovery
 rates `beta`, `sigma`, and `gamma` against an observed
-infectious-prevalence curve. The reproduction number
-$`R_0 = \beta / \gamma`$ is the recoverable summary an outbreak curve
-identifies most sharply:
+infectious-prevalence curve. The reproduction number R_0 = \beta /
+\gamma is the recoverable summary an outbreak curve identifies most
+sharply:
 
 ``` r
 
@@ -630,7 +629,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.8.0.9000
+#> [1] PESTO_0.9.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       

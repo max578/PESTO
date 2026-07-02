@@ -1,8 +1,10 @@
 # Plot Parameter Identifiability
 
-Creates a bar plot of parameter identifiability based on the singular
-value decomposition of the Jacobian matrix. Accepts either a numeric
-Jacobian matrix in memory or a path to a `.jco` (PEST binary) file.
+Creates a ranked lollipop plot of parameter identifiability based on the
+singular value decomposition of the Jacobian matrix. Accepts either a
+numeric Jacobian matrix in memory or a path to a `.jco` (PEST binary)
+file. High-dimensional problems are kept legible by showing only the
+most identifiable parameters (see `top_n`).
 
 ## Usage
 
@@ -12,6 +14,7 @@ plot_identifiability(
   jco_file = NULL,
   pst = NULL,
   n_sv = NULL,
+  top_n = NULL,
   title = "Parameter Identifiability"
 )
 ```
@@ -38,6 +41,14 @@ plot_identifiability(
 - n_sv:
 
   Integer. Number of singular values to retain.
+
+- top_n:
+
+  Integer. Maximum number of parameters to display, ranked by
+  identifiability. Defaults to all parameters when there are at most 40
+  and to the 40 most identifiable otherwise, so high-dimensional
+  problems stay legible. Set explicitly to override; a subtitle records
+  how many of the total are shown.
 
 - title:
 

@@ -1,4 +1,4 @@
-# PESTO ![](reference/figures/logo.png)
+# PESTO
 
 **P**arameter **EST**imation **O**ptimised – the **PEST** approach
 (Doherty 2015), brought to R and optimised, with **APSIM** as its
@@ -38,11 +38,11 @@ systems.
 | **PEST++ integration** | Read/write .pst control files, run PEST++ executables from R |
 | **Publication-ready plots** | Convergence, ensemble distributions, identifiability, surrogate diagnostics |
 
-## What “optimised” means (and how it is checked)
+## Performance
 
-The name is a claim, so each part is backed by a measured number, not an
-assertion (the full definitions and maths are in the *PEST and PEST++
-Comparison* vignette):
+The *optimised* in the name is concrete – three measured properties,
+with the full definitions and maths in the *Benchmarking PESTO against
+PEST and PEST++* vignette:
 
 - **Faster, at matched accuracy.** Against PEST 18.25 and `pestpp-ies`
   5.2.16 on identical problems, PESTO is roughly **40–860x faster in
@@ -57,9 +57,8 @@ Comparison* vignette):
   regime-dependent, with a graceful fall-back to full evaluation (the
   *Surrogate-accelerated IES* vignette).
 
-These are validated, not promised; where PESTO does *not* win (raw
-interval calibration; total solve count) is stated just as plainly in
-the vignettes.
+Where PESTO does *not* win – raw-interval calibration, total solve count
+– is stated just as plainly in the vignettes.
 
 ## Installation
 
@@ -275,7 +274,7 @@ objective.
   : Ensemble Solution Kernel (GLM form)
 - [`ensemble_solution_mda()`](https://max578.github.io/PESTO/reference/ensemble_solution_mda.md)
   : Ensemble Solution Kernel (MDA / Evensen form)
-- [`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
+- [`ensemble_solution_adaptive()`](https://max578.github.io/PESTO/reference/ensemble_solution_adaptive.md)
   : Ensemble Solution with Adaptive SVD Backend
 - [`compute_phi()`](https://max578.github.io/PESTO/reference/compute_phi.md)
   : Compute Phi (Objective Function) for Ensemble
@@ -473,6 +472,14 @@ surrogate diagnostics.
 - [`plot_surrogate_diagnostics()`](https://max578.github.io/PESTO/reference/plot_surrogate_diagnostics.md)
   : Plot Surrogate Diagnostics
 
+## Deprecated
+
+Retained for backward compatibility; scheduled for removal in a future
+release.
+
+- [`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
+  : Deprecated: ensemble solution with adaptive SVD backend
+
 # Articles
 
 ### Get started
@@ -482,10 +489,10 @@ surrogate diagnostics.
 
 ### Algorithms and comparison
 
-- [PEST and PEST++ Comparison and Simulation
-  Study](https://max578.github.io/PESTO/articles/pestpp-comparison-and-simulation.md):
-- [Surrogate-Accelerated Iterative Ensemble
-  Smoother](https://max578.github.io/PESTO/articles/surrogate-ies.md):
+- [Benchmarking PESTO against PEST and
+  PEST++](https://max578.github.io/PESTO/articles/pestpp-comparison-and-simulation.md):
+- [Surrogate-accelerated iterative ensemble
+  smoother](https://max578.github.io/PESTO/articles/surrogate-ies.md):
 - [Countering Ensemble Collapse: Inflation and
   Localisation](https://max578.github.io/PESTO/articles/inflation-localisation.md):
 

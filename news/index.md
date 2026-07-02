@@ -1,24 +1,47 @@
 # Changelog
 
-## PESTO (development version)
+## PESTO 0.9.0
 
+- **Vignettes brought to publication quality.** *Benchmarking PESTO
+  against PEST and PEST++* (formerly the “comparison and simulation
+  study”) is reduced from roughly 1300 lines to a focused benchmark –
+  comparative estimates, the notable deviations explained, and compute
+  times – plus one worked example; its coverage-driving simulation study
+  moved into `tests/` (`test-export-surface.R`). The pkgdown site now
+  renders maths with KaTeX (resolving a `\boldsymbol` extension-load
+  failure), all vignettes use sentence-case headings and verified
+  references (the PEST citation is corrected to the 2015 *Calibration
+  and Uncertainty Analysis* book), and
+  [`plot_identifiability()`](https://max578.github.io/PESTO/reference/plot_identifiability.md)
+  gains a `top_n` cap with a ranked-lollipop layout so high-dimensional
+  problems stay legible. A `tools/check_publication_quality.R` guard
+  blocks internal-flag words from shipped prose.
 - **Name and title grounded in the lineage.** PESTO expands as
   *Parameter ESTimation Optimised* – the **PEST** approach (PEST =
   *Parameter ESTimation*, Doherty 2015) brought to R and optimised –
   rather than the earlier letter-by-letter backronym. The package title
   is now *Parameter Estimation Optimised, with APSIM Coupling*, and the
   website tagline, citation, and GitHub description match.
-- **The “Optimised” claim is now validated in the docs.** A new section
-  in the *PEST and PEST++ Comparison* vignette (“The ‘Optimised’ in
-  PESTO, quantified”) states precisely what is optimised, each backed by
-  a measured number and its maths: wall-clock speed-up (reference time /
-  PESTO time) at matched accuracy, with the per-solve cost model behind
-  it; surrogate evaluation-economy; the multi-fidelity control-variate
-  variance reduction; and convergence-based early stopping. It also
-  states the limits plainly (not fewer solves than classic PEST; raw
-  intervals under-cover until inflation). The README’s surrogate feature
-  is corrected from a flat “50-90%” to the measured, regime-dependent
-  saving.
+- **A “Performance characteristics” section** in *Benchmarking PESTO
+  against PEST and PEST++* documents the four levers behind the speed
+  and evaluation economy: the in-process cost model (wall-clock speed-up
+  at matched accuracy), surrogate evaluation-economy, the multi-fidelity
+  control-variate variance reduction (Kennedy & O’Hagan 2000; Glasserman
+  2003), and convergence-based early stopping – each with its maths and
+  a measured outcome, and with the limits stated plainly (not fewer
+  solves than classic PEST; raw intervals under-cover until inflation).
+  The README’s surrogate feature is corrected from a flat “50-90%” to
+  the measured, regime-dependent saving.
+- **[`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
+  renamed to
+  [`ensemble_solution_adaptive()`](https://max578.github.io/PESTO/reference/ensemble_solution_adaptive.md).**
+  The former name implied GPU computation; the function performs CPU
+  adaptive-SVD backend selection (randomised SVD versus a dense LAPACK /
+  Accelerate decomposition), and its documentation no longer claims CUDA
+  / cuSOLVER support.
+  [`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
+  is retained as a deprecated alias that warns and forwards, and will be
+  removed in a future release.
 - New exported helper
   [`pestpp_available()`](https://max578.github.io/PESTO/reference/pestpp_available.md)
   – a non-erroring probe for a PEST++ family executable
@@ -34,7 +57,7 @@
   `inst/extdata/pestpp_cache/`: accuracy parity on the linear problem,
   the ensemble methods’ advantage over linearised GLM on the non-linear
   one, a two-to-three-orders-of-magnitude wall-clock advantage, and the
-  honest calibration caveat (raw ensemble intervals under-cover; apply
+  calibration caveat (raw ensemble intervals under-cover; apply
   inflation). A new *Lineage and scope* section grounds PESTO in PEST
   (Doherty 2015) and PEST++ (White et al. 2020) and states the algorithm
   boundary that makes the comparison fair.
@@ -158,9 +181,9 @@ ordinary-differential-equation models.
 - The *In-Process IES via R Callback* vignette gains an
   over-determination guard section: it shows how conditioning on a
   likelihood tighter than the data deserve (passing the standard error
-  of a replicate mean, $`\sigma/\sqrt{m}`$, instead of the
-  field-realistic replicate spread $`\sigma`$) collapses the ensemble
-  and produces a confidently-wrong posterior, and how
+  of a replicate mean, \sigma/\sqrt{m}, instead of the field-realistic
+  replicate spread \sigma) collapses the ensemble and produces a
+  confidently-wrong posterior, and how
   [`ensemble_spread_ess()`](https://max578.github.io/PESTO/reference/ensemble_spread_ess.md)
   and credible-interval coverage diagnose it.
 
@@ -420,8 +443,8 @@ canon recipes on the `max578/PESTO` channel.
   `https://max578.github.io/PESTO`. The `aagi` git remote is retained as
   a frozen read-only mirror; no push to `AAGI-AUS` without explicit
   per-instance maintainer approval.
-- Package-root `CLAUDE.md` declares `aagi_aus: out-of-scope` so the
-  AAGI-AUS canon signal-detection deactivates for this package. The file
+- The package opts out of the `AAGI-AUS` publication canon (it is
+  published through the `max578` channel); project-local configuration
   is excluded from R-package builds via `.Rbuildignore`.
 - `man/PESTO-package.Rd` regenerated to inherit the new URLs from
   `DESCRIPTION` via `devtools::document()`.
@@ -436,8 +459,7 @@ canon recipes on the `max578/PESTO` channel.
 
 #### Sole copyright holder
 
-- `codemeta.json` `copyrightHolder` corrected from
-  `Organization "Supremum Consulting Ltd"` to `Person "Max Moldovan"`
+- `codemeta.json` `copyrightHolder` corrected to `Person "Max Moldovan"`
   with ORCID `0000-0001-9680-8474` and Adelaide University affiliation,
   matching `Authors@R` and `LICENSE.md`.
 
@@ -666,10 +688,9 @@ canon recipes on the `max578/PESTO` channel.
   `pesto_glm`, `pesto_sweep`, `pesto_sensitivity`) and
   `pesto_surrogate_ies` use guarded `\donttest{}` (no `\dontrun{}`).
 - Vignettes acquire a “Regime of applicability” subsection
-  (`surrogate-ies.Rmd`) and an “Honest reading — surrogate savings in
-  this regime” defence paragraph (`pestpp-comparison-and-simulation.Rmd`
-  Section 3) covering the curse-of-dimensionality finding from
-  investigation I3.
+  (`surrogate-ies.Rmd`) and a “surrogate savings in this regime” note
+  (`pestpp-comparison-and-simulation.Rmd`) covering the
+  curse-of-dimensionality finding from investigation I3.
 - Kernel docstring
   [`?ensemble_solution`](https://max578.github.io/PESTO/reference/ensemble_solution.md)
   now states the `sim - obs` convention with a full GLM-derivation
@@ -706,8 +727,7 @@ canon recipes on the `max578/PESTO` channel.
 ### Sole-Authorship Consolidation
 
 - Authorship consolidated to Max Moldovan as sole `aut`, `cre`, and
-  `cph`. Supremum Consulting Ltd. removed from `Authors@R`
-  (administrative consolidation by sole director; no licence change).
+  `cph` (administrative consolidation; no licence change).
 - Licence unchanged: GPL-3 or any later version.
 - `LICENSE` file rewritten with corrected canonical wording and
   copyright attribution.
@@ -739,8 +759,10 @@ canon recipes on the `max578/PESTO` channel.
   — Direct LAPACK SVD leveraging platform-optimised BLAS (Apple
   Accelerate/AMX on macOS, MKL or OpenBLAS on Linux).
 - [`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
-  — GPU-ready ensemble solution with adaptive SVD backend and
-  performance diagnostics.
+  — ensemble solution with adaptive SVD backend selection and
+  performance diagnostics (renamed to
+  [`ensemble_solution_adaptive()`](https://max578.github.io/PESTO/reference/ensemble_solution_adaptive.md)
+  in the development version).
 
 #### Surrogate-Accelerated IES (Novel)
 

@@ -7,14 +7,14 @@ simulator (see the *Calibrating APSIM with PESTO* vignette for the
 coupling mechanics). This case study is the calibration counterpart: a
 complete, reproducible demonstration that PESTO’s iterative ensemble
 smoother (IES) recovers known APSIM parameters and quantifies their
-uncertainty honestly.
+uncertainty.
 
 It is deliberately a **synthetic-truth recovery experiment** (an OSSE,
 or “twin experiment”): we fix known-true APSIM parameters, simulate
 per-season wheat yields, add measurement noise, and then try to recover
 the truth from the noisy yields. Because the truth is known *by
 construction*, correctness is verifiable without any field data – the
-honest way to show a calibration method works before confronting real
+cleanest way to show a calibration method works before confronting real
 observations. The forward model is the **bundled APSIM Wheat example**
 (a multi-decade run at a single site), driven in-process through
 [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md).
@@ -185,7 +185,7 @@ value marked: the two strong parameters collapse tightly onto the truth,
 while the weak parameter's posterior stays
 broad.](apsim-case-study_files/figure-html/recovery-plot-1.png)
 
-#### Identifiability – honest about what the data can constrain
+#### Identifiability – what the data can constrain
 
 A parameter is well-identified when conditioning on the data collapses
 its spread far below the prior. The ratio of posterior to prior standard
@@ -221,7 +221,7 @@ the data can and cannot teach you.
 ### Out-of-sample validation – and the under-dispersion caveat
 
 Using the posterior ensemble to predict the **held-out** seasons tests
-genuine out-of-sample skill. The honest finding is that the *raw*
+genuine out-of-sample skill. The key finding is that the *raw*
 ensemble’s predictive band is too narrow:
 
 ``` r
@@ -406,7 +406,7 @@ Provenance: APSIM 2026.5.8046.0, `apsimx` 2.8.235, PESTO 0.8.0.9000,
 seed 20260628, generated 2026-06-28. Part 2 uses the `obsWheat` data and
 `Wheat-opt-ex.apsimx` model shipped with `apsimx`.
 
-### Honest reading
+### What this study shows
 
 - **Strong parameters recovered.** Soil runoff and fertiliser nitrogen
   are recovered with the truth inside the 90% credible interval.

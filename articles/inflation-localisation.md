@@ -29,12 +29,11 @@ exactly.
 
 ## A linear-Gaussian problem with a known posterior
 
-For a linear forward model $`d = G\theta + \varepsilon`$ with a Gaussian
-prior $`\theta \sim N(0, C_0)`$ and observation error
-$`\varepsilon \sim N(0, R)`$, the posterior covariance is
-$`C_{\mathrm{post}} = (C_0^{-1} + G^{\top} R^{-1} G)^{-1}`$. We can
-therefore compare the ensemble’s posterior spread directly against the
-truth.
+For a linear forward model d = G\theta + \varepsilon with a Gaussian
+prior \theta \sim N(0, C_0) and observation error \varepsilon \sim N(0,
+R), the posterior covariance is C\_{\mathrm{post}} = (C_0^{-1} +
+G^{\top} R^{-1} G)^{-1}. We can therefore compare the ensemble’s
+posterior spread directly against the truth.
 
 ``` r
 
@@ -234,7 +233,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.8.0.9000
+#> [1] PESTO_0.9.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.2.0       

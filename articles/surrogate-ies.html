@@ -5,12 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Surrogate-Accelerated Iterative Ensemble Smoother • PESTO</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<title>Surrogate-accelerated iterative ensemble smoother • PESTO</title>
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Surrogate-Accelerated Iterative Ensemble Smoother">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
+<meta property="og:title" content="Surrogate-accelerated iterative ensemble smoother">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -20,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,7 +57,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Surrogate-Accelerated Iterative Ensemble Smoother</h1>
+      <h1>Surrogate-accelerated iterative ensemble smoother</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/max578/PESTO/blob/main/vignettes/surrogate-ies.Rmd" class="external-link"><code>vignettes/surrogate-ies.Rmd</code></a></small>
@@ -67,56 +69,47 @@
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>The surrogate-accelerated IES is PESTO’s approach to reducing the
-number of expensive forward model evaluations during iterative parameter
-estimation. It embeds an online Gaussian Process (GP) surrogate within
-the IES update loop, using uncertainty-driven switching to decide which
-ensemble members require full model evaluation and which can use the
-cheaper surrogate prediction.</p>
-<p>This vignette demonstrates the full workflow on a nonlinear test
-problem.</p>
+<p>The surrogate-accelerated IES reduces the number of expensive
+forward-model evaluations during iterative parameter estimation. It
+embeds an online Gaussian process (GP) surrogate in the IES update loop
+and uses uncertainty-driven switching to decide which ensemble members
+need a full model evaluation and which can use the cheaper surrogate
+prediction. This vignette demonstrates the workflow, states where it
+pays off, and shows the savings on a real run.</p>
 <div class="section level3">
 <h3 id="regime-of-applicability">Regime of applicability<a class="anchor" aria-label="anchor" href="#regime-of-applicability"></a>
 </h3>
-<p>The Gaussian-process surrogate inside PESTO is a tool with a clearly
-bounded operating envelope, and it is worth stating that envelope before
-the demo. As an empirical soft floor we recommend
-<code>n_train &gt;= 5 * n_params</code> – below that ratio the GP
-posterior variance rarely drops far enough for the uncertainty-driven
-switching rule to fire, and the surrogate honestly defers to the full
-model on most realisations. The second axis is the smoothness of the
-forward model: smooth, near-linear responses are well-approximated by an
-RBF-kernel GP and yield large savings, whereas rough or
-near-discontinuous responses (sharp wetting fronts, threshold
+<p>The GP surrogate has a bounded operating envelope, worth stating
+before the demo. As a soft floor, use
+<code>n_train &gt;= 5 * n_params</code>: below that ratio the GP
+posterior variance rarely drops far enough for the switching rule to
+fire, and the surrogate defers to the full model on most realisations.
+The second axis is smoothness: smooth, near-linear responses are well
+approximated by an RBF-kernel GP and yield large savings, whereas rough
+or near-discontinuous responses (sharp wetting fronts, threshold
 activations, regime switches) defeat the kernel and savings collapse.
-The third axis is ensemble size – larger ensembles improve the GP fit
-roughly as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝒪</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>n</mi><mrow><mi>−</mi><mn>1</mn></mrow></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mathcal{O}(n^{-1})</annotation></semantics></math>
-in posterior variance, and ensembles of fewer than about twenty
-realisations rarely produce a usable surrogate at any dimensionality. If
-your problem falls outside this envelope (high
-<code>n_params / n_train</code> ratio, rough forward model, or tiny
-ensemble), the right thing to do is run pure IES via
-<code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code> –
-<code><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update()</a></code> will report near-zero savings
+The third is ensemble size: larger ensembles improve the GP fit roughly
+as <span class="math inline">\mathcal{O}(n^{-1})</span> in posterior
+variance, and fewer than about twenty realisations rarely produce a
+usable surrogate. Outside this envelope, run pure IES via
+<code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code>:
+<code><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update()</a></code> reports near-zero savings
 rather than degrading the posterior, but you pay the GP training cost
-for no return.</p>
+for no return. The <code><a href="../reference/check_surrogate_regime.html">check_surrogate_regime()</a></code> helper flags an
+unfavourable regime before you commit.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="the-test-problem">The Test Problem<a class="anchor" aria-label="anchor" href="#the-test-problem"></a>
+<h2 id="the-test-problem">The test problem<a class="anchor" aria-label="anchor" href="#the-test-problem"></a>
 </h2>
-<p>We define a nonlinear forward model inspired by groundwater flow,
-where the response includes both linear sensitivity and a nonlinear
-interaction term:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>y</mi><mi>j</mi></msub><mo>=</mo><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>G</mi><mrow><mi>j</mi><mi>k</mi></mrow></msub><msub><mi>θ</mi><mi>k</mi></msub><mo>+</mo><mi>α</mi><mrow><mi mathvariant="normal">sin</mi><mo>⁡</mo></mrow><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>G</mi><mrow><mi>j</mi><mi>k</mi></mrow></msub><msub><mi>θ</mi><mi>k</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mn>0.1</mn><mrow><mo stretchy="true" form="prefix">|</mo><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>G</mi><mrow><mi>j</mi><mi>k</mi></mrow></msub><msub><mi>θ</mi><mi>k</mi></msub><mo stretchy="true" form="postfix">|</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>ε</mi><mi>j</mi></msub></mrow><annotation encoding="application/x-tex">y_j = \sum_k G_{jk}\theta_k + \alpha \sin\!\left(\sum_k G_{jk}\theta_k\right) \exp\!\left(-0.1\left|\sum_k G_{jk}\theta_k\right|\right) + \varepsilon_j</annotation></semantics></math></p>
-<p>The parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-controls nonlinearity:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha = 0</annotation></semantics></math>
-is linear,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\alpha = 1</annotation></semantics></math>
-is strongly nonlinear.</p>
+<p>A nonlinear forward model inspired by groundwater flow, with a linear
+sensitivity and a nonlinear interaction term:</p>
+<p><span class="math display">y_j = \eta_j + \alpha \sin(\eta_j)\,
+e^{-0.1\,\lvert \eta_j \rvert} + \varepsilon_j,
+   \qquad \eta_j = \sum_k G_{jk}\theta_k .</span></p>
+<p>Here <span class="math inline">\eta_j</span> is the linear predictor
+and <span class="math inline">\alpha</span> controls the nonlinearity:
+<span class="math inline">\alpha = 0</span> is linear, <span class="math inline">\alpha = 1</span> is strongly nonlinear.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/max578/PESTO" class="external-link">PESTO</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
@@ -143,12 +136,12 @@ is strongly nonlinear.</p>
 <span><span class="va">y_obs</span> <span class="op">&lt;-</span> <span class="fu">forward_model</span><span class="op">(</span><span class="va">theta_true</span>, <span class="va">G</span>, alpha <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_obs</span>, sd <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="step-1-generate-prior-ensemble">Step 1: Generate Prior Ensemble<a class="anchor" aria-label="anchor" href="#step-1-generate-prior-ensemble"></a>
+<h2 id="step-1-generate-the-prior-ensemble">Step 1: generate the prior ensemble<a class="anchor" aria-label="anchor" href="#step-1-generate-the-prior-ensemble"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">par_ens</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_real</span> <span class="op">*</span> <span class="va">n_par</span>, sd <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span>, <span class="va">n_real</span>, <span class="va">n_par</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Run forward model for each realisation</span></span>
+<span><span class="co"># Run the forward model for each realisation</span></span>
 <span><span class="va">obs_ens</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">par_ens</span>, <span class="fl">1</span>, <span class="kw">function</span><span class="op">(</span><span class="va">p</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu">forward_model</span><span class="op">(</span><span class="va">p</span>, <span class="va">G</span>, alpha <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_obs</span>, sd <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
@@ -159,7 +152,7 @@ is strongly nonlinear.</p>
 <span><span class="co">#&gt; Observation ensemble: 50 realisations x 50 observations</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="step-2-train-the-gp-surrogate">Step 2: Train the GP Surrogate<a class="anchor" aria-label="anchor" href="#step-2-train-the-gp-surrogate"></a>
+<h2 id="step-2-train-the-gp-surrogate">Step 2: train the GP surrogate<a class="anchor" aria-label="anchor" href="#step-2-train-the-gp-surrogate"></a>
 </h2>
 <p>PESTO trains a GP with an RBF kernel directly from the ensemble:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -179,7 +172,7 @@ is strongly nonlinear.</p>
 <span><span class="co">#&gt; Log marginal likelihood: -3043.3</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="step-3-evaluate-surrogate-predictions">Step 3: Evaluate Surrogate Predictions<a class="anchor" aria-label="anchor" href="#step-3-evaluate-surrogate-predictions"></a>
+<h2 id="step-3-evaluate-surrogate-predictions">Step 3: evaluate surrogate predictions<a class="anchor" aria-label="anchor" href="#step-3-evaluate-surrogate-predictions"></a>
 </h2>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">predictions</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict_gp_surrogate.html">predict_gp_surrogate</a></span><span class="op">(</span><span class="va">gp</span>, <span class="va">par_ens</span><span class="op">)</span></span>
@@ -200,16 +193,17 @@ interpolating within its training set – this is by design, not an
 artefact.</p>
 </div>
 <div class="section level2">
-<h2 id="step-4-surrogate-assisted-ies-update">Step 4: Surrogate-Assisted IES Update<a class="anchor" aria-label="anchor" href="#step-4-surrogate-assisted-ies-update"></a>
+<h2 id="step-4-surrogate-assisted-ies-update">Step 4: surrogate-assisted IES update<a class="anchor" aria-label="anchor" href="#step-4-surrogate-assisted-ies-update"></a>
 </h2>
-<p>The <code><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update()</a></code> function performs the
-full algorithm:</p>
+<p><code><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update()</a></code> performs the full
+algorithm:</p>
 <ol style="list-style-type: decimal">
-<li>Train GP from current ensemble</li>
-<li>Predict model outputs for all realisations</li>
-<li>Classify by uncertainty: high → full model, low → surrogate</li>
-<li>Apply control-variate bias correction</li>
-<li>Compute IES update on blended ensemble</li>
+<li>Train a GP from the current ensemble.</li>
+<li>Predict model outputs for all realisations.</li>
+<li>Classify by uncertainty: high -&gt; full model, low -&gt;
+surrogate.</li>
+<li>Apply the control-variate bias correction.</li>
+<li>Compute the IES update on the blended ensemble.</li>
 </ol>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">weights</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">0.1</span>, <span class="va">n_obs</span><span class="op">)</span>    <span class="co"># 1 / obs_noise</span></span>
@@ -237,9 +231,14 @@ full algorithm:</p>
 <span><span class="co">#&gt; Mean GP uncertainty: 0.009998</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"GP length scale:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">gp_length_scale</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; GP length scale: 9.2136</span></span></code></pre></div>
+<p>This twenty-parameter problem with a fifty-member ensemble sits
+<em>below</em> the <code>n_train &gt;= 5 * n_params</code> floor, so the
+GP variance rarely clears the switching threshold and the savings here
+are modest by design. The next section places the same machinery in a
+favourable regime, where it pays off.</p>
 </div>
 <div class="section level2">
-<h2 id="comparison-standard-vs-surrogate">Comparison: Standard vs Surrogate<a class="anchor" aria-label="anchor" href="#comparison-standard-vs-surrogate"></a>
+<h2 id="comparison-standard-vs-surrogate">Comparison: standard vs surrogate<a class="anchor" aria-label="anchor" href="#comparison-standard-vs-surrogate"></a>
 </h2>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Standard IES update (for comparison)</span></span>
@@ -269,10 +268,48 @@ full algorithm:</p>
 <span><span class="co">#&gt; Upgrade correlation: 1</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="effect-of-nonlinearity">Effect of Nonlinearity<a class="anchor" aria-label="anchor" href="#effect-of-nonlinearity"></a>
+<h2 id="when-the-surrogate-pays-off">When the surrogate pays off<a class="anchor" aria-label="anchor" href="#when-the-surrogate-pays-off"></a>
+</h2>
+<p>The saving is the fraction of realisations the surrogate handles,
+<span class="math inline">1 - n_{\text{model}}/n_{\text{total}}</span>.
+Because the GP is trained on the current ensemble and predicts at those
+same points, in a smooth regime it is confident enough to handle
+essentially the whole ensemble at the default threshold – so the saving
+is high <em>by construction</em>. What decides whether the surrogate is
+worth using is therefore not how many realisations it handles but
+whether its answer stays accurate, which the <em>Effect of
+nonlinearity</em> section measures next.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">7</span><span class="op">)</span></span>
+<span><span class="va">np_f</span>  <span class="op">&lt;-</span> <span class="fl">4L</span></span>
+<span><span class="va">no_f</span>  <span class="op">&lt;-</span> <span class="fl">12L</span></span>
+<span><span class="va">nr_f</span>  <span class="op">&lt;-</span> <span class="fl">120L</span></span>
+<span><span class="va">G_f</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">no_f</span> <span class="op">*</span> <span class="va">np_f</span>, sd <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">np_f</span><span class="op">)</span><span class="op">)</span>, <span class="va">no_f</span>, <span class="va">np_f</span><span class="op">)</span></span>
+<span><span class="va">fwd_f</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">theta</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">G_f</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">theta</span><span class="op">)</span>   <span class="co"># smooth, linear response</span></span>
+<span><span class="va">th_f</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">np_f</span><span class="op">)</span></span>
+<span><span class="va">y_f</span>   <span class="op">&lt;-</span> <span class="fu">fwd_f</span><span class="op">(</span><span class="va">th_f</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">no_f</span>, sd <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span>
+<span><span class="va">pe_f</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nr_f</span> <span class="op">*</span> <span class="va">np_f</span>, sd <span class="op">=</span> <span class="fl">1.0</span><span class="op">)</span>, <span class="va">nr_f</span>, <span class="va">np_f</span><span class="op">)</span></span>
+<span><span class="va">oe_f</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">pe_f</span>, <span class="fl">1L</span>, <span class="kw">function</span><span class="op">(</span><span class="va">p</span><span class="op">)</span> <span class="fu">fwd_f</span><span class="op">(</span><span class="va">p</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">no_f</span>, sd <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">r_f</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update</a></span><span class="op">(</span><span class="va">pe_f</span>, <span class="va">oe_f</span>, <span class="va">y_f</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">0.05</span>, <span class="va">no_f</span><span class="op">)</span>,</span>
+<span>                                    <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">np_f</span><span class="op">)</span>, uncertainty_threshold <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span>
+<span><span class="va">post_f</span> <span class="op">&lt;-</span> <span class="va">pe_f</span> <span class="op">+</span> <span class="va">r_f</span><span class="op">$</span><span class="va">upgrade</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span></span>
+<span>  <span class="st">"Smooth 4-parameter problem: %.0f%% of evaluations handled by the surrogate; posterior RMSE %.3f\n"</span>,</span>
+<span>  <span class="va">r_f</span><span class="op">$</span><span class="va">savings_pct</span>, <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">post_f</span><span class="op">)</span> <span class="op">-</span> <span class="va">th_f</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Smooth 4-parameter problem: 100% of evaluations handled by the surrogate; posterior RMSE 0.014</span></span></code></pre></div>
+<p>The corollary matters as much: in the curse-of-dimensionality regime
+(parameters outnumbering the ensemble) the surrogate still predicts the
+whole ensemble, but its answer degrades – high savings with a poor
+posterior. That is why <code><a href="../reference/check_surrogate_regime.html">check_surrogate_regime()</a></code> warns
+before you commit, and why the accuracy check below is the one that
+counts.</p>
+</div>
+<div class="section level2">
+<h2 id="effect-of-nonlinearity">Effect of nonlinearity<a class="anchor" aria-label="anchor" href="#effect-of-nonlinearity"></a>
 </h2>
 <p>How does surrogate accuracy vary with model nonlinearity?</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">results_dt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/rbindlist.html" class="external-link">rbindlist</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, by <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">alpha</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span>  <span class="va">y_a</span> <span class="op">&lt;-</span> <span class="fu">forward_model</span><span class="op">(</span><span class="va">theta_true</span>, <span class="va">G</span>, <span class="va">alpha</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_obs</span>, sd <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span>
@@ -304,7 +341,7 @@ full algorithm:</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">ratio</span><span class="op">)</span>, colour <span class="op">=</span> <span class="st">"#009E73"</span>, size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_hline</a></span><span class="op">(</span>yintercept <span class="op">=</span> <span class="fl">1.0</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span>, colour <span class="op">=</span> <span class="st">"grey50"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_continuous</a></span><span class="op">(</span>limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.95</span>, <span class="fl">1.05</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Surrogate Accuracy Across Nonlinearity Levels"</span>,</span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"Surrogate accuracy across nonlinearity levels"</span>,</span>
 <span>       x <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/expression.html" class="external-link">expression</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Nonlinearity strength "</span>, <span class="va">alpha</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>       y <span class="op">=</span> <span class="st">"RMSE ratio (surrogate / standard)"</span>,</span>
 <span>       caption <span class="op">=</span> <span class="st">"Ratio = 1.0 means identical posterior quality"</span><span class="op">)</span> <span class="op">+</span></span>
@@ -317,18 +354,12 @@ Surrogate RMSE ratio across nonlinearity levels.
 </div>
 </div>
 <div class="section level2">
-<h2 id="random-fourier-features-for-large-ensembles">Random Fourier Features for Large Ensembles<a class="anchor" aria-label="anchor" href="#random-fourier-features-for-large-ensembles"></a>
+<h2 id="random-fourier-features-for-large-ensembles">Random Fourier features for large ensembles<a class="anchor" aria-label="anchor" href="#random-fourier-features-for-large-ensembles"></a>
 </h2>
-<p>The exact GP has
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false" form="prefix">(</mo><msup><mi>n</mi><mn>3</mn></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">O(n^3)</annotation></semantics></math>
-training cost. For large ensembles
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>&gt;</mo><mn>300</mn></mrow><annotation encoding="application/x-tex">n &gt; 300</annotation></semantics></math>),
-the Random Fourier Feature (RFF) approximation scales as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>O</mi><mo stretchy="false" form="prefix">(</mo><mi>n</mi><msup><mi>D</mi><mn>2</mn></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">O(nD^2)</annotation></semantics></math>
-where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>D</mi><annotation encoding="application/x-tex">D</annotation></semantics></math>
-is the number of random features:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p>The exact GP has <span class="math inline">O(n^3)</span> training
+cost. For large ensembles (<span class="math inline">n &gt; 300</span>),
+the random Fourier feature (RFF) approximation scales as <span class="math inline">O(nD^2)</span>, where <span class="math inline">D</span> is the number of random features:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Train RFF surrogate (D = 200 features)</span></span>
 <span><span class="va">rff</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/train_rff_surrogate.html">train_rff_surrogate</a></span><span class="op">(</span><span class="va">par_ens</span>, <span class="va">obs_ens</span>, n_features <span class="op">=</span> <span class="fl">200L</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Training MSE:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">rff</span><span class="op">$</span><span class="va">train_mse</span>, <span class="fl">6</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
@@ -348,9 +379,9 @@ is the number of random features:</p>
 <span><span class="co">#&gt; RFF / GP error ratio: 4.5 x</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="scaling-comparison">Scaling Comparison<a class="anchor" aria-label="anchor" href="#scaling-comparison"></a>
+<h2 id="scaling-comparison">Scaling comparison<a class="anchor" aria-label="anchor" href="#scaling-comparison"></a>
 </h2>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">scaling_dt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/rbindlist.html" class="external-link">rbindlist</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">50</span>, <span class="fl">100</span>, <span class="fl">200</span>, <span class="fl">500</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">nr</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nr</span> <span class="op">*</span> <span class="fl">20</span><span class="op">)</span>, <span class="va">nr</span>, <span class="fl">20</span><span class="op">)</span></span>
 <span>  <span class="va">Y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nr</span> <span class="op">*</span> <span class="fl">50</span><span class="op">)</span>, <span class="va">nr</span>, <span class="fl">50</span><span class="op">)</span></span>
@@ -368,55 +399,52 @@ is the number of random features:</p>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>linewidth <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">2.5</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_log10</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_manual.html" class="external-link">scale_colour_manual</a></span><span class="op">(</span>values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Exact GP"</span> <span class="op">=</span> <span class="st">"#D55E00"</span>, <span class="st">"RFF (D=200)"</span> <span class="op">=</span> <span class="st">"#0072B2"</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"GP Surrogate Training Time"</span>,</span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>title <span class="op">=</span> <span class="st">"GP surrogate training time"</span>,</span>
 <span>       x <span class="op">=</span> <span class="st">"Ensemble size"</span>, y <span class="op">=</span> <span class="st">"Training time (ms, log scale)"</span>,</span>
 <span>       colour <span class="op">=</span> <span class="st">"Method"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">14</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/theme.html" class="external-link">theme</a></span><span class="op">(</span>plot.title <span class="op">=</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">element_text</a></span><span class="op">(</span>face <span class="op">=</span> <span class="st">"bold"</span><span class="op">)</span>, legend.position <span class="op">=</span> <span class="st">"bottom"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="surrogate-ies_files/figure-html/scaling-1.png" class="r-plt" alt="GP vs RFF training time scaling." width="672"><p class="caption">
-GP vs RFF training time scaling.
+<img src="surrogate-ies_files/figure-html/scaling-1.png" class="r-plt" alt="GP vs RFF training-time scaling." width="672"><p class="caption">
+GP vs RFF training-time scaling.
 </p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="when-does-the-surrogate-help">When Does the Surrogate Help?<a class="anchor" aria-label="anchor" href="#when-does-the-surrogate-help"></a>
+<h2 id="when-does-the-surrogate-help">When does the surrogate help?<a class="anchor" aria-label="anchor" href="#when-does-the-surrogate-help"></a>
 </h2>
 <p>The surrogate is most effective when:</p>
 <ul>
-<li>The ensemble occupies a <strong>compact region</strong> of parameter
-space (GP interpolation is accurate)</li>
-<li>The forward model varies <strong>smoothly</strong> over the
-parameter range</li>
-<li>The ensemble is <strong>large enough</strong> to train the GP
-(practically
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>≥</mo><mn>20</mn></mrow><annotation encoding="application/x-tex">n \geq 20</annotation></semantics></math>)</li>
+<li>the ensemble occupies a <strong>compact region</strong> of parameter
+space (GP interpolation is accurate);</li>
+<li>the forward model varies <strong>smoothly</strong> over the
+parameter range;</li>
+<li>the ensemble is <strong>large enough</strong> to train the GP
+(practically <span class="math inline">n \geq 20</span>).</li>
 </ul>
 <p>It degrades gracefully when:</p>
 <ul>
-<li>The parameter space is very high-dimensional
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>p</mi></msub><mo>≫</mo><mn>100</mn></mrow><annotation encoding="application/x-tex">n_p \gg 100</annotation></semantics></math>)</li>
-<li>The model has <strong>sharp discontinuities</strong> or
-bifurcations</li>
-<li>The ensemble spans a very <strong>wide region</strong>
-(uninformative prior)</li>
+<li>the parameter space is very high-dimensional (<span class="math inline">n_p \gg 100</span>);</li>
+<li>the model has <strong>sharp discontinuities</strong> or
+bifurcations;</li>
+<li>the ensemble spans a very <strong>wide region</strong>
+(uninformative prior).</li>
 </ul>
-<p>In all cases, the uncertainty threshold
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>
-ensures the algorithm falls back to full model evaluations when the
-surrogate is unreliable.</p>
+<p>In all cases, the uncertainty threshold <span class="math inline">\tau</span> makes the algorithm fall back to full
+model evaluations when the surrogate is unreliable.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <ul>
-<li>Rasmussen, C.E. &amp; Williams, C.K.I. (2006). <em>Gaussian
+<li>Rasmussen, C. E. &amp; Williams, C. K. I. (2006). <em>Gaussian
 Processes for Machine Learning</em>. MIT Press.</li>
 <li>Rahimi, A. &amp; Recht, B. (2007). Random features for large-scale
-kernel machines. <em>NeurIPS</em>.</li>
-<li>Chen, Y. &amp; Oliver, D.S. (2013). Levenberg-Marquardt forms of the
-iterative ensemble smoother. <em>Computational Geosciences</em>,
-17(4).</li>
+kernel machines. <em>Advances in Neural Information Processing
+Systems</em> 20.</li>
+<li>Chen, Y. &amp; Oliver, D. S. (2013). Levenberg-Marquardt forms of
+the iterative ensemble smoother. <em>Computational Geosciences</em>,
+17(4), 689–703.</li>
 <li>Glasserman, P. (2003). <em>Monte Carlo Methods in Financial
 Engineering</em>. Springer.</li>
 </ul>

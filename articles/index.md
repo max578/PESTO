@@ -7,10 +7,10 @@
 
 ### Algorithms and comparison
 
-- [PEST and PEST++ Comparison and Simulation
-  Study](https://max578.github.io/PESTO/articles/pestpp-comparison-and-simulation.md):
-- [Surrogate-Accelerated Iterative Ensemble
-  Smoother](https://max578.github.io/PESTO/articles/surrogate-ies.md):
+- [Benchmarking PESTO against PEST and
+  PEST++](https://max578.github.io/PESTO/articles/pestpp-comparison-and-simulation.md):
+- [Surrogate-accelerated iterative ensemble
+  smoother](https://max578.github.io/PESTO/articles/surrogate-ies.md):
 - [Countering Ensemble Collapse: Inflation and
   Localisation](https://max578.github.io/PESTO/articles/inflation-localisation.md):
 

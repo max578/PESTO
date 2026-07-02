@@ -6,11 +6,13 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Parameter Estimation Optimised, with APSIM Coupling • PESTO</title>
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="katex-auto.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Parameter Estimation Optimised, with APSIM Coupling">
+<script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><link href="extra.css" rel="stylesheet">
+<meta property="og:title" content="Parameter Estimation Optimised, with APSIM Coupling">
 <meta name="description" content="High-performance parameter estimation, uncertainty quantification, and inverse modelling toolkit built on modernised PEST++ algorithms. Provides native R interfaces to iterative ensemble smoothers (IES), Gauss-Levenberg-Marquardt (GLM) solvers, global sensitivity analysis, and multi-objective optimisation under uncertainty. Includes surrogate-accelerated IES via Gaussian Process and Random Fourier Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen), and convergence-aware adaptive ensemble sizing. Designed for large-scale environmental, hydrological, and agricultural models with support for highly-parameterised problems (&gt;100,000 parameters). The toolkit is model-independent -- any R function can serve as the forward model -- with first-class in-process coupling to the APSIM agricultural-systems model via the apsimx package as its flagship simulator partner.">
 <meta property="og:description" content="High-performance parameter estimation, uncertainty quantification, and inverse modelling toolkit built on modernised PEST++ algorithms. Provides native R interfaces to iterative ensemble smoothers (IES), Gauss-Levenberg-Marquardt (GLM) solvers, global sensitivity analysis, and multi-objective optimisation under uncertainty. Includes surrogate-accelerated IES via Gaussian Process and Random Fourier Features, adaptive SVD backends (randomised SVD, LAPACK, Eigen), and convergence-aware adaptive ensemble sizing. Designed for large-scale environmental, hydrological, and agricultural models with support for highly-parameterised problems (&gt;100,000 parameters). The toolkit is model-independent -- any R function can serve as the forward model -- with first-class in-process coupling to the APSIM agricultural-systems model via the apsimx package as its flagship simulator partner.">
 </head>
@@ -22,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +54,7 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="pesto-">PESTO <img src="reference/figures/logo.png" align="right" height="139"><a class="anchor" aria-label="anchor" href="#pesto-"></a>
+<div class="page-header"><h1 id="pesto">PESTO<a class="anchor" aria-label="anchor" href="#pesto"></a>
 </h1></div>
 <!-- badges: start -->
 
@@ -112,9 +114,9 @@
 </table>
 </div>
 <div class="section level2">
-<h2 id="what-optimised-means-and-how-it-is-checked">What “optimised” means (and how it is checked)<a class="anchor" aria-label="anchor" href="#what-optimised-means-and-how-it-is-checked"></a>
+<h2 id="performance">Performance<a class="anchor" aria-label="anchor" href="#performance"></a>
 </h2>
-<p>The name is a claim, so each part is backed by a measured number, not an assertion (the full definitions and maths are in the <em>PEST and PEST++ Comparison</em> vignette):</p>
+<p>The <em>optimised</em> in the name is concrete – three measured properties, with the full definitions and maths in the <em>Benchmarking PESTO against PEST and PEST++</em> vignette:</p>
 <ul>
 <li>
 <strong>Faster, at matched accuracy.</strong> Against PEST 18.25 and <code>pestpp-ies</code> 5.2.16 on identical problems, PESTO is roughly <strong>40–860x faster in wall-clock</strong> (median per inversion) while matching their posterior accuracy – the cause is in-process evaluation and a C++ update kernel avoiding per-solve file exchange, not fewer model solves.</li>
@@ -123,7 +125,7 @@
 <li>
 <strong>Fewer expensive solves when it can.</strong> The GP surrogate skips the model on confident realisations; the saving is measured and regime-dependent, with a graceful fall-back to full evaluation (the <em>Surrogate-accelerated IES</em> vignette).</li>
 </ul>
-<p>These are validated, not promised; where PESTO does <em>not</em> win (raw interval calibration; total solve count) is stated just as plainly in the vignettes.</p>
+<p>Where PESTO does <em>not</em> win – raw-interval calibration, total solve count – is stated just as plainly in the vignettes.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
