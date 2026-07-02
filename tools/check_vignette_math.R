@@ -2,8 +2,8 @@
 # Durable gate: vignette mathematics must be configured to render at body-text
 # size on BOTH surfaces, so the oversized / unrendered-maths regression cannot
 # silently recur. Static (no rendering, no network): it checks that the known-good
-# configuration is present. The full recipe and the manual render-verify step are
-# in /rpkg recipe 54 (vignette math rendering).
+# configuration is present; run the manual render-verify step separately to
+# confirm the rendered output on each surface.
 #
 #   Surface 1 -- pkgdown site:   KaTeX, sized down in pkgdown/extra.css.
 #   Surface 2 -- standalone vignette (browseVignettes): MathJax v3 from jsdelivr,
@@ -62,7 +62,7 @@ if (file.exists("_pkgdown.yml")) {
 if (length(fail)) {
   cat("VIGNETTE-MATH GATE FAILED:\n")
   cat(paste0("  - ", unlist(fail)), sep = "\n")
-  cat("\nFix per /rpkg recipe 54 (vignette math rendering).\n")
+  cat("\nConfigure both surfaces for body-sized maths (see the notes above).\n")
   quit(status = 1L)
 }
 cat(sprintf(

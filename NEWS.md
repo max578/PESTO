@@ -1,4 +1,4 @@
-# PESTO (development version)
+# PESTO 0.9.0
 
 * **Vignettes brought to publication quality.** *Benchmarking PESTO against PEST
   and PEST++* (formerly the "comparison and simulation study") is reduced from
@@ -367,9 +367,9 @@ canon recipes on the `max578/PESTO` channel.
   `https://max578.github.io/PESTO`. The `aagi` git remote is retained
   as a frozen read-only mirror; no push to `AAGI-AUS` without explicit
   per-instance maintainer approval.
-* Package-root `CLAUDE.md` declares `aagi_aus: out-of-scope` so the
-  AAGI-AUS canon signal-detection deactivates for this package. The
-  file is excluded from R-package builds via `.Rbuildignore`.
+* The package opts out of the `AAGI-AUS` publication canon (it is
+  published through the `max578` channel); project-local configuration
+  is excluded from R-package builds via `.Rbuildignore`.
 * `man/PESTO-package.Rd` regenerated to inherit the new URLs from
   `DESCRIPTION` via `devtools::document()`.
 
@@ -383,11 +383,9 @@ canon recipes on the `max578/PESTO` channel.
 
 ### Sole copyright holder
 
-* `codemeta.json` `copyrightHolder` corrected from
-  `Organization "Supremum Consulting Ltd"` to
-  `Person "Max Moldovan"` with ORCID `0000-0001-9680-8474` and
-  Adelaide University affiliation, matching `Authors@R` and
-  `LICENSE.md`.
+* `codemeta.json` `copyrightHolder` corrected to `Person "Max Moldovan"`
+  with ORCID `0000-0001-9680-8474` and Adelaide University affiliation,
+  matching `Authors@R` and `LICENSE.md`.
 
 ### AAGI canon recipes added
 
@@ -625,9 +623,8 @@ canon recipes on the `max578/PESTO` channel.
 
 ## Sole-Authorship Consolidation
 
-* Authorship consolidated to Max Moldovan as sole `aut`, `cre`, and `cph`.
-  Supremum Consulting Ltd. removed from `Authors@R` (administrative
-  consolidation by sole director; no licence change).
+* Authorship consolidated to Max Moldovan as sole `aut`, `cre`, and `cph`
+  (administrative consolidation; no licence change).
 * Licence unchanged: GPL-3 or any later version.
 * `LICENSE` file rewritten with corrected canonical wording and copyright
   attribution.

@@ -3,10 +3,9 @@
 #
 # Fails (non-zero exit) if internal-flag / hedge / self-grading words leak into
 # any reader-facing artefact: vignettes, NEWS, README, and man pages. This is the
-# reference implementation of the charter rule "no internal-flag words in shipped
-# artefacts" (draft ~/CLAUDE_for_review_v_no_internal_flags.md), intended to be
-# wired into /rpkg recipe 52. R/ source is deliberately excluded so legitimate
-# srr `@srrstatsTODO` tags are not flagged.
+# reference implementation of the "no internal-flag words in shipped artefacts"
+# rule. R/ source is deliberately excluded so legitimate srr `@srrstatsTODO`
+# tags are not flagged.
 #
 # Run from the package root:  Rscript tools/check_publication_quality.R
 
