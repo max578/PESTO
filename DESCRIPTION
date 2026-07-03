@@ -1,7 +1,7 @@
 Package: PESTO
 Type: Package
 Title: Parameter Estimation Optimised, with APSIM Coupling
-Version: 0.9.0
+Version: 0.9.0.9000
 Authors@R: c(
     person("Max", "Moldovan",
            role = c("aut", "cre", "cph"),
