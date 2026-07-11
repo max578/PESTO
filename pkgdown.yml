@@ -1,5 +1,5 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   apsim-callback: apsim-callback.html
@@ -9,7 +9,7 @@ articles:
   inflation-localisation: inflation-localisation.html
   pestpp-comparison-and-simulation: pestpp-comparison-and-simulation.html
   surrogate-ies: surrogate-ies.html
-last_built: 2026-07-02T23:57Z
+last_built: 2026-07-11T13:01Z
 urls:
   reference: https://max578.github.io/PESTO/reference
   article: https://max578.github.io/PESTO/articles

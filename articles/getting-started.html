@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -285,8 +285,8 @@ the computational heart of the package:</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">bench</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; Unit: microseconds</span></span>
-<span><span class="co">#&gt;       expr     min      lq     mean   median       uq     max neval</span></span>
-<span><span class="co">#&gt;  PESTO_cpp 430.803 434.395 444.9889 440.4665 450.6495 576.855   100</span></span></code></pre></div>
+<span><span class="co">#&gt;       expr    min      lq     mean   median      uq     max neval</span></span>
+<span><span class="co">#&gt;  PESTO_cpp 464.51 466.874 476.0868 473.1085 478.076 623.827   100</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="computing-phi-the-objective-function">Computing phi (the objective function)<a class="anchor" aria-label="anchor" href="#computing-phi-the-objective-function"></a>
@@ -366,7 +366,7 @@ speedups:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Method:"</span>, <span class="va">res_auto</span><span class="op">$</span><span class="va">method_used</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Method: rsvd (Halko-Martinsson-Tropp)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_auto</span><span class="op">$</span><span class="va">time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Time: 17.99 ms</span></span>
+<span><span class="co">#&gt; Time: 18.78 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Singular values (top 5):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_auto</span><span class="op">$</span><span class="va">d</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Singular values (top 5): 50.643 50.283 49.956 49.689 49.454</span></span>
 <span></span>
@@ -403,9 +403,9 @@ best backend for a problem size is not known in advance.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"SVD method:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">svd_method</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; SVD method: LAPACK (platform-optimised)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"SVD time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">svd_time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; SVD time: 2.3 ms</span></span>
+<span><span class="co">#&gt; SVD time: 2.52 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Total time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">total_time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Total time: 2.72 ms</span></span>
+<span><span class="co">#&gt; Total time: 2.99 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Singular values used:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">singular_values_used</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Singular values used: 50</span></span></code></pre></div>
 </div>
@@ -493,7 +493,7 @@ solving inverse problems. <em>Computational Geosciences</em>,
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>
