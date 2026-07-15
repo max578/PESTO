@@ -31,7 +31,10 @@ the value in the .pst file).}
 
 \item{ies_par_en}{Character. Path to existing parameter ensemble file.}
 
-\item{extra_args}{Named list. Additional PEST++ arguments.}
+\item{extra_args}{Named list. Additional PEST++ options, written to the
+control file as \code{++key(value)} lines. Keys must be PestppOptions keys --
+PEST++ rejects one it does not recognise. An option the control file
+already sets is replaced, not duplicated.}
 
 \item{working_dir}{Character. Working directory for the run.
 Defaults to the directory containing the .pst file.}

@@ -16,7 +16,10 @@ pesto_sensitivity(
 \arguments{
 \item{pst_file}{Character. Path to the .pst control file.}
 
-\item{method}{Character. "morris" or "sobol".}
+\item{method}{Character. \code{"morris"} or \code{"sobol"}. Selects the algorithm by
+setting the \code{GSA_METHOD} option in the control file; pestpp-sen defaults
+to Morris, so without this the result would carry the requested label
+whatever was actually computed.}
 
 \item{exe}{Character. Path to pestpp-sen executable.}
 

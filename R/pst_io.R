@@ -93,7 +93,12 @@ read_pst <- function(file) {
       nprior   = if (length(tokens2) >= 4) tokens2[4] else NA_integer_,
       nobsgp   = if (length(tokens2) >= 5) tokens2[5] else NA_integer_,
       ntplfle  = if (length(tokens3) >= 1) as.integer(tokens3[1]) else NA_integer_,
-      ninsfle  = if (length(tokens3) >= 2) as.integer(tokens3[2]) else NA_integer_
+      ninsfle  = if (length(tokens3) >= 2) as.integer(tokens3[2]) else NA_integer_,
+      # Line 7: NOPTMAX PHIREDSTP NPHINORED RELPARSTP NRELPAR PHISTOPTHRESH.
+      # Read positionally over the section's non-blank lines. Without this the
+      # iteration cap is dropped on read and write_pst() re-emits a literal, so
+      # a read/write round-trip silently reset the caller's NOPTMAX.
+      noptmax  = .pst_read_noptmax(lines, cd_start)
     )
   }
 
@@ -267,7 +272,11 @@ write_pst <- function(pst, file) {
   lines <- c(lines, "5.0 2.0 0.3 0.03 10")
   lines <- c(lines, "5.0 5.0 0.001")
   lines <- c(lines, "0.1")
-  lines <- c(lines, "30 0.01 4 4 0.01 4")
+  # Line 7 is NOPTMAX PHIREDSTP NPHINORED RELPARSTP NRELPAR PHISTOPTHRESH.
+  # NOPTMAX is the iteration cap the run functions set, so it comes from the
+  # object rather than a literal; the rest are PEST's conventional defaults.
+  noptmax <- cd$noptmax %||% 30L
+  lines <- c(lines, paste(as.integer(noptmax), "0.01 4 4 0.01 4"))
   lines <- c(lines, "1 1 1")
 
   # Parameter groups -----------------------------------------------------
