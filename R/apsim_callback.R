@@ -69,9 +69,10 @@
 #' @return A closure of signature `function(theta) -> obs` suitable for
 #'   the `forward_model =` argument of [pesto_ies_callback()]. The closure
 #'   carries an `"apsim_version"` attribute recording the in-use APSIM
-#'   binary version (via `apsimx::apsim_version()`, `NA_character_` if it
-#'   cannot be determined), so a calibrated run can be grounded to the
-#'   exact simulator that produced it. Thread it into the manifest with
+#'   binary version (read from `Models --version` on the configured engine,
+#'   `NA_character_` if it cannot be determined), so a calibrated run can be
+#'   grounded to the exact simulator that produced it. Thread it into the
+#'   manifest with
 #'   `as_manifest(fit, apsim_version = attr(fm, "apsim_version"))`, so a
 #'   downstream consumer can refuse to compare two manifests built against
 #'   incompatible APSIM major versions.
@@ -248,21 +249,57 @@ apsim_callback <- function(template,
   fm
 }
 
-# Capture the in-use APSIM binary version for run provenance. Defensive:
-# returns NA_character_ when apsimx or a working APSIM install is absent, so
-# a non-APSIM or CI context never errors. The captured string lets a
-# downstream consumer refuse a manifest pair built against incompatible
-# APSIM major versions.
+# Read the APSIM engine path apsimx is currently configured to use, without
+# disturbing it. apsimx exposes no public getter for `exe.path`, and calling
+# `apsimx::apsimx_options()` with no arguments *resets* every option to its
+# default -- so its option store (an unexported environment) is read directly.
+# Guarded: any change to apsimx's internals degrades to NA, never an error.
+.apsimx_exe_path <- function() {
+  opt_env <- tryCatch(
+    get("apsimx.options", envir = asNamespace("apsimx")),
+    error = function(e) NULL
+  )
+  if (!is.environment(opt_env)) return(NA_character_)
+  exe <- tryCatch(
+    get0("exe.path", envir = opt_env, inherits = FALSE, ifnotfound = NA),
+    error = function(e) NA
+  )
+  if (length(exe) != 1L || is.na(exe) || !nzchar(exe)) return(NA_character_)
+  exe
+}
+
+# Capture the in-use APSIM binary version for run provenance, read straight
+# from the configured engine via `Models --version`. This deliberately avoids
+# `apsimx::apsim_version()`, which on macOS derives the version from install-
+# folder names under `/Applications` and never inspects the binary in use --
+# so a source build, or an install under `~/Applications`, is invisible to it.
+# Defensive: returns NA_character_ when apsimx, the configured path, or a
+# working .NET runtime is absent, so a non-APSIM or CI context never errors.
+# The captured string lets a downstream consumer refuse a manifest pair built
+# against incompatible APSIM major versions.
 .capture_apsim_version <- function() {
   if (!requireNamespace("apsimx", quietly = TRUE)) return(NA_character_)
-  # An absent APSIM binary makes apsim_version() *warn* and return empty; that
-  # "couldn't determine -> NA" outcome is encoded explicitly below, so the
-  # warning is handled-by-design and must not leak to the caller.
-  tryCatch(suppressWarnings({
-    v <- as.character(apsimx::apsim_version(which = "inuse", verbose = FALSE))
-    v <- v[nzchar(v) & !is.na(v)]
-    if (length(v) == 0L) NA_character_ else v[length(v)]
-  }), error = function(e) NA_character_)
+
+  # apsimx stores either the Models binary itself or the directory holding it.
+  exe <- .apsimx_exe_path()
+  if (is.na(exe)) return(NA_character_)
+  if (dir.exists(exe)) {
+    hit <- list.files(exe, pattern = "^Models(\\.exe)?$", full.names = TRUE)
+    if (length(hit) == 0L) return(NA_character_)
+    exe <- hit[[1L]]
+  }
+  if (!file.exists(exe)) return(NA_character_)
+
+  # `Models --version` prints e.g. "APSIM 2026.5.8046.0". A missing .NET
+  # runtime makes it exit non-zero with empty stdout; that "couldn't
+  # determine -> NA" outcome is handled here so it never leaks to the caller.
+  out <- tryCatch(
+    suppressWarnings(system2(exe, "--version", stdout = TRUE, stderr = FALSE)),
+    error = function(e) character(0L)
+  )
+  out <- out[nzchar(out)]
+  if (length(out) == 0L) return(NA_character_)
+  sub("^APSIM[[:space:]]+", "", out[[length(out)]])
 }
 
 # Default editor dispatch. Returns a function(file, src.dir, node, value).

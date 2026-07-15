@@ -1,5 +1,14 @@
 # PESTO (development version)
 
+## Minor improvements and fixes
+
+* `apsim_callback()` now reads the engine version for the `"apsim_version"`
+  provenance attribute from `Models --version` on the configured binary,
+  rather than from `apsimx::apsim_version()`. On macOS the latter infers the
+  version from `/Applications` folder names and cannot see a source build or an
+  install under `~/Applications`, so the attribute previously fell back to
+  `NA`; it now reflects the simulator actually in use.
+
 
 # PESTO 0.9.0
 
