@@ -44,7 +44,9 @@ read_ensemble <- function(file, format = c("csv", "binary")) {
 #'
 #' @param ensemble A data.table with realisation data.
 #' @param file Character. Output file path.
-#' @param format Character. Currently only "csv" is supported.
+#' @param format Character. Only `"csv"` is supported; any other value is an
+#'   error. Note the asymmetry with [read_ensemble()], which also reads PEST++
+#'   binary: writing that format is not implemented.
 #' @return Invisible `NULL`.
 #' @examples
 #' ens <- data.table::data.table(
@@ -59,6 +61,11 @@ read_ensemble <- function(file, format = c("csv", "binary")) {
 #' @seealso [read_ensemble()]
 #' @export
 write_ensemble <- function(ensemble, file, format = "csv") {
+  # `csv` is the only implemented writer, so refuse anything else rather than
+  # writing CSV under the name the caller asked for. `read_ensemble()` gates
+  # its own `format` the same way.
+  format <- match.arg(format, "csv")
+
   if (!data.table::is.data.table(ensemble)) {
     ensemble <- data.table::as.data.table(ensemble)
   }
@@ -100,10 +107,27 @@ write_ensemble <- function(ensemble, file, format = "csv") {
     col_names[i] <- trimws(readChar(con, nm_len))
   }
 
+  # A file written without column names reads back with blank labels, and
+  # `set()` keys on the name: every blank column would land on the same ""
+  # column, so all but the last would be silently discarded -- fewer columns
+  # than the header declared, with no error. Name the blanks positionally so
+  # each column survives. `plot_identifiability()` substitutes real labels from
+  # a `pst` when one is supplied.
+  blank <- !nzchar(col_names)
+  if (any(blank)) {
+    col_names[blank] <- paste0("p", seq_len(ncol_val)[blank])
+  }
+
   dt <- data.table::data.table(real_name = row_names)
   for (j in seq_len(ncol_val)) {
     data.table::set(dt, j = col_names[j], value = mat[, j])
   }
+
+  # Record which labels are placeholders rather than names the file carried, so
+  # a caller holding the authoritative names can substitute them. Without this
+  # the substitution is unavailable: `p1` is indistinguishable from a parameter
+  # genuinely called `p1`.
+  data.table::setattr(dt, "unnamed_columns", blank)
 
   dt
 }
