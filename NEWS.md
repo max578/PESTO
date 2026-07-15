@@ -14,6 +14,17 @@
   Verified against the PEST++ sources rather than against PESTO's own belief
   about them.
 
+* `create_pest_scenario()` now writes instruction files into the control file.
+  `instruction_files` was read only to count them, so every control file PESTO
+  produced declared `NINSFLE` and then supplied none, and PEST++ refused all of
+  them: `model input/output error: number of instruction files = 0`. PESTO had
+  never written a runnable control file; nothing local could see it, because
+  the control file is only ever read by the binary.
+
+* `$exit_code` is an exit code again. With `verbose = FALSE` -- which every
+  example uses -- `system2()` returns the captured OUTPUT rather than the
+  status, so `$exit_code` held PEST++'s entire log.
+
 * `pesto_glm()` now honours `noptmax` and `extra_args`, and
   `pesto_sensitivity()` now honours `extra_args`. All three were documented,
   exported, and read by nothing.

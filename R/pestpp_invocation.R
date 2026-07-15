@@ -36,6 +36,32 @@
 .PESTO_NOPTMAX_LINE <- 7L
 
 
+#' Assemble the `* model input/output` table
+#'
+#' PEST++ reads that section positionally: the first NTPLFLE lines are
+#' template/model-input pairs and every line after them is an
+#' instruction/model-output pair (`Pest.cpp`, `MODEL INPUT/OUTPUT`, which keys
+#' off `i_tpl_ins < num_tpl_file`). So the two tables are bound by position and
+#' templates must come first. Column names differ between them (`tpl`/`inp` vs
+#' `ins`/`out`) and carry no meaning in the file, so they are bound by position
+#' rather than by name.
+#'
+#' @param template_files data.table or `NULL`. Template/model-input pairs.
+#' @param instruction_files data.table or `NULL`. Instruction/model-output
+#'   pairs.
+#'
+#' @returns A two-column data.table, templates first.
+#' @noRd
+.pst_io_files <- function(template_files, instruction_files) {
+  parts <- Filter(Negate(is.null), list(template_files, instruction_files))
+  if (length(parts) == 0L) {
+    return(data.table::data.table())
+  }
+
+  data.table::rbindlist(parts, use.names = FALSE)
+}
+
+
 #' Index of a control-file section header
 #'
 #' @param lines Character vector. The control file.
@@ -249,7 +275,7 @@
 #' @param working_dir Character. Directory to run in.
 #' @param verbose Logical. Stream PEST++ output.
 #'
-#' @returns Integer exit code, as returned by [system2()].
+#' @returns Integer exit code, in both the streaming and the capturing case.
 #' @noRd
 .pesto_run_pestpp <- function(exe, pst_file, working_dir, verbose = TRUE) {
   old <- setwd(working_dir)
@@ -257,11 +283,23 @@
 
   # The only argument PEST++ accepts here is the control file: no run-manager
   # switch (serial), and no control variables -- those are in the file.
-  system2(
+  res <- suppressWarnings(system2(
     command = exe,
     args    = basename(pst_file),
     stdout  = if (verbose) "" else TRUE,
     stderr  = if (verbose) "" else TRUE,
     wait    = TRUE
-  )
+  ))
+
+  # system2() returns the exit code when output is streamed, but the captured
+  # OUTPUT when it is not -- with the status hidden in an attribute that is
+  # absent on success. Returning that verbatim put PEST++'s entire log in
+  # `$exit_code` whenever `verbose = FALSE`, which is what the examples use.
+  # Normalise here so callers get an exit code either way.
+  if (is.character(res)) {
+    status <- attr(res, "status")
+    return(if (is.null(status)) 0L else as.integer(status))
+  }
+
+  as.integer(res)
 }
