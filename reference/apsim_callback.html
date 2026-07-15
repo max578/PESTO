@@ -116,9 +116,10 @@ print per-realisation status (default <code>FALSE</code>).</p></dd>
     <p>A closure of signature <code>function(theta) -&gt; obs</code> suitable for
 the <code>forward_model =</code> argument of <code><a href="pesto_ies_callback.html">pesto_ies_callback()</a></code>. The closure
 carries an <code>"apsim_version"</code> attribute recording the in-use APSIM
-binary version (via <code><a href="https://rdrr.io/pkg/apsimx/man/apsim_version.html" class="external-link">apsimx::apsim_version()</a></code>, <code>NA_character_</code> if it
-cannot be determined), so a calibrated run can be grounded to the
-exact simulator that produced it. Thread it into the manifest with
+binary version (read from <code>Models --version</code> on the configured engine,
+<code>NA_character_</code> if it cannot be determined), so a calibrated run can be
+grounded to the exact simulator that produced it. Thread it into the
+manifest with
 <code>as_manifest(fit, apsim_version = attr(fm, "apsim_version"))</code>, so a
 downstream consumer can refuse to compare two manifests built against
 incompatible APSIM major versions.</p>

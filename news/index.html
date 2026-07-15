@@ -38,6 +38,11 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="development version" id="pesto-development-version">PESTO (development version)<a class="anchor" aria-label="anchor" href="#pesto-development-version"></a></h2>
+<div class="section level3">
+<h3 id="minor-improvements-and-fixes-development-version">Minor improvements and fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-fixes-development-version"></a></h3>
+<ul><li>
+<code><a href="../reference/apsim_callback.html">apsim_callback()</a></code> now reads the engine version for the <code>"apsim_version"</code> provenance attribute from <code>Models --version</code> on the configured binary, rather than from <code><a href="https://rdrr.io/pkg/apsimx/man/apsim_version.html" class="external-link">apsimx::apsim_version()</a></code>. On macOS the latter infers the version from <code>/Applications</code> folder names and cannot see a source build or an install under <code>~/Applications</code>, so the attribute previously fell back to <code>NA</code>; it now reflects the simulator actually in use.</li>
+</ul></div>
 </div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.9.0" id="pesto-090">PESTO 0.9.0<a class="anchor" aria-label="anchor" href="#pesto-090"></a></h2>

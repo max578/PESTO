@@ -74,11 +74,10 @@ A closure of signature `function(theta) -> obs` suitable for the
 `forward_model =` argument of
 [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md).
 The closure carries an `"apsim_version"` attribute recording the in-use
-APSIM binary version (via
-[`apsimx::apsim_version()`](https://rdrr.io/pkg/apsimx/man/apsim_version.html),
-`NA_character_` if it cannot be determined), so a calibrated run can be
-grounded to the exact simulator that produced it. Thread it into the
-manifest with
+APSIM binary version (read from `Models --version` on the configured
+engine, `NA_character_` if it cannot be determined), so a calibrated run
+can be grounded to the exact simulator that produced it. Thread it into
+the manifest with
 `as_manifest(fit, apsim_version = attr(fm, "apsim_version"))`, so a
 downstream consumer can refuse to compare two manifests built against
 incompatible APSIM major versions.
