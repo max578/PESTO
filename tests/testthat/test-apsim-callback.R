@@ -125,15 +125,17 @@ test_that(".capture_apsim_version reads the version from `Models --version`", {
 
   # A stand-in `Models` that prints an APSIM-style version banner, so the
   # capture path is exercised deterministically without a real APSIM install.
-  stub_dir <- withr::local_tempdir()
+  stub_dir <- tempfile("apsim_stub_")
+  dir.create(stub_dir)
+  on.exit(unlink(stub_dir, recursive = TRUE), add = TRUE)
   stub <- file.path(stub_dir, "Models")
   writeLines(c("#!/bin/sh", "echo 'APSIM 9.9.9-test+deadbeef'"), stub)
   Sys.chmod(stub, mode = "0755")
 
   old_exe <- .apsimx_exe_path()
-  withr::defer(suppressWarnings(
+  on.exit(suppressWarnings(
     apsimx::apsimx_options(exe.path = old_exe, warn.find.apsimx = FALSE)
-  ))
+  ), add = TRUE)
   suppressWarnings(
     apsimx::apsimx_options(exe.path = stub, warn.find.apsimx = FALSE)
   )
@@ -145,9 +147,9 @@ test_that(".capture_apsim_version returns NA when the engine path is unusable", 
   skip_if_not_installed("apsimx")
 
   old_exe <- .apsimx_exe_path()
-  withr::defer(suppressWarnings(
+  on.exit(suppressWarnings(
     apsimx::apsimx_options(exe.path = old_exe, warn.find.apsimx = FALSE)
-  ))
+  ), add = TRUE)
   suppressWarnings(
     apsimx::apsimx_options(
       exe.path = file.path(tempdir(), "no_such_Models"),
