@@ -25,6 +25,17 @@ path the benchmark suite exercises -- are unaffected: it does not shell out.
 
 ## Bug fixes
 
+* PESTO now finds an APSIM Next Gen engine via `APSIM_EXE_PATH`. It consulted
+  only `apsimx`'s `exe.path` option, so a machine with a working APSIM and the
+  environment variable exported still reported no engine, and
+  `apsim_callback()` stamped the closure's `apsim_version` as `NA` -- leaving
+  every run it fed unattributable to the simulator that produced it. APSIM has
+  no discoverable install location on macOS: `apsimx::apsim_version()` derives
+  the version from `/Applications` folder names, so it sees neither a
+  `~/Applications` install nor a source build, and never reads `exe.path` at
+  all. An explicit `apsimx_options(exe.path=)` still takes precedence. The
+  adapter now has tests that run against a real engine rather than stubs.
+
 * PESTO now finds a PEST++ install that is not on the `PATH`. It consulted only
   the `PATH` and a copy bundled at `inst/bin` -- which PESTO has never shipped,
   so that branch could not fire and the documented "uses the bundled binary"

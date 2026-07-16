@@ -255,17 +255,30 @@ apsim_callback <- function(template,
 # default -- so its option store (an unexported environment) is read directly.
 # Guarded: any change to apsimx's internals degrades to NA, never an error.
 .apsimx_exe_path <- function() {
+  # 1. What the caller configured explicitly always wins.
   opt_env <- tryCatch(
     get("apsimx.options", envir = asNamespace("apsimx")),
     error = function(e) NULL
   )
-  if (!is.environment(opt_env)) return(NA_character_)
-  exe <- tryCatch(
-    get0("exe.path", envir = opt_env, inherits = FALSE, ifnotfound = NA),
-    error = function(e) NA
-  )
-  if (length(exe) != 1L || is.na(exe) || !nzchar(exe)) return(NA_character_)
-  exe
+  if (is.environment(opt_env)) {
+    exe <- tryCatch(
+      get0("exe.path", envir = opt_env, inherits = FALSE, ifnotfound = NA),
+      error = function(e) NA
+    )
+    if (length(exe) == 1L && !is.na(exe) && nzchar(exe)) return(exe)
+  }
+
+  # 2. APSIM_EXE_PATH. APSIM Next Gen has no discoverable install location on
+  # macOS -- apsimx::apsim_version() scans `/Applications` folder names and so
+  # sees neither a `~/Applications` install nor a source build, and never
+  # consults exe.path at all. Pointing at the engine by environment variable is
+  # how it is actually reached from R here. Without this, a machine with a
+  # working APSIM reported "no APSIM" and the manifest recorded the provenance
+  # of the run as unknown.
+  env <- Sys.getenv("APSIM_EXE_PATH", unset = "")
+  if (nzchar(env) && file.exists(env)) return(env)
+
+  NA_character_
 }
 
 # Capture the in-use APSIM binary version for run provenance, read straight
