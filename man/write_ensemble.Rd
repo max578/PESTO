@@ -11,7 +11,9 @@ write_ensemble(ensemble, file, format = "csv")
 
 \item{file}{Character. Output file path.}
 
-\item{format}{Character. Currently only "csv" is supported.}
+\item{format}{Character. Only \code{"csv"} is supported; any other value is an
+error. Note the asymmetry with \code{\link[=read_ensemble]{read_ensemble()}}, which also reads PEST++
+binary: writing that format is not implemented.}
 }
 \value{
 Invisible \code{NULL}.

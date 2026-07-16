@@ -256,8 +256,10 @@ plot_ensemble <- function(ensemble,
 #'   `jco_file` must be supplied.
 #' @param jco_file Character. Path to a `.jco` (Jacobian) binary file.
 #'   Mutually exclusive with `jacobian`.
-#' @param pst A `pesto_pst` object for parameter names. Optional; only
-#'   used when reading from a `.jco` file and column names are absent.
+#' @param pst A `pesto_pst` object supplying parameter names. Optional; used
+#'   only when reading from a `.jco` file that carries no column names, in
+#'   which case the labels are taken from its parameter table, positionally.
+#'   Errors if its parameter count does not match the Jacobian's columns.
 #' @param n_sv Integer. Number of singular values to retain.
 #' @param top_n Integer. Maximum number of parameters to display, ranked by
 #'   identifiability. Defaults to all parameters when there are at most 40 and
@@ -292,6 +294,25 @@ plot_identifiability <- function(jacobian = NULL,
     jco <- .read_ensemble_binary(jco_file)
     par_names <- names(jco)[-1]
     mat <- as.matrix(jco[, -1, with = FALSE])
+
+    # A .jco written without column names reads back with positional
+    # placeholders; `pst` is the documented source of the real labels. Applied
+    # positionally, which is only defensible when the counts agree -- a
+    # mismatch means this `pst` does not describe this Jacobian, and labelling
+    # the columns anyway would attach confident wrong names to real numbers.
+    unnamed <- attr(jco, "unnamed_columns")
+    if (!is.null(pst) && any(unnamed)) {
+      pst_names <- pst$parameters$parnme
+      if (length(pst_names) != length(par_names)) {
+        stop(
+          "`pst` describes ", length(pst_names), " parameters but `jco_file` ",
+          "has ", length(par_names), " columns, so its names cannot be ",
+          "matched to this Jacobian.",
+          call. = FALSE
+        )
+      }
+      par_names[unnamed] <- pst_names[unnamed]
+    }
   }
 
   sv <- svd(mat)

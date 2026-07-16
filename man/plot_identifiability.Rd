@@ -22,8 +22,10 @@ otherwise \code{p1}, \code{p2}, ... are generated. Either \code{jacobian} or
 \item{jco_file}{Character. Path to a \code{.jco} (Jacobian) binary file.
 Mutually exclusive with \code{jacobian}.}
 
-\item{pst}{A \code{pesto_pst} object for parameter names. Optional; only
-used when reading from a \code{.jco} file and column names are absent.}
+\item{pst}{A \code{pesto_pst} object supplying parameter names. Optional; used
+only when reading from a \code{.jco} file that carries no column names, in
+which case the labels are taken from its parameter table, positionally.
+Errors if its parameter count does not match the Jacobian's columns.}
 
 \item{n_sv}{Integer. Number of singular values to retain.}
 

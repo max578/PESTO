@@ -9,10 +9,15 @@
 #'   uses the bundled binary.
 #' @param num_reals Integer. Number of ensemble realisations (overrides
 #'   the value in the .pst file).
-#' @param noptmax Integer. Maximum number of iterations.
+#' @param noptmax Integer or `NULL`. Maximum number of iterations, written to
+#'   field 1 of line 7 of the control file's `* control data` section. `NULL`
+#'   (the default) leaves the control file's own value alone.
 #' @param lambda_scale_fac Numeric vector. Lambda scaling factors.
 #' @param ies_par_en Character. Path to existing parameter ensemble file.
-#' @param extra_args Named list. Additional PEST++ arguments.
+#' @param extra_args Named list. Additional PEST++ options, written to the
+#'   control file as `++key(value)` lines. Keys must be PestppOptions keys --
+#'   PEST++ rejects one it does not recognise. An option the control file
+#'   already sets is replaced, not duplicated.
 #' @param working_dir Character. Working directory for the run.
 #'   Defaults to the directory containing the .pst file.
 #' @param verbose Logical. Print stdout/stderr from pestpp-ies.
@@ -48,7 +53,7 @@
 pesto_ies <- function(pst_file,
                      exe = NULL,
                      num_reals = 50,
-                     noptmax = 4,
+                     noptmax = NULL,
                      lambda_scale_fac = c(0.1, 0.5, 1.0),
                      ies_par_en = NULL,
                      extra_args = list(),
@@ -62,37 +67,31 @@ pesto_ies <- function(pst_file,
   }
   exe <- .find_pestpp_exe("pestpp-ies", exe)
 
-  # Assemble PEST++ command-line overrides --------------------------------
-  overrides <- list(
+  # Route control variables into the control file --------------------------
+  # PEST++ takes none of these on the command line; see pestpp_invocation.R.
+  # `noptmax` goes to `* control data`, the rest are `++` options.
+  pestpp_options <- list(
     ies_num_reals    = num_reals,
-    noptmax          = noptmax,
     ies_lambda_mults = paste(lambda_scale_fac, collapse = ",")
   )
   if (!is.null(ies_par_en)) {
-    overrides$ies_par_en <- ies_par_en
+    pestpp_options$ies_par_en <- ies_par_en
   }
-  overrides <- c(overrides, extra_args)
+  pestpp_options <- c(pestpp_options, extra_args)
 
-  override_args <- vapply(names(overrides), function(nm) {
-    sprintf("/h :%s=%s", nm, as.character(overrides[[nm]]))
-  }, character(1))
+  run_file <- .pesto_run_control_file(
+    pst_file, working_dir,
+    noptmax = noptmax, pestpp_options = pestpp_options
+  )
 
   # Run pestpp-ies --------------------------------------------------------
   t0 <- proc.time()["elapsed"]
-  all_args <- c(basename(pst_file), override_args)
-
-  result <- system2(
-    command = exe,
-    args    = all_args,
-    stdout  = if (verbose) "" else TRUE,
-    stderr  = if (verbose) "" else TRUE,
-    env     = paste0("PATH=", dirname(exe), ":", Sys.getenv("PATH")),
-    wait    = TRUE
-  )
+  result <- .pesto_run_pestpp(exe, run_file, working_dir, verbose = verbose)
   runtime <- proc.time()["elapsed"] - t0
 
   # Parse outputs ---------------------------------------------------------
-  base_name <- tools::file_path_sans_ext(basename(pst_file))
+  # Named after the control file PEST++ actually read, not the caller's.
+  base_name <- tools::file_path_sans_ext(basename(run_file))
   phi_file <- file.path(working_dir, paste0(base_name, ".phi.actual.csv"))
   par_file <- file.path(working_dir, paste0(base_name, ".0.par.csv"))
   obs_file <- file.path(working_dir, paste0(base_name, ".0.obs.csv"))
@@ -127,8 +126,14 @@ pesto_ies <- function(pst_file,
 #'
 #' @param pst_file Character. Path to the .pst control file.
 #' @param exe Character. Path to pestpp-glm executable.
-#' @param noptmax Integer. Maximum number of iterations.
-#' @param extra_args Named list. Additional PEST++ arguments.
+#' @param noptmax Integer or `NULL`. Maximum number of iterations. Written into
+#'   the control file's `* control data` section, overriding the value there;
+#'   PEST++ does not accept it as a `++` option. `NULL` (the default) leaves the
+#'   file's own value alone.
+#' @param extra_args Named list. Additional PEST++ options, written to the
+#'   control file as `++key(value)` lines. Keys must be PestppOptions keys --
+#'   PEST++ rejects one it does not recognise. An option the control file
+#'   already sets is replaced, not duplicated.
 #' @param working_dir Character. Working directory.
 #' @param verbose Logical. Print output.
 #' @return A list of class `pesto_glm_result`.
@@ -155,7 +160,7 @@ pesto_ies <- function(pst_file,
 #' @export
 pesto_glm <- function(pst_file,
                      exe = NULL,
-                     noptmax = 20,
+                     noptmax = NULL,
                      extra_args = list(),
                      working_dir = NULL,
                      verbose = TRUE) {
@@ -165,19 +170,19 @@ pesto_glm <- function(pst_file,
   if (is.null(working_dir)) working_dir <- dirname(pst_file)
   exe <- .find_pestpp_exe("pestpp-glm", exe)
 
+  # Route control variables into the control file --------------------------
+  run_file <- .pesto_run_control_file(
+    pst_file, working_dir,
+    noptmax = noptmax, pestpp_options = extra_args
+  )
+
   # Run pestpp-glm --------------------------------------------------------
   t0 <- proc.time()["elapsed"]
-  result <- system2(
-    command = exe,
-    args    = c(basename(pst_file)),
-    stdout  = if (verbose) "" else TRUE,
-    stderr  = if (verbose) "" else TRUE,
-    wait    = TRUE
-  )
+  result <- .pesto_run_pestpp(exe, run_file, working_dir, verbose = verbose)
   runtime <- proc.time()["elapsed"] - t0
 
   # Parse outputs ---------------------------------------------------------
-  base_name <- tools::file_path_sans_ext(basename(pst_file))
+  base_name <- tools::file_path_sans_ext(basename(run_file))
 
   output <- list(
     exit_code       = result,
@@ -271,14 +276,11 @@ pesto_sweep <- function(pst_file,
   }
 
   # Run pestpp-swp --------------------------------------------------------
+  # Runs in `working_dir`: the control file is passed by basename, and both
+  # `sweep_in.csv` and the `sweep_out.csv` read back below are resolved by
+  # PEST++ against its own working directory.
   t0 <- proc.time()["elapsed"]
-  result <- system2(
-    command = exe,
-    args = c(basename(pst_file)),
-    stdout = if (verbose) "" else TRUE,
-    stderr = if (verbose) "" else TRUE,
-    wait = TRUE
-  )
+  result <- .pesto_run_pestpp(exe, pst_file, working_dir, verbose = verbose)
   runtime <- proc.time()["elapsed"] - t0
 
   # Parse outputs ---------------------------------------------------------
@@ -301,7 +303,10 @@ pesto_sweep <- function(pst_file,
 #' Executes pestpp-sen for Morris or Sobol sensitivity analysis.
 #'
 #' @param pst_file Character. Path to the .pst control file.
-#' @param method Character. "morris" or "sobol".
+#' @param method Character. `"morris"` or `"sobol"`. Selects the algorithm by
+#'   setting the `GSA_METHOD` option in the control file; pestpp-sen defaults
+#'   to Morris, so without this the result would carry the requested label
+#'   whatever was actually computed.
 #' @param exe Character. Path to pestpp-sen executable.
 #' @param extra_args Named list. Additional options.
 #' @param working_dir Character. Working directory.
@@ -341,15 +346,18 @@ pesto_sensitivity <- function(pst_file,
   if (is.null(working_dir)) working_dir <- dirname(pst_file)
   exe <- .find_pestpp_exe("pestpp-sen", exe)
 
+  # Route control variables into the control file --------------------------
+  # `method` selects the global-sensitivity algorithm via the GSA_METHOD
+  # PestppOptions key; without it pestpp-sen runs its default (MORRIS) and the
+  # result would carry the caller's label regardless of what was computed.
+  run_file <- .pesto_run_control_file(
+    pst_file, working_dir,
+    pestpp_options = c(list(gsa_method = toupper(method)), extra_args)
+  )
+
   # Run pestpp-sen --------------------------------------------------------
   t0 <- proc.time()["elapsed"]
-  result <- system2(
-    command = exe,
-    args = c(basename(pst_file)),
-    stdout = if (verbose) "" else TRUE,
-    stderr = if (verbose) "" else TRUE,
-    wait = TRUE
-  )
+  result <- .pesto_run_pestpp(exe, run_file, working_dir, verbose = verbose)
   runtime <- proc.time()["elapsed"] - t0
 
   # Parse outputs ---------------------------------------------------------
@@ -359,7 +367,7 @@ pesto_sensitivity <- function(pst_file,
     method          = method
   )
 
-  base_name <- tools::file_path_sans_ext(basename(pst_file))
+  base_name <- tools::file_path_sans_ext(basename(run_file))
   msn_file <- file.path(working_dir, paste0(base_name, ".msn"))
   if (file.exists(msn_file)) {
     output$sensitivity <- data.table::fread(msn_file)

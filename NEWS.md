@@ -1,5 +1,71 @@
 # PESTO (development version)
 
+## Breaking changes
+
+* `pesto_ies()` and `pesto_glm()` now default `noptmax` to `NULL`, meaning
+  "leave the control file's own iteration cap alone". The previous defaults
+  (`4` and `20`) were documented as overrides but, because the whole
+  command-line path was broken, had never once been applied to a real run.
+  Honouring them now would have silently retuned every caller's control file,
+  so the safer reading of a value the user never chose is to respect the file.
+  Pass `noptmax` explicitly to override. A call that injects nothing writes no
+  file at all and runs the caller's own control file, rather than a
+  `<base>_pesto.pst` copy of it.
+
+## Bug fixes
+
+* The PEST++ invocation layer has been rebuilt. PESTO passed control variables
+  as `/h :name=value` command-line switches, which PEST++ has never accepted:
+  its parser takes a control file, an optional `/r` or `/j`, and an optional
+  run-manager switch, where `/h` selects the PANTHER run manager and expects a
+  `host:port`. Every `pesto_ies()` call built at least one such switch, so the
+  binary exited with a command-line error before starting. Control variables
+  now go where PEST++ reads them: `noptmax` into `* control data`, and every
+  other option as a `++key(value)` line. No test caught this because the
+  binary was never a test dependency; the suite checked PESTO against PESTO.
+  Verified against the PEST++ sources rather than against PESTO's own belief
+  about them.
+
+* `create_pest_scenario()` now writes instruction files into the control file.
+  `instruction_files` was read only to count them, so every control file PESTO
+  produced declared `NINSFLE` and then supplied none, and PEST++ refused all of
+  them: `model input/output error: number of instruction files = 0`. PESTO had
+  never written a runnable control file; nothing local could see it, because
+  the control file is only ever read by the binary.
+
+* `$exit_code` is an exit code again. With `verbose = FALSE` -- which every
+  example uses -- `system2()` returns the captured OUTPUT rather than the
+  status, so `$exit_code` held PEST++'s entire log.
+
+* `pesto_glm()` now honours `noptmax` and `extra_args`, and
+  `pesto_sensitivity()` now honours `extra_args`. All three were documented,
+  exported, and read by nothing.
+
+* `pesto_sensitivity(method = "sobol")` now runs Sobol. `method` selected the
+  label on the returned object but never reached the binary, so pestpp-sen ran
+  its Morris default and the result was reported as Sobol regardless.
+
+* PEST++ now runs in the directory holding the control file. The file is
+  passed by basename, so it -- and every relative template, instruction, and
+  model-command path inside it -- was previously resolved against R's working
+  directory, which is only correct by coincidence.
+
+* `read_pst()` now reads `NOPTMAX`, and `write_pst()` emits it instead of a
+  hard-coded `30`. A read/write round-trip previously reset the caller's
+  iteration cap without saying so.
+
+* `write_ensemble()` rejects a `format` it cannot write. `format = "binary"`
+  wrote a CSV under the requested name.
+
+* `plot_identifiability()` honours `pst`, documented as the source of
+  parameter names for a `.jco` that carries none but never consulted. Reading
+  such a file also dropped columns: blank labels all collided on one name, so
+  a three-column Jacobian came back with one.
+
+* Runs now write `<name>_pesto.pst` beside the control file and name their
+  outputs after it. This is the exact input PEST++ was given, recorded for
+  reproducibility.
+
 ## Minor improvements and fixes
 
 * `apsim_callback()` now reads the engine version for the `"apsim_version"`

@@ -7,7 +7,7 @@
 pesto_glm(
   pst_file,
   exe = NULL,
-  noptmax = 20,
+  noptmax = NULL,
   extra_args = list(),
   working_dir = NULL,
   verbose = TRUE
@@ -18,9 +18,15 @@ pesto_glm(
 
 \item{exe}{Character. Path to pestpp-glm executable.}
 
-\item{noptmax}{Integer. Maximum number of iterations.}
+\item{noptmax}{Integer or \code{NULL}. Maximum number of iterations. Written into
+the control file's \verb{* control data} section, overriding the value there;
+PEST++ does not accept it as a \verb{++} option. \code{NULL} (the default) leaves the
+file's own value alone.}
 
-\item{extra_args}{Named list. Additional PEST++ arguments.}
+\item{extra_args}{Named list. Additional PEST++ options, written to the
+control file as \code{++key(value)} lines. Keys must be PestppOptions keys --
+PEST++ rejects one it does not recognise. An option the control file
+already sets is replaced, not duplicated.}
 
 \item{working_dir}{Character. Working directory.}
 

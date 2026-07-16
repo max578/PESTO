@@ -98,7 +98,7 @@ create_pest_scenario <- function(parameters,
     parameters = parameters,
     observations = observations,
     model_command = model_command,
-    io_files = if (!is.null(template_files)) template_files else data.table::data.table(),
+    io_files = .pst_io_files(template_files, instruction_files),
     pestpp_options = pestpp_options,
     file = NA_character_
   )
