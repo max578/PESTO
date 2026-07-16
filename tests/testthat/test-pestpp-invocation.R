@@ -201,6 +201,84 @@ test_that("noptmax changes the control file PEST++ reads", {
   expect_equal(read_noptmax(99L), 99L)
 })
 
+test_that("noptmax = NULL leaves the file's own iteration cap alone", {
+  # The default. A caller who set NOPTMAX in their own control file must get
+  # that value, not one of PESTO's -- the old defaults (4 / 20) would have
+  # silently overridden it on every default call.
+  scenario <- .make_test_scenario()
+  tf <- file.path(tempdir(), "keepcap.pst")
+  on.exit(unlink(list.files(tempdir(), "^keepcap", full.names = TRUE)), add = TRUE)
+  write_pst(scenario, tf)
+
+  lines <- .pst_set_noptmax(readLines(tf), 13L)
+  writeLines(lines, tf)
+
+  # Force a run file to be written anyway, so this tests NULL rather than the
+  # no-injection short-circuit below.
+  run_file <- .pesto_run_control_file(
+    tf, tempdir(),
+    noptmax = NULL, pestpp_options = list(ies_num_reals = 6L)
+  )
+  out <- readLines(run_file)
+
+  expect_equal(
+    .pst_read_noptmax(out, .pst_section_index(out, "control data")), 13L
+  )
+  expect_true(any(grepl("^\\+\\+ies_num_reals\\(6\\)$", out)))
+})
+
+test_that("pesto_ies and pesto_glm default to the file's own iteration cap", {
+  # Grades the DEFAULT, not just the NULL path: the old defaults (4 for
+  # pesto_ies, 20 for pesto_glm) were documented as overrides but had never
+  # once been applied, so honouring them now would silently retune every
+  # caller's control file. Tested through the exported functions because a
+  # regression would live in the signature, which .pesto_run_control_file
+  # tests cannot see.
+  scenario <- .make_test_scenario()
+  tf <- file.path(tempdir(), "defcap.pst")
+  on.exit(unlink(list.files(tempdir(), "^defcap", full.names = TRUE)), add = TRUE)
+  write_pst(scenario, tf)
+  writeLines(.pst_set_noptmax(readLines(tf), 13L), tf)
+
+  seen <- new.env(parent = emptyenv())
+  local_mocked_bindings(
+    .find_pestpp_exe = function(name, exe = NULL) name,
+    .pesto_run_pestpp = function(exe, pst_file, working_dir, verbose = TRUE) {
+      lines <- readLines(pst_file)
+      seen$noptmax <- .pst_read_noptmax(
+        lines, .pst_section_index(lines, "control data")
+      )
+      0L
+    }
+  )
+
+  pesto_ies(tf, verbose = FALSE)
+  expect_equal(seen$noptmax, 13L)
+
+  pesto_glm(tf, verbose = FALSE)
+  expect_equal(seen$noptmax, 13L)
+
+  # And an explicit value still overrides, or the parameter would be dead again.
+  pesto_glm(tf, noptmax = 2L, verbose = FALSE)
+  expect_equal(seen$noptmax, 2L)
+})
+
+test_that("nothing to inject writes no file and runs the caller's own", {
+  # With no noptmax and no options there is nothing to change, so PESTO must
+  # not manufacture a `_pesto.pst` the caller never asked for.
+  scenario <- .make_test_scenario()
+  wd <- file.path(tempdir(), "noinject")
+  dir.create(wd, showWarnings = FALSE)
+  on.exit(unlink(wd, recursive = TRUE), add = TRUE)
+  tf <- file.path(wd, "plain.pst")
+  write_pst(scenario, tf)
+
+  run_file <- .pesto_run_control_file(tf, wd)
+
+  expect_identical(run_file, tf)
+  expect_false(file.exists(file.path(wd, "plain_pesto.pst")))
+})
+
 test_that("extra_args become ++key(value) lines", {
   # The parentheses are not cosmetic: parse_plusplus_line throws "incorrect
   # format for '++' line (missing'(')" without them.

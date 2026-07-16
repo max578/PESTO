@@ -1,5 +1,17 @@
 # PESTO (development version)
 
+## Breaking changes
+
+* `pesto_ies()` and `pesto_glm()` now default `noptmax` to `NULL`, meaning
+  "leave the control file's own iteration cap alone". The previous defaults
+  (`4` and `20`) were documented as overrides but, because the whole
+  command-line path was broken, had never once been applied to a real run.
+  Honouring them now would have silently retuned every caller's control file,
+  so the safer reading of a value the user never chose is to respect the file.
+  Pass `noptmax` explicitly to override. A call that injects nothing writes no
+  file at all and runs the caller's own control file, rather than a
+  `<base>_pesto.pst` copy of it.
+
 ## Bug fixes
 
 * The PEST++ invocation layer has been rebuilt. PESTO passed control variables

@@ -8,7 +8,7 @@ pesto_ies(
   pst_file,
   exe = NULL,
   num_reals = 50,
-  noptmax = 4,
+  noptmax = NULL,
   lambda_scale_fac = c(0.1, 0.5, 1),
   ies_par_en = NULL,
   extra_args = list(),
@@ -25,7 +25,9 @@ uses the bundled binary.}
 \item{num_reals}{Integer. Number of ensemble realisations (overrides
 the value in the .pst file).}
 
-\item{noptmax}{Integer. Maximum number of iterations.}
+\item{noptmax}{Integer or \code{NULL}. Maximum number of iterations, written to
+field 1 of line 7 of the control file's \verb{* control data} section. \code{NULL}
+(the default) leaves the control file's own value alone.}
 
 \item{lambda_scale_fac}{Numeric vector. Lambda scaling factors.}
 

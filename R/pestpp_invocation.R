@@ -228,12 +228,20 @@
 #' @param noptmax Integer or `NULL`. `NULL` leaves the file's own value.
 #' @param pestpp_options Named list. `++` options to set.
 #'
-#' @returns Character. Path to the control file to run.
+#' @returns Character. Path to the control file to run -- `pst_file` itself when
+#'   there is nothing to inject.
 #' @noRd
 .pesto_run_control_file <- function(pst_file,
                                     working_dir,
                                     noptmax = NULL,
                                     pestpp_options = list()) {
+  # Nothing to change means nothing to write: run the caller's own file, so a
+  # default call leaves no artefact behind and names its outputs after the file
+  # the caller passed.
+  if (is.null(noptmax) && length(pestpp_options) == 0L) {
+    return(pst_file)
+  }
+
   lines <- readLines(pst_file, warn = FALSE)
 
   # `* control data keyword` is the alternative to the positional section, and

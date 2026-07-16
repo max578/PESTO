@@ -9,7 +9,9 @@
 #'   uses the bundled binary.
 #' @param num_reals Integer. Number of ensemble realisations (overrides
 #'   the value in the .pst file).
-#' @param noptmax Integer. Maximum number of iterations.
+#' @param noptmax Integer or `NULL`. Maximum number of iterations, written to
+#'   field 1 of line 7 of the control file's `* control data` section. `NULL`
+#'   (the default) leaves the control file's own value alone.
 #' @param lambda_scale_fac Numeric vector. Lambda scaling factors.
 #' @param ies_par_en Character. Path to existing parameter ensemble file.
 #' @param extra_args Named list. Additional PEST++ options, written to the
@@ -51,7 +53,7 @@
 pesto_ies <- function(pst_file,
                      exe = NULL,
                      num_reals = 50,
-                     noptmax = 4,
+                     noptmax = NULL,
                      lambda_scale_fac = c(0.1, 0.5, 1.0),
                      ies_par_en = NULL,
                      extra_args = list(),
@@ -124,10 +126,10 @@ pesto_ies <- function(pst_file,
 #'
 #' @param pst_file Character. Path to the .pst control file.
 #' @param exe Character. Path to pestpp-glm executable.
-#' @param noptmax Integer. Maximum number of iterations. Written into the
-#'   control file's `* control data` section, overriding the value there;
-#'   PEST++ does not accept it as a `++` option. `NULL` leaves the file's own
-#'   value alone.
+#' @param noptmax Integer or `NULL`. Maximum number of iterations. Written into
+#'   the control file's `* control data` section, overriding the value there;
+#'   PEST++ does not accept it as a `++` option. `NULL` (the default) leaves the
+#'   file's own value alone.
 #' @param extra_args Named list. Additional PEST++ options, written to the
 #'   control file as `++key(value)` lines. Keys must be PestppOptions keys --
 #'   PEST++ rejects one it does not recognise. An option the control file
@@ -158,7 +160,7 @@ pesto_ies <- function(pst_file,
 #' @export
 pesto_glm <- function(pst_file,
                      exe = NULL,
-                     noptmax = 20,
+                     noptmax = NULL,
                      extra_args = list(),
                      working_dir = NULL,
                      verbose = TRUE) {
