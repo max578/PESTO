@@ -23,7 +23,7 @@ A list with version strings: `pesto_version`, `pestpp_version`,
 ``` r
 v <- pesto_version()
 v$pesto_version
-#> [1] "0.10.0"
+#> [1] "0.10.1"
 v$platform
 #> [1] "x86_64-pc-linux-gnu"
 ```

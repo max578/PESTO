@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,14 @@
       <small>Source: <a href="https://github.com/max578/PESTO/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.10.1" id="pesto-0101">PESTO 0.10.1<a class="anchor" aria-label="anchor" href="#pesto-0101"></a></h2>
+<p>Follows 0.10.0’s PEST++ rebuild by applying the same question to the other external authority PESTO drives – APSIM – and finding the same shape of defect: a working engine PESTO could not see, and an adapter whose tests only ever asked PESTO about itself.</p>
+<div class="section level3">
+<h3 id="bug-fixes-0-10-1">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-10-1"></a></h3>
+<ul><li>PESTO now finds an APSIM Next Gen engine via <code>APSIM_EXE_PATH</code>. It consulted only <code>apsimx</code>’s <code>exe.path</code> option, so a machine with a working APSIM and the environment variable exported still reported no engine, and <code><a href="../reference/apsim_callback.html">apsim_callback()</a></code> stamped the closure’s <code>apsim_version</code> as <code>NA</code> – leaving every run it fed unattributable to the simulator that produced it. APSIM has no discoverable install location on macOS: <code><a href="https://rdrr.io/pkg/apsimx/man/apsim_version.html" class="external-link">apsimx::apsim_version()</a></code> derives the version from <code>/Applications</code> folder names, so it sees neither a <code>~/Applications</code> install nor a source build, and never reads <code>exe.path</code> at all. An explicit <code>apsimx_options(exe.path=)</code> still takes precedence. The adapter now has tests that run against a real engine rather than stubs.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.10.0" id="pesto-0100">PESTO 0.10.0<a class="anchor" aria-label="anchor" href="#pesto-0100"></a></h2>
 <p>This release rebuilds the PEST++ invocation layer. PESTO’s shell-out to PEST++ had never run: control variables were passed as <code>/h :name=value</code> command-line switches, which PEST++ has never accepted, so every call exited before the binary started. The defects below have been present since the initial release (9 April 2026) and shipped in every release since; they surfaced now because this is the first time the layer was checked against the PEST++ sources and then against the real binary, rather than against PESTO’s own tests.</p>

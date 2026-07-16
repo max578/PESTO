@@ -1,5 +1,29 @@
 # Changelog
 
+## PESTO 0.10.1
+
+Follows 0.10.0’s PEST++ rebuild by applying the same question to the
+other external authority PESTO drives – APSIM – and finding the same
+shape of defect: a working engine PESTO could not see, and an adapter
+whose tests only ever asked PESTO about itself.
+
+### Bug fixes
+
+- PESTO now finds an APSIM Next Gen engine via `APSIM_EXE_PATH`. It
+  consulted only `apsimx`’s `exe.path` option, so a machine with a
+  working APSIM and the environment variable exported still reported no
+  engine, and
+  [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md)
+  stamped the closure’s `apsim_version` as `NA` – leaving every run it
+  fed unattributable to the simulator that produced it. APSIM has no
+  discoverable install location on macOS:
+  [`apsimx::apsim_version()`](https://rdrr.io/pkg/apsimx/man/apsim_version.html)
+  derives the version from `/Applications` folder names, so it sees
+  neither a `~/Applications` install nor a source build, and never reads
+  `exe.path` at all. An explicit `apsimx_options(exe.path=)` still takes
+  precedence. The adapter now has tests that run against a real engine
+  rather than stubs.
+
 ## PESTO 0.10.0
 
 This release rebuilds the PEST++ invocation layer. PESTO’s shell-out to
