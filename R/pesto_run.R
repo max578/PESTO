@@ -5,8 +5,10 @@
 #' and uncertainty quantification.
 #'
 #' @param pst_file Character. Path to the .pst control file.
-#' @param exe Character. Path to pestpp-ies executable. If NULL,
-#'   uses the bundled binary.
+#' @param exe Character. Path to the pestpp-ies executable. `NULL` (the
+#'   default) resolves it from `PESTPP_IES_EXE_PATH`, then `PESTPP_BIN_DIR`,
+#'   then the `PATH`. PESTO does not bundle PEST++; it drives an installation
+#'   you supply.
 #' @param num_reals Integer. Number of ensemble realisations (overrides
 #'   the value in the .pst file).
 #' @param noptmax Integer or `NULL`. Maximum number of iterations, written to
@@ -378,11 +380,30 @@ pesto_sensitivity <- function(pst_file,
 }
 
 
-#' Find PEST++ executable
-#' @param name Name of the executable (e.g., "pestpp-ies")
-#' @param user_path User-specified path (overrides search)
-#' @return Path to executable
+#' Environment-variable name holding a PEST++ tool's path
+#'
+#' `pestpp-ies` maps to `PESTPP_IES_EXE_PATH`, and so on for the rest of the
+#' suite.
+#'
+#' @param name Name of the executable (e.g., "pestpp-ies").
+#' @return The environment-variable name, as a string.
 #' @keywords internal
+#' @noRd
+.pestpp_exe_env_var <- function(name) {
+  paste0(toupper(gsub("-", "_", name, fixed = TRUE)), "_EXE_PATH")
+}
+
+#' Find a PEST++ executable
+#'
+#' Resolution order: the `user_path` argument, the per-tool environment
+#' variable (e.g. `PESTPP_IES_EXE_PATH`), `PESTPP_BIN_DIR`, then the system
+#' `PATH`. PESTO bundles no binaries.
+#'
+#' @param name Name of the executable (e.g., "pestpp-ies").
+#' @param user_path User-specified path (overrides the search).
+#' @return Path to the executable. Errors if it cannot be resolved.
+#' @keywords internal
+#' @noRd
 .find_pestpp_exe <- function(name, user_path = NULL) {
   if (!is.null(user_path)) {
     if (!file.exists(user_path)) {
@@ -394,26 +415,42 @@ pesto_sensitivity <- function(pst_file,
     return(normalizePath(user_path))
   }
 
-  # Bundled binary (preferred)  -----------------------------------------
-  pkg_bin <- system.file("bin", name, package = "PESTO")
-  if (nchar(pkg_bin) > 0 && file.exists(pkg_bin)) {
-    return(pkg_bin)
+  # Per-tool environment variable, e.g. PESTPP_IES_EXE_PATH -------------
+  # PEST++ ships no installer and is not on PATH by default, so pointing at
+  # it by environment variable is the normal way to run it from R. These are
+  # the names already used by the benchmark harness and `~/.Renviron`.
+  env_exe <- Sys.getenv(.pestpp_exe_env_var(name), unset = "")
+  if (nzchar(env_exe) && file.exists(env_exe)) {
+    return(normalizePath(env_exe))
   }
 
-  # Fall back to PATH  --------------------------------------------------
+  # Whole-suite bin directory -------------------------------------------
+  bin_dir <- Sys.getenv("PESTPP_BIN_DIR", unset = "")
+  if (nzchar(bin_dir)) {
+    candidate <- file.path(bin_dir, name)
+    if (file.exists(candidate)) {
+      return(normalizePath(candidate))
+    }
+  }
+
+  # PATH ----------------------------------------------------------------
   sys_exe <- Sys.which(name)
   if (nchar(sys_exe) > 0) {
-    return(sys_exe)
+    return(unname(sys_exe))
   }
 
   stop(
     sprintf(
       paste0(
-        "Cannot find %s executable. Either:\n",
-        "  1. Install PEST++ and ensure it is on your PATH, or\n",
-        "  2. Specify the path via the `exe` argument."
+        "Cannot find the %s executable. Either:\n",
+        "  1. set %s to the binary, or\n",
+        "  2. set PESTPP_BIN_DIR to the directory holding the PEST++ ",
+        "binaries, or\n",
+        "  3. put %s on your PATH, or\n",
+        "  4. pass the path via the `exe` argument.\n",
+        "PESTO does not bundle PEST++; it drives an installation you supply."
       ),
-      name
+      name, .pestpp_exe_env_var(name), name
     ),
     call. = FALSE
   )
@@ -427,9 +464,12 @@ pesto_sensitivity <- function(pst_file,
 #' in R, so the external binaries are needed only for the optional
 #' cross-checking and `.pst`-file paths.
 #'
-#' The probe looks first for a copy bundled with PESTO (`inst/bin`), then for
-#' the executable on the system `PATH`. It mirrors the resolution used by
-#' [pesto_ies()] and friends but never throws.
+#' The probe resolves the executable exactly as [pesto_ies()] and friends do --
+#' the per-tool environment variable (e.g. `PESTPP_IES_EXE_PATH`), then
+#' `PESTPP_BIN_DIR`, then the system `PATH` -- but never throws. PESTO bundles
+#' no binaries: PEST++ ships no installer and is not on the `PATH` by default,
+#' so pointing at an existing install by environment variable is the normal
+#' way to reach it from R.
 #'
 #' @param which Character scalar naming the executable to probe. Defaults to
 #'   `"pestpp-ies"`; any PEST++ tool name is accepted, e.g. `"pestpp-glm"`,
@@ -880,10 +920,13 @@ pesto_ies_callback <- function(forward_model,
 
 #' Get PESTO package version information
 #'
-#' Returns version info for both the PESTO R package and the
-#' bundled PEST++ binaries.
+#' Returns the PESTO package version, plus the version of the PEST++ install
+#' PESTO resolves (see [pestpp_available()] for how it is found). PESTO bundles
+#' no binaries, so `pestpp_version` reports whatever install is configured, or
+#' `"not found"` when there is none.
 #'
-#' @return A list with version strings.
+#' @return A list with version strings: `pesto_version`, `pestpp_version`,
+#'   `platform`, and `r_version`.
 #' @examples
 #' v <- pesto_version()
 #' v$pesto_version
@@ -892,12 +935,10 @@ pesto_ies_callback <- function(forward_model,
 pesto_version <- function() {
   pkg_ver <- utils::packageVersion("PESTO")
 
-  # Try to get PEST++ version
-  pestpp_ver <- tryCatch({
-    exe <- .find_pestpp_exe("pestpp-ies", NULL)
-    out <- system2(exe, "--version", stdout = TRUE, stderr = TRUE)
-    paste(out, collapse = " ")
-  }, error = function(e) "not found")
+  pestpp_ver <- tryCatch(
+    .pestpp_binary_version(.find_pestpp_exe("pestpp-ies", NULL)),
+    error = function(e) "not found"
+  )
 
   list(
     pesto_version = as.character(pkg_ver),

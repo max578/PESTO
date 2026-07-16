@@ -23,9 +23,12 @@ in R, so the external binaries are needed only for the optional
 cross-checking and \code{.pst}-file paths.
 }
 \details{
-The probe looks first for a copy bundled with PESTO (\code{inst/bin}), then for
-the executable on the system \code{PATH}. It mirrors the resolution used by
-\code{\link[=pesto_ies]{pesto_ies()}} and friends but never throws.
+The probe resolves the executable exactly as \code{\link[=pesto_ies]{pesto_ies()}} and friends do --
+the per-tool environment variable (e.g. \code{PESTPP_IES_EXE_PATH}), then
+\code{PESTPP_BIN_DIR}, then the system \code{PATH} -- but never throws. PESTO bundles
+no binaries: PEST++ ships no installer and is not on the \code{PATH} by default,
+so pointing at an existing install by environment variable is the normal
+way to reach it from R.
 }
 \examples{
 # FALSE on a machine without PEST++ installed -- and that is fine:

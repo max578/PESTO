@@ -19,8 +19,10 @@ pesto_ies(
 \arguments{
 \item{pst_file}{Character. Path to the .pst control file.}
 
-\item{exe}{Character. Path to pestpp-ies executable. If NULL,
-uses the bundled binary.}
+\item{exe}{Character. Path to the pestpp-ies executable. \code{NULL} (the
+default) resolves it from \code{PESTPP_IES_EXE_PATH}, then \code{PESTPP_BIN_DIR},
+then the \code{PATH}. PESTO does not bundle PEST++; it drives an installation
+you supply.}
 
 \item{num_reals}{Integer. Number of ensemble realisations (overrides
 the value in the .pst file).}

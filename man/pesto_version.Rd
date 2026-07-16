@@ -7,11 +7,14 @@
 pesto_version()
 }
 \value{
-A list with version strings.
+A list with version strings: \code{pesto_version}, \code{pestpp_version},
+\code{platform}, and \code{r_version}.
 }
 \description{
-Returns version info for both the PESTO R package and the
-bundled PEST++ binaries.
+Returns the PESTO package version, plus the version of the PEST++ install
+PESTO resolves (see \code{\link[=pestpp_available]{pestpp_available()}} for how it is found). PESTO bundles
+no binaries, so \code{pestpp_version} reports whatever install is configured, or
+\code{"not found"} when there is none.
 }
 \examples{
 v <- pesto_version()

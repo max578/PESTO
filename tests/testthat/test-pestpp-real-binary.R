@@ -177,3 +177,64 @@ test_that("pesto_sensitivity(method) selects the algorithm PEST++ runs", {
   expect_equal(gsa_from_rec("morris"), "MORRIS")
   expect_equal(gsa_from_rec("sobol"), "SOBOL")
 })
+
+
+test_that("the version probe reads a version, not a failed run's log", {
+  # PEST++ has no `--version` flag: it reads `--version` as a control file
+  # name, prints its banner, fails on the missing `--version.pst`, exits 1, and
+  # drops `--version.log`/`.rec`/`.rst` in the caller's directory. Asking that
+  # way returned the whole failed run as the "version" -- and looked right,
+  # because the banner is printed before the error. Only the real binary can
+  # show this; a mock would have returned whatever we told it to.
+  exe <- .pestpp_exe("pestpp-ies")
+  skip_if(!nzchar(exe), "no pestpp-ies binary")
+
+  v <- .pestpp_binary_version(exe)
+
+  expect_match(v, "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+  expect_false(grepl("exception|Error|control file", v, ignore.case = TRUE))
+})
+
+test_that("the version probe leaves no files in the caller's directory", {
+  # `pesto_version()` looks like a read-only accessor. The old probe wrote
+  # three files into whatever directory the user happened to be in.
+  exe <- .pestpp_exe("pestpp-ies")
+  skip_if(!nzchar(exe), "no pestpp-ies binary")
+
+  wd <- file.path(tempdir(), "versionprobe")
+  dir.create(wd, showWarnings = FALSE)
+  on.exit(unlink(wd, recursive = TRUE), add = TRUE)
+
+  old <- setwd(wd)
+  on.exit(setwd(old), add = TRUE, after = FALSE)
+
+  before <- list.files(wd, all.files = TRUE, no.. = TRUE)
+  .pestpp_binary_version(exe)
+  after <- list.files(wd, all.files = TRUE, no.. = TRUE)
+
+  expect_equal(after, before)
+  expect_equal(length(after), 0L)
+})
+
+test_that("pesto_version() reports the resolved binary's real version", {
+  exe <- .pestpp_exe("pestpp-ies")
+  skip_if(!nzchar(exe), "no pestpp-ies binary")
+
+  # Base R rather than withr: withr is deliberately not a dependency of this
+  # package (see 889061e), and this file is not the place to re-add one.
+  old <- Sys.getenv("PESTPP_IES_EXE_PATH", unset = NA)
+  Sys.setenv(PESTPP_IES_EXE_PATH = exe)
+  on.exit(
+    if (is.na(old)) {
+      Sys.unsetenv("PESTPP_IES_EXE_PATH")
+    } else {
+      Sys.setenv(PESTPP_IES_EXE_PATH = old)
+    },
+    add = TRUE
+  )
+
+  v <- pesto_version()
+
+  expect_equal(v$pesto_version, as.character(utils::packageVersion("PESTO")))
+  expect_match(v$pestpp_version, "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+})

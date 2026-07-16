@@ -408,3 +408,56 @@ test_that("the binary runs in the control file's directory, with a bare argv", {
   expect_equal(probe$argv, c("pestpp-ies", "x.pst"))
   expect_equal(.pestpp_cmdline_verdict(probe$argv), "ok")
 })
+
+
+# ---- finding the binary ----------------------------------------------------
+
+test_that("the resolver reads the per-tool env var, then PESTPP_BIN_DIR", {
+  # PEST++ ships no installer and is not on the PATH by default, so a machine
+  # can have it installed and configured -- as this one does, via ~/.Renviron
+  # -- while PESTO reported it missing. PESTO consulted only the PATH and a
+  # bundled `inst/bin` copy that does not exist and never has.
+  bin <- file.path(tempdir(), "fakebin")
+  dir.create(bin, showWarnings = FALSE)
+  on.exit(unlink(bin, recursive = TRUE), add = TRUE)
+  exe <- file.path(bin, "pestpp-ies")
+  file.create(exe)
+
+  restore <- function(var, old) {
+    if (is.na(old)) Sys.unsetenv(var) else do.call(Sys.setenv, setNames(list(old), var))
+  }
+  o1 <- Sys.getenv("PESTPP_IES_EXE_PATH", unset = NA)
+  o2 <- Sys.getenv("PESTPP_BIN_DIR", unset = NA)
+  on.exit({ restore("PESTPP_IES_EXE_PATH", o1); restore("PESTPP_BIN_DIR", o2) },
+          add = TRUE)
+
+  Sys.unsetenv("PESTPP_BIN_DIR")
+  Sys.setenv(PESTPP_IES_EXE_PATH = exe)
+  expect_equal(.find_pestpp_exe("pestpp-ies"), normalizePath(exe))
+
+  Sys.unsetenv("PESTPP_IES_EXE_PATH")
+  Sys.setenv(PESTPP_BIN_DIR = bin)
+  expect_equal(.find_pestpp_exe("pestpp-ies"), normalizePath(exe))
+})
+
+test_that("the env var name is derived per tool", {
+  expect_equal(.pestpp_exe_env_var("pestpp-ies"), "PESTPP_IES_EXE_PATH")
+  expect_equal(.pestpp_exe_env_var("pestpp-glm"), "PESTPP_GLM_EXE_PATH")
+  expect_equal(.pestpp_exe_env_var("pestpp-sen"), "PESTPP_SEN_EXE_PATH")
+})
+
+test_that("an unresolvable binary names every way to supply one", {
+  o1 <- Sys.getenv("PESTPP_IES_EXE_PATH", unset = NA)
+  o2 <- Sys.getenv("PESTPP_BIN_DIR", unset = NA)
+  on.exit({
+    if (!is.na(o1)) Sys.setenv(PESTPP_IES_EXE_PATH = o1)
+    if (!is.na(o2)) Sys.setenv(PESTPP_BIN_DIR = o2)
+  }, add = TRUE)
+  Sys.unsetenv(c("PESTPP_IES_EXE_PATH", "PESTPP_BIN_DIR"))
+
+  expect_error(
+    .find_pestpp_exe("pestpp-nonesuch"),
+    "PESTPP_NONESUCH_EXE_PATH"
+  )
+  expect_error(.find_pestpp_exe("pestpp-nonesuch"), "does not bundle")
+})

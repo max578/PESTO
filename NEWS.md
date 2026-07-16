@@ -25,6 +25,23 @@ path the benchmark suite exercises -- are unaffected: it does not shell out.
 
 ## Bug fixes
 
+* PESTO now finds a PEST++ install that is not on the `PATH`. It consulted only
+  the `PATH` and a copy bundled at `inst/bin` -- which PESTO has never shipped,
+  so that branch could not fire and the documented "uses the bundled binary"
+  fallback did not exist. PEST++ has no installer and is not on the `PATH` by
+  default, so a machine could have it installed and configured and still be told
+  it was missing. Resolution is now `exe`, then the per-tool environment
+  variable (e.g. `PESTPP_IES_EXE_PATH`), then `PESTPP_BIN_DIR`, then the `PATH`.
+
+* `pesto_version()` reports a version rather than a failed run's log, and no
+  longer writes to the caller's working directory. PEST++ has no `--version`
+  flag: it read `--version` as a control-file name, printed its banner, failed
+  on the missing `--version.pst`, and left `--version.log`, `--version.rec` and
+  `--version.rst` behind. `$pestpp_version` held that whole transcript,
+  `std::exception` and all, and looked plausible only because the banner is
+  printed before the error. The banner is now parsed for its `version:` line,
+  from a temporary directory.
+
 * The PEST++ invocation layer has been rebuilt. PESTO passed control variables
   as `/h :name=value` command-line switches, which PEST++ has never accepted:
   its parser takes a control file, an optional `/r` or `/j`, and an optional

@@ -272,6 +272,48 @@
 }
 
 
+#' Read a PEST++ binary's version from its startup banner
+#'
+#' PEST++ has no `--version` flag. `pestpp-ies --version` is read as a *control
+#' file name*: the binary prints its banner, fails on the missing
+#' `--version.pst`, exits 1, and leaves `--version.log`, `--version.rec` and
+#' `--version.rst` in the caller's working directory. Asking for the version
+#' that way returned the whole failed run -- `std::exception` and all -- as the
+#' version string, and looked right only because the banner is printed before
+#' the error.
+#'
+#' Invoked with no arguments the binary prints the same banner, exits 1, and
+#' writes nothing. That is the probe. Run from a temporary directory anyway, so
+#' a future PEST++ that does emit files cannot litter the caller's.
+#'
+#' @param exe Character. Path to the binary.
+#'
+#' @returns Character. The version string, or `"unknown"` if the banner carries
+#'   no `version:` line.
+#' @noRd
+.pestpp_binary_version <- function(exe) {
+  probe_dir <- tempfile("pestpp_version_")
+  dir.create(probe_dir)
+  on.exit(unlink(probe_dir, recursive = TRUE), add = TRUE)
+
+  old <- setwd(probe_dir)
+  on.exit(setwd(old), add = TRUE, after = FALSE)
+
+  # Exit status is 1 even on the clean banner path, so it carries no signal
+  # here and is deliberately ignored; the banner is the answer.
+  out <- suppressWarnings(system2(
+    exe, args = character(0), stdout = TRUE, stderr = TRUE
+  ))
+
+  hit <- grep("^[[:space:]]*version:", out, value = TRUE)
+  if (length(hit) == 0L) {
+    return("unknown")
+  }
+
+  trimws(sub("^[[:space:]]*version:[[:space:]]*", "", hit[1L]))
+}
+
+
 #' Run a PEST++ binary on a control file
 #'
 #' Runs in `working_dir`, because the control file is passed by basename and
