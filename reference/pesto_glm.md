@@ -9,7 +9,7 @@ estimation.
 pesto_glm(
   pst_file,
   exe = NULL,
-  noptmax = 20,
+  noptmax = NULL,
   extra_args = list(),
   working_dir = NULL,
   verbose = TRUE
@@ -28,11 +28,17 @@ pesto_glm(
 
 - noptmax:
 
-  Integer. Maximum number of iterations.
+  Integer or `NULL`. Maximum number of iterations. Written into the
+  control file's `* control data` section, overriding the value there;
+  PEST++ does not accept it as a `++` option. `NULL` (the default)
+  leaves the file's own value alone.
 
 - extra_args:
 
-  Named list. Additional PEST++ arguments.
+  Named list. Additional PEST++ options, written to the control file as
+  `++key(value)` lines. Keys must be PestppOptions keys – PEST++ rejects
+  one it does not recognise. An option the control file already sets is
+  replaced, not duplicated.
 
 - working_dir:
 

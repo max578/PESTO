@@ -35,8 +35,10 @@ plot_identifiability(
 
 - pst:
 
-  A `pesto_pst` object for parameter names. Optional; only used when
-  reading from a `.jco` file and column names are absent.
+  A `pesto_pst` object supplying parameter names. Optional; used only
+  when reading from a `.jco` file that carries no column names, in which
+  case the labels are taken from its parameter table, positionally.
+  Errors if its parameter count does not match the Jacobian's columns.
 
 - n_sv:
 

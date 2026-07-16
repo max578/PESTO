@@ -15,7 +15,7 @@ showing only the most identifiable parameters (see top_n)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,8 +82,10 @@ Mutually exclusive with <code>jacobian</code>.</p></dd>
 
 
 <dt id="arg-pst">pst<a class="anchor" aria-label="anchor" href="#arg-pst"></a></dt>
-<dd><p>A <code>pesto_pst</code> object for parameter names. Optional; only
-used when reading from a <code>.jco</code> file and column names are absent.</p></dd>
+<dd><p>A <code>pesto_pst</code> object supplying parameter names. Optional; used
+only when reading from a <code>.jco</code> file that carries no column names, in
+which case the labels are taken from its parameter table, positionally.
+Errors if its parameter count does not match the Jacobian's columns.</p></dd>
 
 
 <dt id="arg-n-sv">n_sv<a class="anchor" aria-label="anchor" href="#arg-n-sv"></a></dt>

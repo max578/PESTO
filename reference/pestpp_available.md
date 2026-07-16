@@ -27,11 +27,13 @@ A length-one logical: `TRUE` if the named executable is resolvable,
 
 ## Details
 
-The probe looks first for a copy bundled with PESTO (`inst/bin`), then
-for the executable on the system `PATH`. It mirrors the resolution used
-by
+The probe resolves the executable exactly as
 [`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md)
-and friends but never throws.
+and friends do – the per-tool environment variable (e.g.
+`PESTPP_IES_EXE_PATH`), then `PESTPP_BIN_DIR`, then the system `PATH` –
+but never throws. PESTO bundles no binaries: PEST++ ships no installer
+and is not on the `PATH` by default, so pointing at an existing install
+by environment variable is the normal way to reach it from R.
 
 ## See also
 

@@ -11,7 +11,7 @@ pesto_ies(
   pst_file,
   exe = NULL,
   num_reals = 50,
-  noptmax = 4,
+  noptmax = NULL,
   lambda_scale_fac = c(0.1, 0.5, 1),
   ies_par_en = NULL,
   extra_args = list(),
@@ -28,8 +28,10 @@ pesto_ies(
 
 - exe:
 
-  Character. Path to pestpp-ies executable. If NULL, uses the bundled
-  binary.
+  Character. Path to the pestpp-ies executable. `NULL` (the default)
+  resolves it from `PESTPP_IES_EXE_PATH`, then `PESTPP_BIN_DIR`, then
+  the `PATH`. PESTO does not bundle PEST++; it drives an installation
+  you supply.
 
 - num_reals:
 
@@ -38,7 +40,9 @@ pesto_ies(
 
 - noptmax:
 
-  Integer. Maximum number of iterations.
+  Integer or `NULL`. Maximum number of iterations, written to field 1 of
+  line 7 of the control file's `* control data` section. `NULL` (the
+  default) leaves the control file's own value alone.
 
 - lambda_scale_fac:
 
@@ -50,7 +54,10 @@ pesto_ies(
 
 - extra_args:
 
-  Named list. Additional PEST++ arguments.
+  Named list. Additional PEST++ options, written to the control file as
+  `++key(value)` lines. Keys must be PestppOptions keys – PEST++ rejects
+  one it does not recognise. An option the control file already sets is
+  replaced, not duplicated.
 
 - working_dir:
 

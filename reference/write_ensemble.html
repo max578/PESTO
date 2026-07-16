@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,7 +59,9 @@
 
 
 <dt id="arg-format">format<a class="anchor" aria-label="anchor" href="#arg-format"></a></dt>
-<dd><p>Character. Currently only "csv" is supported.</p></dd>
+<dd><p>Character. Only <code>"csv"</code> is supported; any other value is an
+error. Note the asymmetry with <code><a href="read_ensemble.html">read_ensemble()</a></code>, which also reads PEST++
+binary: writing that format is not implemented.</p></dd>
 
 </dl></div>
     <div class="section level2">

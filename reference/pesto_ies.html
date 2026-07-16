@@ -11,7 +11,7 @@ and uncertainty quantification."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -53,7 +53,7 @@ and uncertainty quantification.</p>
 <span>  <span class="va">pst_file</span>,</span>
 <span>  exe <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  num_reals <span class="op">=</span> <span class="fl">50</span>,</span>
-<span>  noptmax <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  noptmax <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lambda_scale_fac <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.5</span>, <span class="fl">1</span><span class="op">)</span>,</span>
 <span>  ies_par_en <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  extra_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -71,8 +71,10 @@ and uncertainty quantification.</p>
 
 
 <dt id="arg-exe">exe<a class="anchor" aria-label="anchor" href="#arg-exe"></a></dt>
-<dd><p>Character. Path to pestpp-ies executable. If NULL,
-uses the bundled binary.</p></dd>
+<dd><p>Character. Path to the pestpp-ies executable. <code>NULL</code> (the
+default) resolves it from <code>PESTPP_IES_EXE_PATH</code>, then <code>PESTPP_BIN_DIR</code>,
+then the <code>PATH</code>. PESTO does not bundle PEST++; it drives an installation
+you supply.</p></dd>
 
 
 <dt id="arg-num-reals">num_reals<a class="anchor" aria-label="anchor" href="#arg-num-reals"></a></dt>
@@ -81,7 +83,9 @@ the value in the .pst file).</p></dd>
 
 
 <dt id="arg-noptmax">noptmax<a class="anchor" aria-label="anchor" href="#arg-noptmax"></a></dt>
-<dd><p>Integer. Maximum number of iterations.</p></dd>
+<dd><p>Integer or <code>NULL</code>. Maximum number of iterations, written to
+field 1 of line 7 of the control file's <code>* control data</code> section. <code>NULL</code>
+(the default) leaves the control file's own value alone.</p></dd>
 
 
 <dt id="arg-lambda-scale-fac">lambda_scale_fac<a class="anchor" aria-label="anchor" href="#arg-lambda-scale-fac"></a></dt>
@@ -93,7 +97,10 @@ the value in the .pst file).</p></dd>
 
 
 <dt id="arg-extra-args">extra_args<a class="anchor" aria-label="anchor" href="#arg-extra-args"></a></dt>
-<dd><p>Named list. Additional PEST++ arguments.</p></dd>
+<dd><p>Named list. Additional PEST++ options, written to the
+control file as <code>++key(value)</code> lines. Keys must be PestppOptions keys –
+PEST++ rejects one it does not recognise. An option the control file
+already sets is replaced, not duplicated.</p></dd>
 
 
 <dt id="arg-working-dir">working_dir<a class="anchor" aria-label="anchor" href="#arg-working-dir"></a></dt>

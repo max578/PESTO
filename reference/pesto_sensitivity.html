@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,7 +62,10 @@
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>Character. "morris" or "sobol".</p></dd>
+<dd><p>Character. <code>"morris"</code> or <code>"sobol"</code>. Selects the algorithm by
+setting the <code>GSA_METHOD</code> option in the control file; pestpp-sen defaults
+to Morris, so without this the result would carry the requested label
+whatever was actually computed.</p></dd>
 
 
 <dt id="arg-exe">exe<a class="anchor" aria-label="anchor" href="#arg-exe"></a></dt>

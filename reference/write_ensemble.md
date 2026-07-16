@@ -20,7 +20,11 @@ write_ensemble(ensemble, file, format = "csv")
 
 - format:
 
-  Character. Currently only "csv" is supported.
+  Character. Only `"csv"` is supported; any other value is an error.
+  Note the asymmetry with
+  [`read_ensemble()`](https://max578.github.io/PESTO/reference/read_ensemble.md),
+  which also reads PEST++ binary: writing that format is not
+  implemented.
 
 ## Value
 

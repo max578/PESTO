@@ -82,7 +82,8 @@ devtools::check(args = "--as-cran")
 ```
 
 The Apple Silicon toolchain currently lacks `libgcov`, so
-`covr::package_coverage()` is meaningful only on Linux CI.
+[`covr::package_coverage()`](http://covr.r-lib.org/reference/package_coverage.md)
+is meaningful only on Linux CI.
 
 ## Issue and discussion
 

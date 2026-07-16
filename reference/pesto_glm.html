@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -46,7 +46,7 @@
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">pesto_glm</span><span class="op">(</span></span>
 <span>  <span class="va">pst_file</span>,</span>
 <span>  exe <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  noptmax <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>  noptmax <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  extra_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  working_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -66,11 +66,17 @@
 
 
 <dt id="arg-noptmax">noptmax<a class="anchor" aria-label="anchor" href="#arg-noptmax"></a></dt>
-<dd><p>Integer. Maximum number of iterations.</p></dd>
+<dd><p>Integer or <code>NULL</code>. Maximum number of iterations. Written into
+the control file's <code>* control data</code> section, overriding the value there;
+PEST++ does not accept it as a <code>++</code> option. <code>NULL</code> (the default) leaves the
+file's own value alone.</p></dd>
 
 
 <dt id="arg-extra-args">extra_args<a class="anchor" aria-label="anchor" href="#arg-extra-args"></a></dt>
-<dd><p>Named list. Additional PEST++ arguments.</p></dd>
+<dd><p>Named list. Additional PEST++ options, written to the
+control file as <code>++key(value)</code> lines. Keys must be PestppOptions keys –
+PEST++ rejects one it does not recognise. An option the control file
+already sets is replaced, not duplicated.</p></dd>
 
 
 <dt id="arg-working-dir">working_dir<a class="anchor" aria-label="anchor" href="#arg-working-dir"></a></dt>

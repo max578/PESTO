@@ -23,7 +23,10 @@ pesto_sensitivity(
 
 - method:
 
-  Character. "morris" or "sobol".
+  Character. `"morris"` or `"sobol"`. Selects the algorithm by setting
+  the `GSA_METHOD` option in the control file; pestpp-sen defaults to
+  Morris, so without this the result would carry the requested label
+  whatever was actually computed.
 
 - exe:
 

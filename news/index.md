@@ -1,6 +1,122 @@
 # Changelog
 
-## PESTO (development version)
+## PESTO 0.10.0
+
+This release rebuilds the PEST++ invocation layer. PESTO’s shell-out to
+PEST++ had never run: control variables were passed as `/h :name=value`
+command-line switches, which PEST++ has never accepted, so every call
+exited before the binary started. The defects below have been present
+since the initial release (9 April 2026) and shipped in every release
+since; they surfaced now because this is the first time the layer was
+checked against the PEST++ sources and then against the real binary,
+rather than against PESTO’s own tests.
+
+Users of
+[`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+– PESTO’s native R ensemble smoother, and the path the benchmark suite
+exercises – are unaffected: it does not shell out.
+
+### Breaking changes
+
+- [`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md)
+  and
+  [`pesto_glm()`](https://max578.github.io/PESTO/reference/pesto_glm.md)
+  now default `noptmax` to `NULL`, meaning “leave the control file’s own
+  iteration cap alone”. The previous defaults (`4` and `20`) were
+  documented as overrides but, because the whole command-line path was
+  broken, had never once been applied to a real run. Honouring them now
+  would have silently retuned every caller’s control file, so the safer
+  reading of a value the user never chose is to respect the file. Pass
+  `noptmax` explicitly to override. A call that injects nothing writes
+  no file at all and runs the caller’s own control file, rather than a
+  `<base>_pesto.pst` copy of it.
+
+### Bug fixes
+
+- PESTO now finds a PEST++ install that is not on the `PATH`. It
+  consulted only the `PATH` and a copy bundled at `inst/bin` – which
+  PESTO has never shipped, so that branch could not fire and the
+  documented “uses the bundled binary” fallback did not exist. PEST++
+  has no installer and is not on the `PATH` by default, so a machine
+  could have it installed and configured and still be told it was
+  missing. Resolution is now `exe`, then the per-tool environment
+  variable (e.g. `PESTPP_IES_EXE_PATH`), then `PESTPP_BIN_DIR`, then the
+  `PATH`.
+
+- [`pesto_version()`](https://max578.github.io/PESTO/reference/pesto_version.md)
+  reports a version rather than a failed run’s log, and no longer writes
+  to the caller’s working directory. PEST++ has no `--version` flag: it
+  read `--version` as a control-file name, printed its banner, failed on
+  the missing `--version.pst`, and left `--version.log`, `--version.rec`
+  and `--version.rst` behind. `$pestpp_version` held that whole
+  transcript, `std::exception` and all, and looked plausible only
+  because the banner is printed before the error. The banner is now
+  parsed for its `version:` line, from a temporary directory.
+
+- The PEST++ invocation layer has been rebuilt. PESTO passed control
+  variables as `/h :name=value` command-line switches, which PEST++ has
+  never accepted: its parser takes a control file, an optional `/r` or
+  `/j`, and an optional run-manager switch, where `/h` selects the
+  PANTHER run manager and expects a `host:port`. Every
+  [`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md)
+  call built at least one such switch, so the binary exited with a
+  command-line error before starting. Control variables now go where
+  PEST++ reads them: `noptmax` into `* control data`, and every other
+  option as a `++key(value)` line. No test caught this because the
+  binary was never a test dependency; the suite checked PESTO against
+  PESTO. Verified against the PEST++ sources rather than against PESTO’s
+  own belief about them.
+
+- [`create_pest_scenario()`](https://max578.github.io/PESTO/reference/create_pest_scenario.md)
+  now writes instruction files into the control file.
+  `instruction_files` was read only to count them, so every control file
+  PESTO produced declared `NINSFLE` and then supplied none, and PEST++
+  refused all of them:
+  `model input/output error: number of instruction files = 0`. PESTO had
+  never written a runnable control file; nothing local could see it,
+  because the control file is only ever read by the binary.
+
+- `$exit_code` is an exit code again. With `verbose = FALSE` – which
+  every example uses –
+  [`system2()`](https://rdrr.io/r/base/system2.html) returns the
+  captured OUTPUT rather than the status, so `$exit_code` held PEST++’s
+  entire log.
+
+- [`pesto_glm()`](https://max578.github.io/PESTO/reference/pesto_glm.md)
+  now honours `noptmax` and `extra_args`, and
+  [`pesto_sensitivity()`](https://max578.github.io/PESTO/reference/pesto_sensitivity.md)
+  now honours `extra_args`. All three were documented, exported, and
+  read by nothing.
+
+- `pesto_sensitivity(method = "sobol")` now runs Sobol. `method`
+  selected the label on the returned object but never reached the
+  binary, so pestpp-sen ran its Morris default and the result was
+  reported as Sobol regardless.
+
+- PEST++ now runs in the directory holding the control file. The file is
+  passed by basename, so it – and every relative template, instruction,
+  and model-command path inside it – was previously resolved against R’s
+  working directory, which is only correct by coincidence.
+
+- [`read_pst()`](https://max578.github.io/PESTO/reference/read_pst.md)
+  now reads `NOPTMAX`, and
+  [`write_pst()`](https://max578.github.io/PESTO/reference/write_pst.md)
+  emits it instead of a hard-coded `30`. A read/write round-trip
+  previously reset the caller’s iteration cap without saying so.
+
+- [`write_ensemble()`](https://max578.github.io/PESTO/reference/write_ensemble.md)
+  rejects a `format` it cannot write. `format = "binary"` wrote a CSV
+  under the requested name.
+
+- [`plot_identifiability()`](https://max578.github.io/PESTO/reference/plot_identifiability.md)
+  honours `pst`, documented as the source of parameter names for a
+  `.jco` that carries none but never consulted. Reading such a file also
+  dropped columns: blank labels all collided on one name, so a
+  three-column Jacobian came back with one.
+
+- Runs now write `<name>_pesto.pst` beside the control file and name
+  their outputs after it. This is the exact input PEST++ was given,
+  recorded for reproducibility.
 
 ### Minor improvements and fixes
 

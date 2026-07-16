@@ -15,7 +15,7 @@ cross-checking and .pst-file paths."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,9 +75,12 @@ cross-checking and <code>.pst</code>-file paths.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The probe looks first for a copy bundled with PESTO (<code>inst/bin</code>), then for
-the executable on the system <code>PATH</code>. It mirrors the resolution used by
-<code><a href="pesto_ies.html">pesto_ies()</a></code> and friends but never throws.</p>
+    <p>The probe resolves the executable exactly as <code><a href="pesto_ies.html">pesto_ies()</a></code> and friends do –
+the per-tool environment variable (e.g. <code>PESTPP_IES_EXE_PATH</code>), then
+<code>PESTPP_BIN_DIR</code>, then the system <code>PATH</code> – but never throws. PESTO bundles
+no binaries: PEST++ ships no installer and is not on the <code>PATH</code> by default,
+so pointing at an existing install by environment variable is the normal
+way to reach it from R.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
