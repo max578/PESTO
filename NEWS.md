@@ -1,4 +1,15 @@
-# PESTO (development version)
+# PESTO 0.10.0
+
+This release rebuilds the PEST++ invocation layer. PESTO's shell-out to PEST++
+had never run: control variables were passed as `/h :name=value` command-line
+switches, which PEST++ has never accepted, so every call exited before the
+binary started. The defects below have been present since the initial release
+(9 April 2026) and shipped in every release since; they surfaced now because
+this is the first time the layer was checked against the PEST++ sources and
+then against the real binary, rather than against PESTO's own tests.
+
+Users of `pesto_ies_callback()` -- PESTO's native R ensemble smoother, and the
+path the benchmark suite exercises -- are unaffected: it does not shell out.
 
 ## Breaking changes
 
