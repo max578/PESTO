@@ -58,7 +58,7 @@
 #' @srrstats {BS2.12} The verbose parameter controls progress output and defaults to TRUE.
 #' @srrstats {BS2.15} on_failure = "na" catches forward-model failures and captures them in the return value (failure_rate + NA realisations) rather than aborting; tested in test-ies-callback.R.
 #' @srrstats {BS3.0} Missing-value handling is documented via the on_failure parameter and the forward-model contract (failed realisations become NA rows, tolerated or aborted).
-#' @srrstats {BS4.0} The assimilation algorithms are documented via citation (Chen & Oliver 2013; Evensen 2018) in roxygen references.
+#' @srrstats {BS4.0} The assimilation algorithms are documented via citation (Chen & Oliver 2013; Emerick & Reynolds 2013; Evensen 2018) in roxygen references.
 #' @srrstats {BS4.5} Non-convergence is surfaced via the returned phi trace, the per-iteration spread-ESS ratio, and the converged flag; failed forward evaluations are handled via on_failure; Marquardt lambda damping mitigates divergence.
 #'
 #' Standards documented next to their code/tests:
@@ -66,7 +66,10 @@
 #'   edge-conditions, noise-susceptibility, helper-srr).
 #' - BS2.7, BS2.8, BS2.13, BS5.1, BS5.3, BS5.5: test-bayesian-interface.R.
 #' - BS4.1, BS7.2: test-correctness-analytic.R.
-#' - BS4.2, BS7.0, BS7.1, BS7.4, BS7.4a: test-bayesian-recovery.R.
+#' - BS4.2, BS7.0, BS7.1, BS7.4, BS7.4a: test-bayesian-recovery.R
+#'   (first moment); test-posterior-calibration.R grades the posterior
+#'   covariance and the realised interval coverage against the same
+#'   closed-form conjugate posterior.
 #' - BS7.3: test-recovery-scaling.R.
 #' - BS6.0, BS6.1, BS6.3: R/ies_result_methods.R.
 #' - BS1.4, BS4.3, BS4.4, BS4.6, BS4.7: test-convergence.R (the phi_tol checker).

@@ -1,10 +1,16 @@
 # Posterior- and prior-recovery standards for the Bayesian & Monte Carlo
 # category (srr BS7), plus posterior-estimate validation (BS4.2).
 
-#' @srrstats {BS4.2} Posterior estimates are validated: on problems with a known
-#'   answer the posterior mean recovers the truth / the closed-form posterior
-#'   (here and in test-correctness-analytic.R), and the spread-ESS / coverage
-#'   diagnostics validate the dispersion.
+#' @srrstats {BS4.2} Posterior estimates are validated on problems with a known
+#'   answer. This file grades the *first* moment: the posterior mean against
+#'   the closed-form Gaussian-conjugate posterior (also in
+#'   test-correctness-analytic.R). The *second* moment and the realised
+#'   coverage of the ensemble's intervals are graded in
+#'   test-posterior-calibration.R against the same closed form. The
+#'   spread-ESS diagnostic reported on each iteration is deliberately not
+#'   claimed as a dispersion oracle: it is a participation ratio, invariant
+#'   to a global rescaling of the ensemble anomalies, so it cannot detect a
+#'   uniformly collapsed spread.
 #' @srrstats {BS7.0} Recovery of the parametric estimates of a prior: the
 #'   empirical moments of a prior ensemble drawn from N(mu, Sigma) recover
 #'   mu and Sigma within tolerance.
@@ -47,6 +53,9 @@ test_that("non-informative data leaves the posterior equal to the prior (BS7.1)"
 })
 
 test_that("posterior mean matches the closed-form conjugate posterior (BS7.2)", {
+  # First moment only. The covariance and the interval coverage are graded in
+  # test-posterior-calibration.R -- a run can match this test to four
+  # significant figures while returning a spread a tenth of the right size.
   set.seed(22L)
   npar <- 3L; nobs <- 24L; nreal <- 400L; sigma <- 0.03
   G   <- matrix(stats::rnorm(nobs * npar), nobs, npar) / sqrt(npar)

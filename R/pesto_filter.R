@@ -59,7 +59,26 @@
 #'   filter per window). A scalar is recycled; a short vector is
 #'   right-padded with its last value.
 #' @param lambda Numeric scalar or per-window vector. Marquardt lambda
-#'   (default `1.0`; recycled / right-padded across windows).
+#'   (default `1.0`; recycled / right-padded across windows). Only available
+#'   under `obs_perturbation = "none"`: under the default `"mda"` the
+#'   damping is the ES-MDA inflation of the inner iterations
+#'   (`alpha = lambda + 1`) and is set through `mda_alpha`, so supplying
+#'   `lambda` there is an error rather than a silently ignored argument.
+#' @param obs_perturbation Character, `"mda"` (default) or `"none"`. Whether
+#'   each realisation assimilates its own perturbed observation block. See
+#'   *Posterior spread and observation perturbation* in
+#'   [pesto_ies_callback()]; the scheme is identical, applied window by
+#'   window.
+#' @param mda_alpha Numeric vector or `NULL`. The ES-MDA inflation schedule
+#'   used *within* each window, one entry per inner iteration (recycled /
+#'   right-padded to `window_noptmax`). `NULL` (default) uses the uniform
+#'   schedule \eqn{\alpha_j = }`window_noptmax`. Windows are disjoint, so
+#'   each observation block is assimilated exactly once and the
+#'   \eqn{\sum_j 1/\alpha_j = 1} budget is spent inside a window, not
+#'   across windows.
+#' @param seed Integer or `NULL`. As in [pesto_ies_callback()]: when
+#'   supplied, `set.seed(seed)` runs once before the filter and the value is
+#'   recorded on the result for [as_manifest()] to carry.
 #' @param fidelity_schedule Integer vector or `NULL`. Per-window fidelity
 #'   level for a [pesto_multifidelity_model()] (see *Multi-fidelity*).
 #' @param parcov Numeric vector of length `npar`, the diagonal of the
@@ -87,18 +106,26 @@
 #'     \item{obs_ensemble}{Final simulated-observation ensemble, full
 #'       `nobs` columns (data.table).}
 #'     \item{windows}{List of per-window metadata: assimilated indices,
-#'       lambda, mean phi, per-parameter ensemble mean and standard
+#'       lambda, the window's ES-MDA inflation schedule `mda_alpha`,
+#'       mean phi, per-parameter ensemble mean and standard
 #'       deviation (the sd trace shows the posterior tightening), and
 #'       failure count.}
 #'     \item{runtime_seconds, n_forward_evals, failure_rate}{Run totals.}
 #'     \item{fidelity}{Multi-fidelity provenance (or `NULL`), as in
 #'       [pesto_ies_callback()].}
+#'     \item{obs_perturbation}{Assimilation-scheme provenance: `scheme`, the
+#'       per-window ES-MDA inflation schedules `alpha`, the run `seed`, and
+#'       `obs_noise` -- the noise ensemble of the final inner update, whose
+#'       rows are the *last window's* observation block.}
 #'   }
 #' @references
 #' Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
 #' iterative ensemble smoother for efficient history matching and
 #' uncertainty quantification. *Computational Geosciences*, 17(4),
 #' 689--703.
+#'
+#' Emerick, A.A. & Reynolds, A.C. (2013). Ensemble smoother with multiple
+#' data assimilation. *Computers & Geosciences*, 55, 3--15.
 #' @seealso [pesto_ies_callback()] for the batch smoother;
 #'   [pesto_multifidelity_model()] for fidelity stacks; [as_manifest()]
 #'   to wrap the result in the ensemble-manifest contract.
@@ -134,10 +161,34 @@ pesto_ies_filter <- function(forward_model,
                              inflation = NULL,
                              localisation = NULL,
                              on_failure = c("na", "stop"),
-                             verbose = TRUE) {
+                             verbose = TRUE,
+                             obs_perturbation = c("mda", "none"),
+                             mda_alpha = NULL,
+                             seed = NULL) {
 
   # Validate inputs -----------------------------------------------------
+  lambda_supplied <- !missing(lambda)
   on_failure <- match.arg(on_failure)
+  obs_perturbation <- .check_obs_perturbation(obs_perturbation)
+  if (obs_perturbation == "none" && !is.null(mda_alpha)) {
+    stop(
+      paste0("`mda_alpha` is only meaningful when ",
+             "`obs_perturbation = \"mda\"`."),
+      call. = FALSE
+    )
+  }
+  if (obs_perturbation == "mda" && lambda_supplied) {
+    stop(
+      paste0(
+        "`lambda` is per-window, but under `obs_perturbation = \"mda\"` the ",
+        "Marquardt damping is the ES-MDA inflation of the *inner* ",
+        "iterations (alpha = lambda + 1) and is derived from `mda_alpha`. ",
+        "Set the schedule with `mda_alpha`, or pass ",
+        "`obs_perturbation = \"none\"` to control `lambda` directly."
+      ),
+      call. = FALSE
+    )
+  }
   .check_pesto_ies_callback_inputs(forward_model, 1L, eigthresh)
   .check_inflation(inflation)
   .check_localisation(localisation)
@@ -211,6 +262,32 @@ pesto_ies_filter <- function(forward_model,
     )
   }
 
+  # ES-MDA inflation schedule, one per window. Windows are disjoint, so each
+  # observation block is assimilated exactly once and the sum(1 / alpha) == 1
+  # budget is spent *within* a window across its `window_noptmax` inner
+  # iterations -- not across windows.
+  alpha_by_window <- if (obs_perturbation == "mda") {
+    lapply(inner_seq, function(m) {
+      .mda_alpha_schedule(mda_alpha, lambda, FALSE, m)$alpha
+    })
+  } else {
+    lapply(inner_seq, function(m) rep(NA_real_, m))
+  }
+  if (obs_perturbation == "mda") {
+    lambda_seq <- vapply(alpha_by_window, function(a) a[1L] - 1.0, numeric(1L))
+  }
+
+  # Observation-noise stream (see `pesto_ies_callback()` for the contract).
+  noise_seed <- NA_integer_
+  if (!is.null(seed)) {
+    noise_seed <- suppressWarnings(as.integer(seed))
+    if (length(noise_seed) != 1L || is.na(noise_seed)) {
+      stop("`seed` must be a single integer, or NULL.", call. = FALSE)
+    }
+    set.seed(noise_seed)
+  }
+  obs_noise_last <- NULL
+
   # Forward-model evaluation contract (mirrors pesto_ies_callback) ------
   is_mf <- S7::S7_inherits(forward_model, pesto_multifidelity_model)
   if (is_mf) {
@@ -256,6 +333,16 @@ pesto_ies_filter <- function(forward_model,
     last_ok   <- NULL
     last_diag <- NULL
     for (j in seq_len(inner_seq[k])) {
+      alpha_kj <- alpha_by_window[[k]][j]
+      if (obs_perturbation == "mda") {
+        obs_noise_last <- .draw_obs_noise(length(idx), nreal, obs_sd_vec[idx],
+                                          scale = alpha_kj)
+        dimnames(obs_noise_last) <- list(obs_names_local[idx],
+                                         paste0("real_", seq_len(nreal)))
+        lambda_kj <- alpha_kj - 1.0
+      } else {
+        lambda_kj <- lambda_seq[k]
+      }
       blk <- .ies_glm_block(
         par_mat       = par_mat,
         obs_block     = obs_mat[, idx, drop = FALSE],
@@ -263,12 +350,13 @@ pesto_ies_filter <- function(forward_model,
         weights_block = weights_blk,
         parcov_inv    = parcov_inv,
         prior_mean    = prior_mean_k,
-        lambda        = lambda_seq[k],
+        lambda        = lambda_kj,
         eigthresh     = eigthresh,
         use_approx    = use_approx,
         window        = k,
         inflation     = inflation,
-        localisation  = localisation
+        localisation  = localisation,
+        obs_noise     = obs_noise_last
       )
       par_mat   <- blk$par_mat
       last_phi  <- blk$phi
@@ -293,6 +381,7 @@ pesto_ies_filter <- function(forward_model,
         window      = k,
         obs_indices = idx,
         lambda      = lambda_seq[k],
+        mda_alpha   = alpha_by_window[[k]],
         mean_phi    = mean(last_phi),
         par_mean    = stats::setNames(par_mean_k, par_names_local),
         par_sd      = stats::setNames(par_sd_k, par_names_local),
@@ -369,7 +458,13 @@ pesto_ies_filter <- function(forward_model,
     }),
     obs_target      = stats::setNames(obs_vec, obs_names_local),
     obs_sd          = stats::setNames(obs_sd_vec, obs_names_local),
-    weights         = stats::setNames(weights, obs_names_local)
+    weights         = stats::setNames(weights, obs_names_local),
+    obs_perturbation = list(
+      scheme    = obs_perturbation,
+      alpha     = alpha_by_window,
+      seed      = noise_seed,
+      obs_noise = obs_noise_last
+    )
   )
   class(output) <- c("pesto_ies_filter_result", "pesto_ies_result")
   output
@@ -384,7 +479,8 @@ pesto_ies_filter <- function(forward_model,
 .ies_glm_block <- function(par_mat, obs_block, obs_vec_block,
                            weights_block, parcov_inv, prior_mean,
                            lambda, eigthresh, use_approx, window,
-                           inflation = NULL, localisation = NULL) {
+                           inflation = NULL, localisation = NULL,
+                           obs_noise = NULL) {
   ok <- stats::complete.cases(obs_block)
   if (sum(ok) < 2L) {
     stop(
@@ -413,7 +509,9 @@ pesto_ies_filter <- function(forward_model,
     use_approx   = use_approx,
     iter         = window,
     inflation    = inflation,
-    localisation = localisation
+    localisation = localisation,
+    obs_noise    = if (is.null(obs_noise)) NULL else
+      obs_noise[, ok, drop = FALSE]
   )
   par_mat[ok, ] <- step$par_ok_new
   list(par_mat = par_mat, phi = step$phi, ok = which(ok),

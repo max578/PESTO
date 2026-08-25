@@ -581,6 +581,14 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
   weights_vec    <- x$weights
   obs_target_vec <- x$obs_target
 
+  # A run that was given a `seed =` records it on the result; carry it into
+  # the manifest so the observation-noise ensemble the posterior spread came
+  # from is reproducible from the manifest alone. An explicit `seed =` here
+  # still wins.
+  if (is.na(seed) && !is.null(x$obs_perturbation$seed)) {
+    seed <- x$obs_perturbation$seed
+  }
+
   lambdas <- vapply(
     x$iterations,
     function(it) if (is.null(it$lambda)) NA_real_ else it$lambda,

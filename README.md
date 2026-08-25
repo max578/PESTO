@@ -78,11 +78,16 @@ PEST and PEST++* vignette:
   *Surrogate-accelerated IES* vignette).
 
 Where PESTO does *not* win is stated just as plainly in the vignettes:
-raw ensemble credible intervals under-cover the analytic posterior (CI90
-around 0.13 against a nominal 0.90 on the benchmark problem) even after
-covariance inflation, and total solve count is unchanged – the speed-up
-is wall-clock, not fewer evaluations (the *Inflation and localisation*
-and *Benchmarking PESTO against PEST and PEST++* vignettes).
+total solve count is unchanged – the speed-up is wall-clock, not fewer
+evaluations (the *Benchmarking PESTO against PEST and PEST++* vignette).
+That benchmark's frozen table also carries a CI90 of about 0.13 against a
+nominal 0.90 for PESTO's raw ensemble intervals. That figure predates the
+current development version: the smoother assimilated the same
+unperturbed observation vector into every realisation, which is now fixed
+by per-realisation observation perturbation under an ES-MDA schedule,
+graded against the closed-form conjugate posterior in both moments.
+Re-running the benchmark needs the external PEST and PEST++ binaries, so
+its calibration row still shows the old behaviour.
 
 ## Installation
 

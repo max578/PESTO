@@ -72,9 +72,14 @@ test_that("IES posterior mean matches fixed-version pestpp-ies 5.2.16 (golden)",
   obs <- stats::setNames(g$obs, sprintf("o%02d", seq_along(g$obs)))
 
   set.seed(g$rng_seed)
+  # No explicit `lambda`: under the default ES-MDA scheme the Marquardt
+  # damping is the inflation factor (alpha = lambda + 1) and is set by the
+  # schedule, so fixing lambda would fix an inflation budget that does not
+  # sum to one likelihood. The graded quantity is the posterior mean, which
+  # the scheme does not move.
   fit <- pesto_ies_callback(function(theta) theta %*% t(g$X), g$prior, obs,
                             obs_sd = g$obs_sd, noptmax = g$noptmax,
-                            lambda = 1.0, verbose = FALSE)
+                            verbose = FALSE)
   post_mean <- colMeans(as.matrix(fit$par_ensemble[, -1L]))
 
   # Agreement with the independently-produced pestpp-ies posterior mean

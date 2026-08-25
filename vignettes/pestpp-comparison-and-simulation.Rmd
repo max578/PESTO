@@ -209,13 +209,21 @@ The three methods separate exactly where the lineage table predicts.
   forward model in-process and updates the ensemble in C++, avoiding the
   per-evaluation file exchange and process spawn the file-coupled binaries pay
   on every call.
-- **Raw calibration is the weak spot.** PESTO's *raw* ensemble credible
-  intervals under-cover (CI90 around 0.13 on the linear problem) -- an
-  under-dispersion the *Inflation and localisation* vignette shows is only
-  partly finite-ensemble collapse. Apply inflation (and, for spatial
-  problems, localisation) before trusting raw intervals, and measure
-  coverage on your own problem rather than assuming inflation restores it
-  to nominal.
+- **The CI90 row is a pre-fix figure.** PESTO's benchmarked *raw* ensemble
+  credible intervals under-cover badly (CI90 around 0.13 on the linear
+  problem against a nominal 0.90). The cause has since been identified and
+  fixed: the smoother assimilated the same unperturbed observation vector
+  into every realisation, so the ensemble was a cloud around the
+  best fit rather than a posterior sample. The development version
+  perturbs the observations per realisation under an ES-MDA schedule and
+  recovers the analytic posterior covariance and nominal interval coverage
+  on a linear-Gaussian problem with a closed-form answer (see *Posterior
+  spread and observation perturbation* in
+  [`?pesto_ies_callback`](../html/pesto_ies_callback.html)). Re-running
+  this benchmark needs the external PEST and PEST++ binaries, which are
+  absent here, so the table above still carries the pre-fix PESTO
+  calibration row. The accuracy, cost and forward-evaluation columns are
+  unaffected. Measure coverage on your own problem regardless.
 
 ## Performance characteristics
 
@@ -454,13 +462,14 @@ should show.
 
 Two limits travel with every PESTO IES result and are stated here once.
 
-- **Raw ensemble intervals under-cover.** Raw credible intervals are too
-  narrow, and covariance inflation only partly closes the gap. The
-  *Inflation and localisation* vignette quantifies this against an
-  analytic posterior, shows that the shortfall does not shrink materially
-  with ensemble size, and gives the current best practice: measure
-  coverage on your own problem rather than trusting a default inflation
-  setting to reach nominal.
+- **The benchmark's calibration row predates the observation-perturbation
+  fix.** The under-coverage it reports was caused by assimilating the same
+  unperturbed observations into every realisation; the development version
+  perturbs per realisation under an ES-MDA schedule and is graded against
+  the closed-form conjugate posterior in both moments. The frozen
+  benchmark cannot be re-run without the external binaries, so its PESTO
+  CI90 row still shows the old behaviour. Measure coverage on your own
+  problem in any case -- that is the standing advice, before and after.
 - **Inflation strength is problem-dependent.** Two independent instruments (a
   joint-calibration coverage test and this cross-tool benchmark) disagree on the
   optimal RTPS strength, which means there is no universal default: report

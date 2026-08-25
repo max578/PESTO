@@ -19,8 +19,15 @@ parameter ensemble (each column is one realisation).}
 \item{obs_ensemble}{Numeric matrix \verb{(n_obs x n_real)}. Simulated
 observations from the current ensemble.}
 
-\item{obs_target}{Numeric vector \code{(n_obs)}. Target (measured)
-observation values.}
+\item{obs_target}{Numeric vector \code{(n_obs)}, or numeric matrix
+\verb{(n_obs x n_real)}. Target (measured) observation values. A vector is
+the textbook single-target form: every realisation assimilates the same
+unperturbed data, which validates the update \emph{arithmetic} but reproduces
+the spread collapse that unperturbed assimilation causes. Pass a matrix
+-- one perturbed data vector \eqn{d_j = d + e_j} per column -- to make
+the reference update the same posterior-sampling update the drivers run
+(see \emph{Posterior spread and observation perturbation} in
+\code{\link[=pesto_ies_callback]{pesto_ies_callback()}}).}
 
 \item{weights}{Numeric vector \code{(n_obs)}. Observation weights
 (typically \code{1 / sd(obs_noise)}).}
