@@ -55,7 +55,17 @@ equally.
 # From GitHub (development version):
 remotes::install_github("max578/PESTO")
 
-# PEST++ binaries must be on your PATH or bundled with the package
+# PESTO ships no PEST++ binaries -- every algorithm runs natively in R, so
+# an external binary is needed only for the optional cross-check and
+# .pst-file paths. `.find_pestpp_exe()` resolves an installed binary in
+# this order:
+#   1. the per-tool environment variable (e.g. PESTPP_IES_EXE_PATH)
+#   2. PESTPP_BIN_DIR, the directory holding the PEST++ suite
+#   3. the system PATH
+#   4. the `exe` argument passed directly to the calling function
+# `pestpp_available()` probes the same order without erroring, and is the
+# documented way for examples and tests to skip gracefully when no binary
+# is installed.
 ```
 
 ## Quick start: creating a model scenario

@@ -125,13 +125,32 @@ its training set -- this is by design, not an artefact.
 
 ## Step 4: surrogate-assisted IES update
 
-`surrogate_ensemble_update()` performs the full algorithm:
+`surrogate_ensemble_update()` performs the classification and blended
+update:
 
 1. Train a GP from the current ensemble.
 2. Predict model outputs for all realisations.
-3. Classify by uncertainty: high -> full model, low -> surrogate.
-4. Apply the control-variate bias correction.
+3. Classify by uncertainty: high -> "full model", low -> surrogate.
+4. Apply the mean-offset bias correction.
 5. Compute the IES update on the blended ensemble.
+
+**What it does not do (in this release):** it does not itself call a
+forward model for the "full model" realisations -- `obs_ensemble` above
+is the caller's already-evaluated ensemble, and step 3's classification
+only chooses which rows of that pre-computed ensemble to keep as-is
+versus replace with the surrogate prediction. `n_model_runs` and
+`savings_pct` below therefore report how many realisations *could* skip
+a forward-model call, not evaluations actually avoided in this run --
+the caller has already paid for every one of them. Realising the saving
+requires wiring a `forward_model` argument that this verb does not yet
+accept; treat the numbers as a projection of the achievable saving, not
+a report of compute already saved. The "mean-offset bias correction" is,
+as named, a single additive offset between the model- and
+surrogate-evaluated rows -- not the variance-reduction control-variate
+estimator of Glasserman (2003) cited below, which `mf_control_variate()`
+implements separately; and the prior-residual term in the blended update
+is held at zero, so this path does not pull the surrogate-corrected
+realisations back toward the prior the way the standard IES update does.
 
 ```{r surrogate-update}
 weights <- rep(1 / 0.1, n_obs)    # 1 / obs_noise
@@ -147,10 +166,11 @@ result <- surrogate_ensemble_update(
   uncertainty_threshold = 0.1
 )
 
-cat("Full model runs needed:", result$n_model_runs, "\n")
-cat("Surrogate predictions:", result$n_surrogate_runs, "\n")
+cat("Realisations classified 'needs full model':", result$n_model_runs, "\n")
+cat("Realisations classified 'surrogate suffices':", result$n_surrogate_runs, "\n")
 cat("Total realisations:", result$n_total, "\n")
-cat("Model savings:", sprintf("%.0f%%", result$savings_pct), "\n")
+cat("Projected saving if wired to skip forward-model calls:",
+    sprintf("%.0f%%", result$savings_pct), "\n")
 cat("Mean GP uncertainty:", round(result$mean_uncertainty, 6), "\n")
 cat("GP length scale:", round(result$gp_length_scale, 4), "\n")
 ```
@@ -190,13 +210,17 @@ cat("Upgrade correlation:", round(upgrade_corr, 6), "\n")
 
 ## When the surrogate pays off
 
-The saving is the fraction of realisations the surrogate handles,
-$1 - n_{\text{model}}/n_{\text{total}}$. Because the GP is trained on the current
-ensemble and predicts at those same points, in a smooth regime it is confident
-enough to handle essentially the whole ensemble at the default threshold -- so
-the saving is high *by construction*. What decides whether the surrogate is
-worth using is therefore not how many realisations it handles but whether its
-answer stays accurate, which the *Effect of nonlinearity* section measures next.
+The projected saving is the fraction of realisations classified as
+surrogate-safe, $1 - n_{\text{model}}/n_{\text{total}}$ -- a *projection*,
+per the caveat in Step 4, since this release does not yet skip the
+forward-model call it counts as saved. Because the GP is trained on the
+current ensemble and predicts at those same points, in a smooth regime it
+is confident enough to classify essentially the whole ensemble as
+surrogate-safe at the default threshold -- so the projected saving is
+high *by construction*. What decides whether wiring up the real saving
+would be worth it is therefore not how many realisations get classified
+as surrogate-safe but whether the surrogate's answer stays accurate,
+which the *Effect of nonlinearity* section measures next.
 
 ```{r savings-number}
 set.seed(7)

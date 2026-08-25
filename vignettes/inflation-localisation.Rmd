@@ -19,20 +19,36 @@ knitr::opts_chunk$set(
 )
 ```
 
-## The problem: finite-ensemble under-dispersion
+## The problem: ensemble under-dispersion
 
 An iterative ensemble smoother estimates a posterior parameter
-distribution from a finite ensemble of realisations. With a finite
-ensemble two pathologies arise, both of which make the posterior spread
-*too narrow* -- the ensemble becomes over-confident:
+distribution from a finite ensemble of realisations. Two distinct
+pathologies can make the posterior spread *too narrow* -- the ensemble
+becomes over-confident:
 
-1. **Under-dispersion (ensemble collapse).** Each assimilation step
-   contracts the ensemble spread; over several iterations the posterior
-   variance can fall far below the true posterior variance. The smoother
-   then reports far more certainty than the data support.
+1. **Finite-ensemble collapse.** Each assimilation step contracts the
+   ensemble spread; over several iterations the posterior variance can
+   fall below the true posterior variance. This is the classical,
+   well-characterised effect the ensemble-Kalman literature addresses
+   with inflation and localisation (Whitaker & Hamill 2012; Luo & Bhakta
+   2020), and it shrinks as the ensemble grows.
 2. **Spurious correlations.** A finite ensemble manufactures apparent
    correlations between parameters and observations that are not real.
-   Acting on them injects noise into the update and accelerates collapse.
+   Acting on them injects noise into the update and accelerates
+   collapse.
+
+This vignette demonstrates inflation and localisation against cause 1 on
+a linear-Gaussian problem with a known analytic posterior. **A caveat
+carried over from the current release:** on this same problem the
+realised under-dispersion is larger than finite-ensemble collapse alone
+predicts, and does not shrink materially as `nreal` grows from 24 to
+8,000 (a sweep this vignette reproduces below) -- evidence that a second,
+ensemble-size-independent source of under-dispersion is present in the
+current smoother alongside the classical effect. Inflation, which is
+designed against cause 1, does not close that residual gap; treat the
+sd-ratio numbers in this vignette as a lower bound on the smoother's
+current calibration, not as "matches the analytic posterior once
+inflated".
 
 PESTO addresses the first with **covariance inflation**
 ([`pesto_inflation()`](../html/pesto_inflation.html)) and the second with
@@ -116,6 +132,39 @@ directions; small values mean it has collapsed onto a few):
 round(bare$ess_ratio, 3)
 ```
 
+### Is this finite-ensemble collapse, or something else?
+
+If the under-dispersion above were purely finite-ensemble collapse, the
+sd-ratio should climb toward 1 as the ensemble grows -- a larger sample
+gives the update a better estimate of the true covariance structure. The
+sweep below runs the same problem at increasing `nreal` (kept modest here
+for vignette build time; the pattern is the same out to 8,000
+realisations):
+
+```{r size-sweep}
+sweep_nreal <- c(24L, 100L, 500L)
+sd_by_nreal <- vapply(sweep_nreal, function(n) {
+  set.seed(42L)
+  prior_n <- matrix(rnorm(n * npar), n, npar,
+                    dimnames = list(NULL, paste0("p", seq_len(npar))))
+  fit_n <- pesto_ies_callback(
+    forward_model = forward, prior_ensemble = prior_n,
+    obs = setNames(y, paste0("o", seq_len(nobs))), obs_sd = obs_sd,
+    noptmax = 12L, verbose = FALSE
+  )
+  mean(apply(as.matrix(fit_n$par_ensemble[, -1]), 2L, sd) / post_sd)
+}, numeric(1L))
+
+data.frame(nreal = sweep_nreal, sd_ratio = round(sd_by_nreal, 3))
+```
+
+The sd-ratio is essentially flat across a 20-fold change in ensemble
+size, not the rising trend finite-ensemble collapse alone would produce.
+That flatness is the evidence behind the caveat above: most of this
+problem's under-dispersion comes from a source that does not respond to
+`nreal`, and inflation -- being a remedy for the ensemble-size-dependent
+part -- cannot be expected to close it either.
+
 ## Inflation re-expands the spread
 
 `pesto_inflation()` offers four methods. The workhorse is relaxation to
@@ -138,16 +187,16 @@ data.frame(
 
 RTPS roughly doubles the retained posterior spread and lifts the
 spread-ESS ratio. A caveat worth stating plainly: inflation *mitigates*
-collapse, it does not abolish it. A finite-ensemble GLM smoother of this
-size still under-estimates the posterior spread; inflation moves it
-substantially closer to the truth without claiming to reach it. Larger
-ensembles narrow the residual gap.
+finite-ensemble collapse, it does not abolish it, and -- per the sweep
+above -- it does not touch the ensemble-size-independent residual either.
+Read the `sd_ratio` improvement as "closer than the bare smoother", not
+as "close to the analytic posterior".
 
 The spread-ESS diagnostic ([`ensemble_spread_ess()`](../html/ensemble_spread_ess.html))
 is recorded on **every** iteration regardless of method, so the collapse
 trajectory is always available in the result:
 
-```{r ess-trace}
+```{r ess-trace, fig.cap = "Spread-ESS ratio by IES iteration under RTPS inflation: the trajectory stabilises rather than decaying toward zero, so inflation is holding the ensemble spread against collapse iteration over iteration.", fig.alt = "Line plot of the spread-ESS ratio (y axis, 0 to 1) against IES iteration number (x axis, 1 to 12) under RTPS inflation. The ratio drops over the first few iterations and then levels off at a stable plateau rather than continuing to decay toward zero."}
 fit <- pesto_ies_callback(
   forward, prior, setNames(y, paste0("o", seq_len(nobs))),
   obs_sd = obs_sd, noptmax = 12L,
@@ -159,6 +208,12 @@ plot(
   main = "Dispersion held up under RTPS inflation", ylim = c(0, 1)
 )
 ```
+
+The plateau, rather than a continued slide toward zero, is what "inflation
+holds the ensemble spread against collapse" looks like iteration by
+iteration -- distinct from the sd-ratio numbers above, which compare the
+*final* ensemble against the analytic posterior rather than tracking
+the trajectory.
 
 ## Localisation suppresses spurious correlations
 

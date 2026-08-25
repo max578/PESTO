@@ -227,12 +227,16 @@ ggplot(bd, aes(year)) +
 ```
 
 The raw 90% band covers well under 90% of the held-out truth -- the
-finite-ensemble **under-dispersion** an iterative smoother suffers. PESTO
-ships the remedy: covariance inflation (and, for spatial problems,
-localisation), documented in the *Inflation and localisation* vignette.
-Re-running with RTPS inflation widens the posterior and lifts coverage toward
-nominal. Inflation strength is problem-dependent, so report coverage and tune
-it rather than trusting a default blindly.
+under-dispersion the current release's IES ensemble carries (part
+finite-ensemble collapse, part a residual that does not shrink with
+ensemble size; see the *Inflation and localisation* vignette). PESTO
+ships covariance inflation (and, for spatial problems, localisation) as
+a partial remedy, documented in that vignette. Re-running with RTPS
+inflation widens the posterior and lifts coverage toward nominal, though
+it does not by itself reach nominal coverage. Inflation strength is
+problem-dependent, so report coverage and tune it rather than trusting a
+default blindly -- and treat coverage as measured, not assumed, until
+the residual under-dispersion is addressed.
 
 ## The ensemble manifest
 
