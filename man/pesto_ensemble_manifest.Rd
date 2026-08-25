@@ -19,7 +19,7 @@ trusting positional convention. \code{outputs} columns: \code{name},
 \code{quantity}, \code{unit} (+ optional provenance \code{verified_on},
 \code{oracle_kind}, \code{evidence_path}); \code{params} columns: \code{name},
 \code{apsim_node}, \code{unit} (+ same optional provenance). Build one with
-\code{\link[=pesto_obs_schema]{pesto_obs_schema()}}. The descriptor is provenance metadata — it is
+\code{\link[=pesto_obs_schema]{pesto_obs_schema()}}. The descriptor is provenance metadata -- it is
 \strong{not} folded into \code{data_hash} (correspondence is grounded by a
 second manifest that agrees on units, not by self-hash). Default
 \code{NULL} (absent).}
@@ -72,7 +72,7 @@ PESTO internals, carrying enough provenance to make a run independently
 reproducible and independently verifiable (via \code{\link[=verify_manifest]{verify_manifest()}}).
 }
 \details{
-Construct directly via the class constructor, or — preferred — via
+Construct directly via the class constructor, or -- preferred -- via
 \code{\link[=as_manifest]{as_manifest()}} applied to a \code{pesto_ies_callback_result}.
 }
 \section{Persistence}{
@@ -84,12 +84,12 @@ assimilation context (\code{weights} + \code{obs_target}) are emitted as
 sidecar files whose relative paths are recorded inside the YAML.
 Three sidecar modes:
 \itemize{
-\item \code{format = "rds"} (default, \strong{verifiable}) — RDS only. IEEE 754
+\item \code{format = "rds"} (default, \strong{verifiable}) -- RDS only. IEEE 754
 doubles round-trip bit-exactly; SHA-256 integrity check holds.
-\item \code{format = "both"} (\strong{verifiable}) — RDS sidecars plus parallel
+\item \code{format = "both"} (\strong{verifiable}) -- RDS sidecars plus parallel
 \verb{*_inspection.csv} files. Hash bound to RDS; CSVs are decorative.
 \item \code{format = "csv_unverified"} (\strong{not verifiable}, renamed from
-\code{"csv"} in PESTO 0.3.2) — CSV-only sidecars. Hash is recorded
+\code{"csv"} in PESTO 0.3.2) -- CSV-only sidecars. Hash is recorded
 but cannot be recomputed from disk (CSV formatter precision loss
 ~1 ULP). \code{\link[=verify_manifest]{verify_manifest()}} returns \code{ok = NA + message}. Use
 only for one-way export to non-R analysts; round-trip integrity

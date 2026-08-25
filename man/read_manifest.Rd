@@ -19,3 +19,17 @@ reconstructs the \code{pesto_ensemble_manifest} S7 object. The file
 extensions in the YAML's \verb{artefacts:} block determine the read path
 (\code{.rds} via \code{readRDS}, \code{.csv} via \code{utils::read.csv}).
 }
+\examples{
+m <- as_manifest(
+  pesto_ies_callback(
+    function(t) t \%*\% t(matrix(1, 2L, 2L)),
+    matrix(rnorm(20L), 10L, 2L, dimnames = list(NULL, c("a", "b"))),
+    c(o1 = 0.1, o2 = -0.2), obs_sd = 0.1, noptmax = 2L, verbose = FALSE
+  ),
+  seed = 1L
+)
+f <- tempfile(fileext = ".yaml")
+write_manifest(m, f)
+m2 <- read_manifest(f)
+class(m2)
+}

@@ -1,4 +1,4 @@
-# PESTO ensemble manifest — S7 class formalising a versioned, hashed,
+# PESTO ensemble manifest -- S7 class formalising a versioned, hashed,
 # self-describing record of an ensemble run that any downstream tool can
 # read and verify without depending on PESTO internals.
 
@@ -10,7 +10,7 @@
 #' PESTO internals, carrying enough provenance to make a run independently
 #' reproducible and independently verifiable (via [verify_manifest()]).
 #'
-#' Construct directly via the class constructor, or — preferred — via
+#' Construct directly via the class constructor, or -- preferred -- via
 #' [as_manifest()] applied to a `pesto_ies_callback_result`.
 #'
 #' @usage NULL
@@ -28,7 +28,7 @@
 #'   `quantity`, `unit` (+ optional provenance `verified_on`,
 #'   `oracle_kind`, `evidence_path`); `params` columns: `name`,
 #'   `apsim_node`, `unit` (+ same optional provenance). Build one with
-#'   [pesto_obs_schema()]. The descriptor is provenance metadata — it is
+#'   [pesto_obs_schema()]. The descriptor is provenance metadata -- it is
 #'   **not** folded into `data_hash` (correspondence is grounded by a
 #'   second manifest that agrees on units, not by self-hash). Default
 #'   `NULL` (absent).
@@ -67,12 +67,12 @@
 #' sidecar files whose relative paths are recorded inside the YAML.
 #' Three sidecar modes:
 #'
-#' * `format = "rds"` (default, **verifiable**) — RDS only. IEEE 754
+#' * `format = "rds"` (default, **verifiable**) -- RDS only. IEEE 754
 #'   doubles round-trip bit-exactly; SHA-256 integrity check holds.
-#' * `format = "both"` (**verifiable**) — RDS sidecars plus parallel
+#' * `format = "both"` (**verifiable**) -- RDS sidecars plus parallel
 #'   `*_inspection.csv` files. Hash bound to RDS; CSVs are decorative.
 #' * `format = "csv_unverified"` (**not verifiable**, renamed from
-#'   `"csv"` in PESTO 0.3.2) — CSV-only sidecars. Hash is recorded
+#'   `"csv"` in PESTO 0.3.2) -- CSV-only sidecars. Hash is recorded
 #'   but cannot be recomputed from disk (CSV formatter precision loss
 #'   ~1 ULP). [verify_manifest()] returns `ok = NA + message`. Use
 #'   only for one-way export to non-R analysts; round-trip integrity
@@ -147,7 +147,7 @@ pesto_ensemble_manifest <- S7::new_class(
                 "`format` must be one of rds, both, csv_unverified")
     }
     # A set `obs_schema` must be well-formed AND describe only columns that
-    # actually exist — a descriptor naming a non-existent output/parameter is
+    # actually exist -- a descriptor naming a non-existent output/parameter is
     # a hallucinated column and is rejected at construction.
     if (!is.null(self@obs_schema)) {
       errs <- c(errs,
@@ -248,6 +248,14 @@ pesto_obs_schema <- function(outputs = NULL, params = NULL) {
 #'   to ground the run to its simulator), and `obs_schema` (a grounded
 #'   semantic descriptor from [pesto_obs_schema()] or `NULL`).
 #' @return A `pesto_ensemble_manifest` S7 object.
+#' @examples
+#' fit <- pesto_ies_callback(
+#'   function(t) t %*% t(matrix(1, 2L, 2L)),
+#'   matrix(rnorm(20L), 10L, 2L, dimnames = list(NULL, c("a", "b"))),
+#'   c(o1 = 0.1, o2 = -0.2), obs_sd = 0.1, noptmax = 2L, verbose = FALSE
+#' )
+#' m <- as_manifest(fit, seed = 1L)
+#' class(m)
 #' @export
 as_manifest <- S7::new_generic("as_manifest", "x")
 
@@ -282,14 +290,14 @@ S7::method(as_manifest,
 #' `<basename>_outputs.<ext>`, `<basename>_assim.<ext>`) in the same
 #' directory. `<ext>` depends on `format`:
 #'
-#' * `"rds"` (default) — RDS sidecars only. IEEE 754 doubles round-trip
+#' * `"rds"` (default) -- RDS sidecars only. IEEE 754 doubles round-trip
 #'   bit-exactly; [verify_manifest()] recomputes the SHA-256 hash and
 #'   confirms integrity.
-#' * `"both"` — RDS sidecars **plus** parallel inspection CSVs
+#' * `"both"` -- RDS sidecars **plus** parallel inspection CSVs
 #'   (`<basename>_params_inspection.csv`, etc.). The hash is still
 #'   bound to the RDS form; the CSVs are decorative only and are
 #'   recorded in the YAML's `inspection_csv:` block.
-#' * `"csv_unverified"` — CSV sidecars only. The hash is still recorded
+#' * `"csv_unverified"` -- CSV sidecars only. The hash is still recorded
 #'   (computed from the in-memory binary representation) but
 #'   [verify_manifest()] cannot recompute it from disk: CSV
 #'   write-formatter precision loss (~1 ULP at IEEE 754 epsilon) would
@@ -307,6 +315,17 @@ S7::method(as_manifest,
 #'   it) and `format` (one of `"rds"`, `"both"`, `"csv_unverified"`).
 #' @return Invisible character vector of the written paths (YAML +
 #'   sidecars, in write order).
+#' @examples
+#' m <- as_manifest(
+#'   pesto_ies_callback(
+#'     function(t) t %*% t(matrix(1, 2L, 2L)),
+#'     matrix(rnorm(20L), 10L, 2L, dimnames = list(NULL, c("a", "b"))),
+#'     c(o1 = 0.1, o2 = -0.2), obs_sd = 0.1, noptmax = 2L, verbose = FALSE
+#'   ),
+#'   seed = 1L
+#' )
+#' f <- tempfile(fileext = ".yaml")
+#' write_manifest(m, f)
 #' @export
 write_manifest <- S7::new_generic("write_manifest", "manifest")
 
@@ -404,6 +423,19 @@ S7::method(write_manifest, pesto_ensemble_manifest) <-
 #'
 #' @param file Character. Path to the YAML manifest file.
 #' @return A `pesto_ensemble_manifest`.
+#' @examples
+#' m <- as_manifest(
+#'   pesto_ies_callback(
+#'     function(t) t %*% t(matrix(1, 2L, 2L)),
+#'     matrix(rnorm(20L), 10L, 2L, dimnames = list(NULL, c("a", "b"))),
+#'     c(o1 = 0.1, o2 = -0.2), obs_sd = 0.1, noptmax = 2L, verbose = FALSE
+#'   ),
+#'   seed = 1L
+#' )
+#' f <- tempfile(fileext = ".yaml")
+#' write_manifest(m, f)
+#' m2 <- read_manifest(f)
+#' class(m2)
 #' @export
 read_manifest <- function(file) {
   .assert_path_exists(file, "file")
@@ -449,10 +481,20 @@ read_manifest <- function(file) {
 #'
 #' @param manifest A `pesto_ensemble_manifest`.
 #' @param ... Reserved.
-#' @return A list with `ok` (`TRUE`, `FALSE`, or `NA` — see Details),
+#' @return A list with `ok` (`TRUE`, `FALSE`, or `NA` -- see Details),
 #'   `stored` (the manifest's recorded hash), `recomputed` (the hash
 #'   computed from current data), and `message` (`NULL` for verifiable
 #'   formats, otherwise an explanation).
+#' @examples
+#' m <- as_manifest(
+#'   pesto_ies_callback(
+#'     function(t) t %*% t(matrix(1, 2L, 2L)),
+#'     matrix(rnorm(20L), 10L, 2L, dimnames = list(NULL, c("a", "b"))),
+#'     c(o1 = 0.1, o2 = -0.2), obs_sd = 0.1, noptmax = 2L, verbose = FALSE
+#'   ),
+#'   seed = 1L
+#' )
+#' verify_manifest(m)$ok
 #' @export
 verify_manifest <- S7::new_generic("verify_manifest", "manifest")
 
@@ -488,7 +530,7 @@ S7::method(verify_manifest, pesto_ensemble_manifest) <-
     )
   }
 
-# Pretty-printer. S7 dispatch on base R's `print` generic — registered
+# Pretty-printer. S7 dispatch on base R's `print` generic -- registered
 # via the S7 method table so the S7 object's default printer (which
 # would dump all slot values verbatim) is overridden.
 S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
@@ -703,7 +745,7 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
 # Returns a character vector of error strings (empty if valid). Each side
 # (outputs/params), when present, must be a data.frame carrying the required
 # descriptor columns AND must name only columns that actually exist in the
-# manifest data — a descriptor for a non-existent column is a hallucinated
+# manifest data -- a descriptor for a non-existent column is a hallucinated
 # fact and is refused.
 .validate_obs_schema <- function(obs_schema, outputs, params) {
   errs <- character(0)

@@ -29,3 +29,12 @@ eventually, \code{\link[=pesto_ies]{pesto_ies()}}) in the S7 manifest contract o
 downstream packages can consume it via S7 dispatch without reaching
 into PESTO-specific list internals.
 }
+\examples{
+fit <- pesto_ies_callback(
+  function(t) t \%*\% t(matrix(1, 2L, 2L)),
+  matrix(rnorm(20L), 10L, 2L, dimnames = list(NULL, c("a", "b"))),
+  c(o1 = 0.1, o2 = -0.2), obs_sd = 0.1, noptmax = 2L, verbose = FALSE
+)
+m <- as_manifest(fit, seed = 1L)
+class(m)
+}

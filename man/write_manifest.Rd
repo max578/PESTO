@@ -26,14 +26,14 @@ directory. \verb{<ext>} depends on \code{format}:
 }
 \details{
 \itemize{
-\item \code{"rds"} (default) — RDS sidecars only. IEEE 754 doubles round-trip
+\item \code{"rds"} (default) -- RDS sidecars only. IEEE 754 doubles round-trip
 bit-exactly; \code{\link[=verify_manifest]{verify_manifest()}} recomputes the SHA-256 hash and
 confirms integrity.
-\item \code{"both"} — RDS sidecars \strong{plus} parallel inspection CSVs
+\item \code{"both"} -- RDS sidecars \strong{plus} parallel inspection CSVs
 (\verb{<basename>_params_inspection.csv}, etc.). The hash is still
 bound to the RDS form; the CSVs are decorative only and are
 recorded in the YAML's \verb{inspection_csv:} block.
-\item \code{"csv_unverified"} — CSV sidecars only. The hash is still recorded
+\item \code{"csv_unverified"} -- CSV sidecars only. The hash is still recorded
 (computed from the in-memory binary representation) but
 \code{\link[=verify_manifest]{verify_manifest()}} cannot recompute it from disk: CSV
 write-formatter precision loss (~1 ULP at IEEE 754 epsilon) would
@@ -44,4 +44,16 @@ review): the old name was indistinguishable at a glance from the
 verifiable modes, which the review judged a footgun. Old YAMLs
 with \code{format: csv} continue to read back correctly.
 }
+}
+\examples{
+m <- as_manifest(
+  pesto_ies_callback(
+    function(t) t \%*\% t(matrix(1, 2L, 2L)),
+    matrix(rnorm(20L), 10L, 2L, dimnames = list(NULL, c("a", "b"))),
+    c(o1 = 0.1, o2 = -0.2), obs_sd = 0.1, noptmax = 2L, verbose = FALSE
+  ),
+  seed = 1L
+)
+f <- tempfile(fileext = ".yaml")
+write_manifest(m, f)
 }

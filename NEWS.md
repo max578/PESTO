@@ -1,3 +1,34 @@
+# PESTO (development version)
+
+## Documentation
+
+* Replaced the last surviving reference to the fabricated "PEST++ binaries
+  may be bundled with the package" interface (`getting-started` vignette)
+  with the real four-step resolution order (`PESTPP_*_EXE_PATH`, then
+  `PESTPP_BIN_DIR`, then `PATH`, then the `exe` argument), grounded against
+  `.find_pestpp_exe()`.
+* Corrected the *Inflation and localisation* vignette's diagnosis: the
+  observed under-dispersion does not shrink materially as `nreal` grows
+  from 24 to 500 (a sweep the vignette now reproduces live), so it is not
+  purely finite-ensemble collapse, and covariance inflation should not be
+  read as closing the gap to the analytic posterior. Carried the same
+  correction into the two vignettes that repeated the original diagnosis
+  (`apsim-case-study`, `pestpp-comparison-and-simulation`) and into the
+  README performance section, which now states "matched accuracy, not
+  matched calibration" in the same sentence as the speed claim.
+* Corrected the *Surrogate-accelerated IES* vignette and README: the
+  current `surrogate_ensemble_update()` classifies which realisations
+  could skip a forward-model call but does not itself skip one, so
+  `savings_pct` is a projection, not a measured compute reduction.
+  Distinguished the "mean-offset bias correction" it applies from a true
+  control-variate estimator (`mf_control_variate()`), and noted the
+  prior-residual term is held at zero in this path.
+* Added a `fig.cap` and interpretive prose to the previously-uncaptioned
+  spread-ESS trace figure in the *Inflation and localisation* vignette.
+* Added `@examples` to the four C2 manifest verbs (`as_manifest()`,
+  `write_manifest()`, `read_manifest()`, `verify_manifest()`); each was
+  previously undocumented by example.
+
 # PESTO 0.10.1
 
 Follows 0.10.0's PEST++ rebuild by applying the same question to the other
