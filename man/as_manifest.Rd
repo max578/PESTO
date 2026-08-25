@@ -7,8 +7,9 @@
 as_manifest(x, ...)
 }
 \arguments{
-\item{x}{A \code{pesto_ies_callback_result} (or any object with a method
-registered against this generic).}
+\item{x}{A \code{pesto_ies_callback_result}, a \code{pesto_ies_filter_result}, a
+\code{\link[=pesto_abstention]{pesto_abstention()}} (any object with a method registered against
+this generic).}
 
 \item{...}{Method-specific arguments. For
 \code{pesto_ies_callback_result}: \code{run_id} (character, defaults to a
@@ -18,10 +19,21 @@ record captured by \code{\link[=pesto_ies_callback]{pesto_ies_callback()}} for a
 \code{apsim_version} (character, defaults to \code{NA_character_}; pass
 \code{attr(fm, "apsim_version")} from an \code{\link[=apsim_callback]{apsim_callback()}} forward model
 to ground the run to its simulator), and \code{obs_schema} (a grounded
-semantic descriptor from \code{\link[=pesto_obs_schema]{pesto_obs_schema()}} or \code{NULL}).}
+semantic descriptor from \code{\link[=pesto_obs_schema]{pesto_obs_schema()}} or \code{NULL}). For a
+\code{pesto_abstention}: the same \code{run_id} / \code{seed} / \code{apsim_version} /
+\code{obs_schema} arguments plus \code{method} (character, one of
+\code{"ies_callback"}, \code{"ies_filter"}, \code{"ies_pst"}, \code{"mda"}, \code{"surrogate"};
+default \code{"ies_callback"} -- there is no ensemble to infer it from).}
 }
 \value{
-A \code{pesto_ensemble_manifest} S7 object.
+A \code{pesto_ensemble_manifest} S7 object. When \code{x} is a
+\code{\link[=pesto_abstention]{pesto_abstention()}}, \code{params} / \code{outputs} are empty (zero-row)
+data frames, \code{weights} / \code{obs_target} are empty numeric vectors,
+\code{failure_rate} is \code{1}, and \code{summary} carries
+\code{list(abstained = TRUE, reason = x$reason, detail = x$detail)} -- the
+abstention's reason travels into the manifest's typed verdict home
+so a downstream consumer sees the decline without inspecting
+PESTO-internal objects.
 }
 \description{
 Wraps the plain-list result returned by \code{\link[=pesto_ies_callback]{pesto_ies_callback()}} (and,

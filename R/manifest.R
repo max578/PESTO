@@ -58,6 +58,13 @@
 #'   iteration.
 #' @param failure_rate Numeric in `[0, 1]`. Fraction of forward
 #'   evaluations that returned `NA`.
+#' @param summary A `list(abstained, reason, detail)` typed verdict, or
+#'   `NULL` (default). Set by [as_manifest()] when applied to a
+#'   [pesto_abstention()]: `abstained` is `TRUE` and `reason` / `detail`
+#'   carry the abstention's reason code and human-readable detail, so a
+#'   downstream consumer of the manifest can see that a PESTO reliability
+#'   gate declined the run without inspecting PESTO-internal objects.
+#'   `NULL` for a manifest built from a completed run.
 #'
 #' @section Persistence:
 #' See [write_manifest()] / [read_manifest()] for YAML serialisation
@@ -121,7 +128,8 @@ pesto_ensemble_manifest <- S7::new_class(
     lambda_schedule = S7::class_numeric,
     failure_rate    = S7::new_property(S7::class_numeric, default = 0),
     format          = S7::new_property(S7::class_character,
-                                       default = "rds")
+                                       default = "rds"),
+    summary         = S7::new_property(S7::class_any, default = NULL)
   ),
   validator = function(self) {
     errs <- character(0)
@@ -153,6 +161,16 @@ pesto_ensemble_manifest <- S7::new_class(
       errs <- c(errs,
                 .validate_obs_schema(self@obs_schema,
                                      self@outputs, self@params))
+    }
+    if (!is.null(self@summary)) {
+      if (!is.list(self@summary) || is.null(self@summary$abstained) ||
+          !is.logical(self@summary$abstained) ||
+          length(self@summary$abstained) != 1L) {
+        errs <- c(errs, paste0(
+          "`summary`, when set, must be a list with a scalar logical ",
+          "`abstained` element"
+        ))
+      }
     }
     if (length(errs) == 0L) NULL else paste(errs, collapse = "; ")
   }
@@ -236,8 +254,9 @@ pesto_obs_schema <- function(outputs = NULL, params = NULL) {
 #' downstream packages can consume it via S7 dispatch without reaching
 #' into PESTO-specific list internals.
 #'
-#' @param x A `pesto_ies_callback_result` (or any object with a method
-#'   registered against this generic).
+#' @param x A `pesto_ies_callback_result`, a `pesto_ies_filter_result`, a
+#'   [pesto_abstention()] (any object with a method registered against
+#'   this generic).
 #' @param ... Method-specific arguments. For
 #'   `pesto_ies_callback_result`: `run_id` (character, defaults to a
 #'   timestamp+hash slug), `seed` (integer, defaults to `NA_integer_`),
@@ -246,8 +265,19 @@ pesto_obs_schema <- function(outputs = NULL, params = NULL) {
 #'   `apsim_version` (character, defaults to `NA_character_`; pass
 #'   `attr(fm, "apsim_version")` from an [apsim_callback()] forward model
 #'   to ground the run to its simulator), and `obs_schema` (a grounded
-#'   semantic descriptor from [pesto_obs_schema()] or `NULL`).
-#' @return A `pesto_ensemble_manifest` S7 object.
+#'   semantic descriptor from [pesto_obs_schema()] or `NULL`). For a
+#'   `pesto_abstention`: the same `run_id` / `seed` / `apsim_version` /
+#'   `obs_schema` arguments plus `method` (character, one of
+#'   `"ies_callback"`, `"ies_filter"`, `"ies_pst"`, `"mda"`, `"surrogate"`;
+#'   default `"ies_callback"` -- there is no ensemble to infer it from).
+#' @return A `pesto_ensemble_manifest` S7 object. When `x` is a
+#'   [pesto_abstention()], `params` / `outputs` are empty (zero-row)
+#'   data frames, `weights` / `obs_target` are empty numeric vectors,
+#'   `failure_rate` is `1`, and `summary` carries
+#'   `list(abstained = TRUE, reason = x$reason, detail = x$detail)` -- the
+#'   abstention's reason travels into the manifest's typed verdict home
+#'   so a downstream consumer sees the decline without inspecting
+#'   PESTO-internal objects.
 #' @examples
 #' fit <- pesto_ies_callback(
 #'   function(t) t %*% t(matrix(1, 2L, 2L)),
@@ -281,6 +311,68 @@ S7::method(as_manifest,
                           apsim_version = apsim_version,
                           obs_schema = obs_schema,
                           method = "ies_filter")
+  }
+
+# A pesto_abstention carries no ensemble -- a reliability gate declined
+# before (over-determination) or during (a degenerate ensemble, a surrogate
+# off its favourable regime) a run completed. Rather than declining to
+# emit a manifest at all, as_manifest() here builds a valid, empty-payload
+# manifest whose `summary` slot states the abstention (P-08): the C2 spine
+# still carries a typed record downstream consumers (decideR, kernR) can
+# see and branch on, instead of receiving nothing.
+S7::method(as_manifest,
+           S7::new_S3_class("pesto_abstention")) <-
+  function(x, run_id = NULL, seed = NA_integer_,
+           fidelity = NULL, apsim_version = NA_character_,
+           obs_schema = NULL,
+           method = c("ies_callback", "ies_filter", "ies_pst",
+                     "mda", "surrogate"),
+           ...) {
+    method <- match.arg(method)
+    if (is.null(run_id)) {
+      run_id <- sprintf(
+        "abstained_%s_%s",
+        format(Sys.time(), "%Y%m%d_%H%M%S"),
+        substr(digest::digest(x, algo = "xxhash32"), 1L, 8L)
+      )
+    }
+    empty_params  <- data.frame(real_name = character(0))
+    empty_outputs <- data.frame(real_name = character(0))
+    # Named (not merely zero-length): write_manifest()'s obs_name fallback
+    # `names(weights) %||% paste0("o", seq_along(weights))` relies on
+    # paste0()'s zero-length-argument recycling, which returns a
+    # length-1 `"o"` rather than character(0) when weights has no names
+    # at all. Setting an explicit (empty) names attribute keeps
+    # `names(weights)` non-NULL so the `%||%` short-circuits cleanly.
+    empty_weights <- stats::setNames(numeric(0), character(0))
+    empty_target  <- stats::setNames(numeric(0), character(0))
+    hash <- paste0("sha256:", .compute_data_hash_inputs(
+      params     = empty_params,
+      outputs    = empty_outputs,
+      weights    = empty_weights,
+      obs_target = empty_target,
+      seed       = as.integer(seed)
+    ))
+    pesto_ensemble_manifest(
+      run_id          = run_id,
+      obs_schema      = obs_schema,
+      params          = empty_params,
+      outputs         = empty_outputs,
+      weights         = empty_weights,
+      obs_target      = empty_target,
+      seed            = as.integer(seed),
+      data_hash       = hash,
+      fidelity        = fidelity,
+      apsim_version   = as.character(apsim_version),
+      pesto_version   = as.character(utils::packageVersion("PESTO")),
+      timestamp       = Sys.time(),
+      method          = method,
+      noptmax         = 0L,
+      lambda_schedule = numeric(0),
+      failure_rate    = 1,
+      summary         = list(abstained = TRUE, reason = x$reason,
+                            detail = x$detail)
+    )
   }
 
 #' Write a manifest to YAML + sidecar data files
@@ -686,6 +778,11 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
       noptmax         = m@noptmax,
       lambda_schedule = as.numeric(m@lambda_schedule),
       failure_rate    = m@failure_rate
+    ),
+    summary         = if (is.null(m@summary)) NULL else list(
+      abstained = isTRUE(m@summary$abstained),
+      reason    = as.character(m@summary$reason %||% NA_character_),
+      detail    = as.character(m@summary$detail %||% NA_character_)
     )
   )
   if (!is.null(inspection_csv)) {
@@ -722,6 +819,11 @@ S7::method(print, pesto_ensemble_manifest) <- function(x, ...) {
     noptmax         = as.integer(ctx$noptmax %||% 0L),
     lambda_schedule = as.numeric(ctx$lambda_schedule %||% numeric(0)),
     failure_rate    = as.numeric(ctx$failure_rate %||% 0),
+    summary         = if (is.null(yl$summary)) NULL else list(
+      abstained = isTRUE(yl$summary$abstained),
+      reason    = yl$summary$reason,
+      detail    = yl$summary$detail
+    ),
     format          = {
       f <- yl$format %||% "rds"
       # Normalise the 0.3.1 spelling on read so existing manifests
