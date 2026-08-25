@@ -78,15 +78,16 @@ test_that("G5.8b unsupported input types do not pass silently", {
 
 test_that("G5.8c all-NA and all-identical fields behave correctly", {
   p <- .edge_problem(nreal = 40L)
-  # All-NA observations are caught, not silently fit.
-  expect_error(
-    pesto_ies_callback(
-      p$fn, p$prior,
-      stats::setNames(rep(NA_real_, 8L), paste0("o", seq_len(8L))),
-      obs_sd = 0.05, noptmax = 2L, verbose = FALSE
-    ),
-    "successful realisations|NA"
+  # All-NA observations are caught -- as a typed pesto_abstention (P-08),
+  # not silently fit and not a bare error (see test-abstention.R for the
+  # dedicated coverage of the gate itself).
+  fit <- pesto_ies_callback(
+    p$fn, p$prior,
+    stats::setNames(rep(NA_real_, 8L), paste0("o", seq_len(8L))),
+    obs_sd = 0.05, noptmax = 2L, verbose = FALSE
   )
+  expect_true(is_pesto_abstention(fit))
+  expect_equal(fit$reason, "degenerate_ensemble")
   # An all-identical (zero-variance) prior column is handled gracefully and the
   # posterior contains no NA (G5.3).
   ident <- p$prior
