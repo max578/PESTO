@@ -12,7 +12,7 @@ verify_manifest(manifest, ...)
 \item{...}{Reserved.}
 }
 \value{
-A list with \code{ok} (\code{TRUE}, \code{FALSE}, or \code{NA} — see Details),
+A list with \code{ok} (\code{TRUE}, \code{FALSE}, or \code{NA} -- see Details),
 \code{stored} (the manifest's recorded hash), \code{recomputed} (the hash
 computed from current data), and \code{message} (\code{NULL} for verifiable
 formats, otherwise an explanation).
@@ -29,4 +29,15 @@ have been truncated at the formatter's precision (~15-17 digits).
 That precision loss is enough to flip the SHA-256 hash, so
 \code{verify_manifest()} returns \code{ok = NA} with an explanatory
 \code{message} field rather than reporting a spurious \code{FALSE}.
+}
+\examples{
+m <- as_manifest(
+  pesto_ies_callback(
+    function(t) t \%*\% t(matrix(1, 2L, 2L)),
+    matrix(rnorm(20L), 10L, 2L, dimnames = list(NULL, c("a", "b"))),
+    c(o1 = 0.1, o2 = -0.2), obs_sd = 0.1, noptmax = 2L, verbose = FALSE
+  ),
+  seed = 1L
+)
+verify_manifest(m)$ok
 }

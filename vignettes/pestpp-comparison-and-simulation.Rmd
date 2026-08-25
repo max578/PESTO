@@ -210,10 +210,12 @@ The three methods separate exactly where the lineage table predicts.
   per-evaluation file exchange and process spawn the file-coupled binaries pay
   on every call.
 - **Raw calibration is the weak spot.** PESTO's *raw* ensemble credible
-  intervals under-cover (CI90 around 0.13 on the linear problem) -- the
-  finite-ensemble under-dispersion the *Inflation and localisation* vignette
-  corrects. Apply inflation (and, for spatial problems, localisation) before
-  trusting raw intervals.
+  intervals under-cover (CI90 around 0.13 on the linear problem) -- an
+  under-dispersion the *Inflation and localisation* vignette shows is only
+  partly finite-ensemble collapse. Apply inflation (and, for spatial
+  problems, localisation) before trusting raw intervals, and measure
+  coverage on your own problem rather than assuming inflation restores it
+  to nominal.
 
 ## Performance characteristics
 
@@ -452,10 +454,13 @@ should show.
 
 Two limits travel with every PESTO IES result and are stated here once.
 
-- **Raw ensemble intervals under-cover.** A finite ensemble under-disperses, so
-  raw credible intervals are too narrow until covariance inflation is applied.
-  The *Inflation and localisation* vignette quantifies this against an analytic
-  posterior and shows the remedy.
+- **Raw ensemble intervals under-cover.** Raw credible intervals are too
+  narrow, and covariance inflation only partly closes the gap. The
+  *Inflation and localisation* vignette quantifies this against an
+  analytic posterior, shows that the shortfall does not shrink materially
+  with ensemble size, and gives the current best practice: measure
+  coverage on your own problem rather than trusting a default inflation
+  setting to reach nominal.
 - **Inflation strength is problem-dependent.** Two independent instruments (a
   joint-calibration coverage test and this cross-tool benchmark) disagree on the
   optimal RTPS strength, which means there is no universal default: report
