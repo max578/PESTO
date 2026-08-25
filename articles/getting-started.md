@@ -41,7 +41,17 @@ crop models, and ODE systems equally.
 # From GitHub (development version):
 remotes::install_github("max578/PESTO")
 
-# PEST++ binaries must be on your PATH or bundled with the package
+# PESTO ships no PEST++ binaries -- every algorithm runs natively in R, so
+# an external binary is needed only for the optional cross-check and
+# .pst-file paths. `.find_pestpp_exe()` resolves an installed binary in
+# this order:
+#   1. the per-tool environment variable (e.g. PESTPP_IES_EXE_PATH)
+#   2. PESTPP_BIN_DIR, the directory holding the PEST++ suite
+#   3. the system PATH
+#   4. the `exe` argument passed directly to the calling function
+# `pestpp_available()` probes the same order without erroring, and is the
+# documented way for examples and tests to skip gracefully when no binary
+# is installed.
 ```
 
 ## Quick start: creating a model scenario
@@ -214,8 +224,8 @@ if (requireNamespace("microbenchmark", quietly = TRUE)) {
   print(bench)
 }
 #> Unit: microseconds
-#>       expr     min      lq     mean   median       uq     max neval
-#>  PESTO_cpp 429.701 431.881 442.6953 438.6535 445.6815 554.053   100
+#>       expr     min       lq     mean   median       uq     max neval
+#>  PESTO_cpp 428.569 430.9035 440.8252 439.9705 444.9095 552.681   100
 ```
 
 ## Computing phi (the objective function)
@@ -302,7 +312,7 @@ res_auto <- adaptive_svd(A, k = 20L, method = "auto")
 cat("Method:", res_auto$method_used, "\n")
 #> Method: rsvd (Halko-Martinsson-Tropp)
 cat("Time:", round(res_auto$time_ms, 2), "ms\n")
-#> Time: 17.25 ms
+#> Time: 17.51 ms
 cat("Singular values (top 5):", round(res_auto$d[1:5], 3), "\n")
 #> Singular values (top 5): 50.643 50.283 49.956 49.689 49.454
 
@@ -342,9 +352,9 @@ result <- ensemble_solution_adaptive(
 cat("SVD method:", result$svd_method, "\n")
 #> SVD method: LAPACK (platform-optimised)
 cat("SVD time:", round(result$svd_time_ms, 2), "ms\n")
-#> SVD time: 2.24 ms
+#> SVD time: 2.18 ms
 cat("Total time:", round(result$total_time_ms, 2), "ms\n")
-#> Total time: 2.66 ms
+#> Total time: 2.59 ms
 cat("Singular values used:", result$singular_values_used, "\n")
 #> Singular values used: 50
 ```

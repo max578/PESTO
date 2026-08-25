@@ -119,7 +119,17 @@ visualisations</li>
 <code class="sourceCode R"><span><span class="co"># From GitHub (development version):</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"max578/PESTO"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># PEST++ binaries must be on your PATH or bundled with the package</span></span></code></pre></div>
+<span><span class="co"># PESTO ships no PEST++ binaries -- every algorithm runs natively in R, so</span></span>
+<span><span class="co"># an external binary is needed only for the optional cross-check and</span></span>
+<span><span class="co"># .pst-file paths. `.find_pestpp_exe()` resolves an installed binary in</span></span>
+<span><span class="co"># this order:</span></span>
+<span><span class="co">#   1. the per-tool environment variable (e.g. PESTPP_IES_EXE_PATH)</span></span>
+<span><span class="co">#   2. PESTPP_BIN_DIR, the directory holding the PEST++ suite</span></span>
+<span><span class="co">#   3. the system PATH</span></span>
+<span><span class="co">#   4. the `exe` argument passed directly to the calling function</span></span>
+<span><span class="co"># `pestpp_available()` probes the same order without erroring, and is the</span></span>
+<span><span class="co"># documented way for examples and tests to skip gracefully when no binary</span></span>
+<span><span class="co"># is installed.</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="quick-start-creating-a-model-scenario">Quick start: creating a model scenario<a class="anchor" aria-label="anchor" href="#quick-start-creating-a-model-scenario"></a>
@@ -285,8 +295,8 @@ the computational heart of the package:</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">bench</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span><span class="co">#&gt; Unit: microseconds</span></span>
-<span><span class="co">#&gt;       expr     min      lq     mean   median       uq     max neval</span></span>
-<span><span class="co">#&gt;  PESTO_cpp 429.701 431.881 442.6953 438.6535 445.6815 554.053   100</span></span></code></pre></div>
+<span><span class="co">#&gt;       expr     min       lq     mean   median       uq     max neval</span></span>
+<span><span class="co">#&gt;  PESTO_cpp 428.569 430.9035 440.8252 439.9705 444.9095 552.681   100</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="computing-phi-the-objective-function">Computing phi (the objective function)<a class="anchor" aria-label="anchor" href="#computing-phi-the-objective-function"></a>
@@ -366,7 +376,7 @@ speedups:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Method:"</span>, <span class="va">res_auto</span><span class="op">$</span><span class="va">method_used</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Method: rsvd (Halko-Martinsson-Tropp)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_auto</span><span class="op">$</span><span class="va">time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Time: 17.25 ms</span></span>
+<span><span class="co">#&gt; Time: 17.51 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Singular values (top 5):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_auto</span><span class="op">$</span><span class="va">d</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Singular values (top 5): 50.643 50.283 49.956 49.689 49.454</span></span>
 <span></span>
@@ -403,9 +413,9 @@ best backend for a problem size is not known in advance.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"SVD method:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">svd_method</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; SVD method: LAPACK (platform-optimised)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"SVD time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">svd_time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; SVD time: 2.24 ms</span></span>
+<span><span class="co">#&gt; SVD time: 2.18 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Total time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">total_time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Total time: 2.66 ms</span></span>
+<span><span class="co">#&gt; Total time: 2.59 ms</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Singular values used:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">singular_values_used</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Singular values used: 50</span></span></code></pre></div>
 </div>

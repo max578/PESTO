@@ -25,7 +25,7 @@ verify_manifest(manifest, ...)
 
 ## Value
 
-A list with `ok` (`TRUE`, `FALSE`, or `NA` — see Details), `stored` (the
+A list with `ok` (`TRUE`, `FALSE`, or `NA` – see Details), `stored` (the
 manifest's recorded hash), `recomputed` (the hash computed from current
 data), and `message` (`NULL` for verifiable formats, otherwise an
 explanation).
@@ -39,3 +39,18 @@ round-tripped through
 digits). That precision loss is enough to flip the SHA-256 hash, so
 `verify_manifest()` returns `ok = NA` with an explanatory `message`
 field rather than reporting a spurious `FALSE`.
+
+## Examples
+
+``` r
+m <- as_manifest(
+  pesto_ies_callback(
+    function(t) t %*% t(matrix(1, 2L, 2L)),
+    matrix(rnorm(20L), 10L, 2L, dimnames = list(NULL, c("a", "b"))),
+    c(o1 = 0.1, o2 = -0.2), obs_sd = 0.1, noptmax = 2L, verbose = FALSE
+  ),
+  seed = 1L
+)
+verify_manifest(m)$ok
+#> [1] TRUE
+```

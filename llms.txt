@@ -32,8 +32,8 @@ systems.
 | **In-process callback** | Couple any R forward model directly – no file-exchange overhead |
 | **APSIM coupling** | First-class [`apsim_callback()`](https://max578.github.io/PESTO/reference/apsim_callback.md) adapter drives `apsimx` ensembles in-process – PESTO’s flagship simulator partner |
 | **Adaptive SVD** | Automatic backend selection: randomised SVD, LAPACK, or Eigen BDCSVD |
-| **Surrogate-accelerated IES** | Gaussian-process surrogates skip the model on confident realisations – regime-dependent savings (large on smooth responses; near-zero with graceful fallback otherwise) |
-| **Inflation & localisation** | Counter finite-ensemble under-dispersion and spurious correlations |
+| **Surrogate-accelerated IES** | Gaussian-process surrogates classify which realisations could skip the model – projected savings are regime-dependent (large on smooth responses; near-zero with graceful fallback otherwise); the projection is not yet a realised compute reduction |
+| **Inflation & localisation** | Mitigate ensemble under-dispersion and spurious correlations (partial remedy; see the *Inflation and localisation* vignette for the current calibration limits) |
 | **Adaptive ensemble sizing** | ESS-based diagnostics prevent over/under-sampling |
 | **PEST++ integration** | Read/write .pst control files, run PEST++ executables from R |
 | **Publication-ready plots** | Convergence, ensemble distributions, identifiability, surrogate diagnostics |
@@ -44,21 +44,30 @@ The *optimised* in the name is concrete – three measured properties,
 with the full definitions and maths in the *Benchmarking PESTO against
 PEST and PEST++* vignette:
 
-- **Faster, at matched accuracy.** Against PEST 18.25 and `pestpp-ies`
-  5.2.16 on identical problems, PESTO is roughly **40–860x faster in
-  wall-clock** (median per inversion) while matching their posterior
-  accuracy – the cause is in-process evaluation and a C++ update kernel
-  avoiding per-solve file exchange, not fewer model solves.
+- **Faster, at matched accuracy, not matched calibration.** Against PEST
+  18.25 and `pestpp-ies` 5.2.16 on identical problems, PESTO is roughly
+  **40–860x faster in wall-clock** (median per inversion) while matching
+  their posterior *accuracy* (RMSE to the true parameters) – the cause
+  is in-process evaluation and a C++ update kernel avoiding per-solve
+  file exchange, not fewer model solves. Raw-interval *calibration* is
+  not matched: see the caveat below.
 - **Recovers the right answer.** It recovers known-true parameters in a
   twin experiment and brackets the independent `apsimx` optimiser’s
   optimum on real observed data (the *APSIM case study* vignette).
-- **Fewer expensive solves when it can.** The GP surrogate skips the
-  model on confident realisations; the saving is measured and
-  regime-dependent, with a graceful fall-back to full evaluation (the
+- **Fewer expensive solves, projected.** The GP surrogate classifies
+  which realisations are confident enough to skip the model; the
+  classification is regime-dependent with a graceful fall-back to full
+  evaluation, but the current release still evaluates every realisation
+  regardless of the classification – so the saving is a projection, not
+  yet a measured reduction in forward-model calls (the
   *Surrogate-accelerated IES* vignette).
 
-Where PESTO does *not* win – raw-interval calibration, total solve count
-– is stated just as plainly in the vignettes.
+Where PESTO does *not* win is stated just as plainly in the vignettes:
+raw ensemble credible intervals under-cover the analytic posterior (CI90
+around 0.13 against a nominal 0.90 on the benchmark problem) even after
+covariance inflation, and total solve count is unchanged – the speed-up
+is wall-clock, not fewer evaluations (the *Inflation and localisation*
+and *Benchmarking PESTO against PEST and PEST++* vignettes).
 
 ## Installation
 

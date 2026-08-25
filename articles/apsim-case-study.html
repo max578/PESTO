@@ -345,13 +345,16 @@ seasons tests genuine out-of-sample skill. The key finding is that the
 <span>  <span class="fu">theme_minimal</span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span></code></pre></div>
 <p><img src="apsim-case-study_files/figure-html/validation-1.png" class="r-plt" alt="Held-out seasonal yields with the posterior 90 percent predictive band, without and with covariance inflation: the raw band is too narrow and misses several points, the inflated band covers more of them." width="672"></p>
 <p>The raw 90% band covers well under 90% of the held-out truth – the
-finite-ensemble <strong>under-dispersion</strong> an iterative smoother
-suffers. PESTO ships the remedy: covariance inflation (and, for spatial
-problems, localisation), documented in the <em>Inflation and
-localisation</em> vignette. Re-running with RTPS inflation widens the
-posterior and lifts coverage toward nominal. Inflation strength is
-problem-dependent, so report coverage and tune it rather than trusting a
-default blindly.</p>
+under-dispersion the current release’s IES ensemble carries (part
+finite-ensemble collapse, part a residual that does not shrink with
+ensemble size; see the <em>Inflation and localisation</em> vignette).
+PESTO ships covariance inflation (and, for spatial problems,
+localisation) as a partial remedy, documented in that vignette.
+Re-running with RTPS inflation widens the posterior and lifts coverage
+toward nominal, though it does not by itself reach nominal coverage.
+Inflation strength is problem-dependent, so report coverage and tune it
+rather than trusting a default blindly – and treat coverage as measured,
+not assumed, until the residual under-dispersion is addressed.</p>
 </div>
 <div class="section level3">
 <h3 id="the-ensemble-manifest">The ensemble manifest<a class="anchor" aria-label="anchor" href="#the-ensemble-manifest"></a>

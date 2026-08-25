@@ -32,7 +32,7 @@ reproducible and independently verifiable (via
   `evidence_path`); `params` columns: `name`, `apsim_node`, `unit` (+
   same optional provenance). Build one with
   [`pesto_obs_schema()`](https://max578.github.io/PESTO/reference/pesto_obs_schema.md).
-  The descriptor is provenance metadata — it is **not** folded into
+  The descriptor is provenance metadata – it is **not** folded into
   `data_hash` (correspondence is grounded by a second manifest that
   agrees on units, not by self-hash). Default `NULL` (absent).
 
@@ -104,7 +104,7 @@ reproducible and independently verifiable (via
 
 ## Details
 
-Construct directly via the class constructor, or — preferred — via
+Construct directly via the class constructor, or – preferred – via
 [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
 applied to a `pesto_ies_callback_result`.
 
@@ -121,14 +121,14 @@ human-readable entry; `params`, `outputs`, and the assimilation context
 (`weights` + `obs_target`) are emitted as sidecar files whose relative
 paths are recorded inside the YAML. Three sidecar modes:
 
-- `format = "rds"` (default, **verifiable**) — RDS only. IEEE 754
+- `format = "rds"` (default, **verifiable**) – RDS only. IEEE 754
   doubles round-trip bit-exactly; SHA-256 integrity check holds.
 
-- `format = "both"` (**verifiable**) — RDS sidecars plus parallel
+- `format = "both"` (**verifiable**) – RDS sidecars plus parallel
   `*_inspection.csv` files. Hash bound to RDS; CSVs are decorative.
 
 - `format = "csv_unverified"` (**not verifiable**, renamed from `"csv"`
-  in PESTO 0.3.2) — CSV-only sidecars. Hash is recorded but cannot be
+  in PESTO 0.3.2) – CSV-only sidecars. Hash is recorded but cannot be
   recomputed from disk (CSV formatter precision loss ~1 ULP).
   [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
   returns `ok = NA + message`. Use only for one-way export to non-R

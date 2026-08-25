@@ -37,6 +37,17 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="pesto-development-version">PESTO (development version)<a class="anchor" aria-label="anchor" href="#pesto-development-version"></a></h2>
+<div class="section level3">
+<h3 id="documentation-development-version">Documentation<a class="anchor" aria-label="anchor" href="#documentation-development-version"></a></h3>
+<ul><li>Replaced the last surviving reference to the fabricated “PEST++ binaries may be bundled with the package” interface (<code>getting-started</code> vignette) with the real four-step resolution order (<code>PESTPP_*_EXE_PATH</code>, then <code>PESTPP_BIN_DIR</code>, then <code>PATH</code>, then the <code>exe</code> argument), grounded against <code>.find_pestpp_exe()</code>.</li>
+<li>Corrected the <em>Inflation and localisation</em> vignette’s diagnosis: the observed under-dispersion does not shrink materially as <code>nreal</code> grows from 24 to 500 (a sweep the vignette now reproduces live), so it is not purely finite-ensemble collapse, and covariance inflation should not be read as closing the gap to the analytic posterior. Carried the same correction into the two vignettes that repeated the original diagnosis (<code>apsim-case-study</code>, <code>pestpp-comparison-and-simulation</code>) and into the README performance section, which now states “matched accuracy, not matched calibration” in the same sentence as the speed claim.</li>
+<li>Corrected the <em>Surrogate-accelerated IES</em> vignette and README: the current <code><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update()</a></code> classifies which realisations could skip a forward-model call but does not itself skip one, so <code>savings_pct</code> is a projection, not a measured compute reduction. Distinguished the “mean-offset bias correction” it applies from a true control-variate estimator (<code><a href="../reference/mf_control_variate.html">mf_control_variate()</a></code>), and noted the prior-residual term is held at zero in this path.</li>
+<li>Added a <code>fig.cap</code> and interpretive prose to the previously-uncaptioned spread-ESS trace figure in the <em>Inflation and localisation</em> vignette.</li>
+<li>Added <code>@examples</code> to the four C2 manifest verbs (<code><a href="../reference/as_manifest.html">as_manifest()</a></code>, <code><a href="../reference/write_manifest.html">write_manifest()</a></code>, <code><a href="../reference/read_manifest.html">read_manifest()</a></code>, <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code>); each was previously undocumented by example.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.10.1" id="pesto-0101">PESTO 0.10.1<a class="anchor" aria-label="anchor" href="#pesto-0101"></a></h2>
 <p>Follows 0.10.0’s PEST++ rebuild by applying the same question to the other external authority PESTO drives – APSIM – and finding the same shape of defect: a working engine PESTO could not see, and an adapter whose tests only ever asked PESTO about itself.</p>
 <div class="section level3">

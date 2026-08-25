@@ -67,24 +67,38 @@
     
     
 <div class="section level2">
-<h2 id="the-problem-finite-ensemble-under-dispersion">The problem: finite-ensemble under-dispersion<a class="anchor" aria-label="anchor" href="#the-problem-finite-ensemble-under-dispersion"></a>
+<h2 id="the-problem-ensemble-under-dispersion">The problem: ensemble under-dispersion<a class="anchor" aria-label="anchor" href="#the-problem-ensemble-under-dispersion"></a>
 </h2>
 <p>An iterative ensemble smoother estimates a posterior parameter
-distribution from a finite ensemble of realisations. With a finite
-ensemble two pathologies arise, both of which make the posterior spread
-<em>too narrow</em> – the ensemble becomes over-confident:</p>
+distribution from a finite ensemble of realisations. Two distinct
+pathologies can make the posterior spread <em>too narrow</em> – the
+ensemble becomes over-confident:</p>
 <ol style="list-style-type: decimal">
 <li>
-<strong>Under-dispersion (ensemble collapse).</strong> Each
-assimilation step contracts the ensemble spread; over several iterations
-the posterior variance can fall far below the true posterior variance.
-The smoother then reports far more certainty than the data support.</li>
+<strong>Finite-ensemble collapse.</strong> Each assimilation step
+contracts the ensemble spread; over several iterations the posterior
+variance can fall below the true posterior variance. This is the
+classical, well-characterised effect the ensemble-Kalman literature
+addresses with inflation and localisation (Whitaker &amp; Hamill 2012;
+Luo &amp; Bhakta 2020), and it shrinks as the ensemble grows.</li>
 <li>
 <strong>Spurious correlations.</strong> A finite ensemble
 manufactures apparent correlations between parameters and observations
 that are not real. Acting on them injects noise into the update and
 accelerates collapse.</li>
 </ol>
+<p>This vignette demonstrates inflation and localisation against cause 1
+on a linear-Gaussian problem with a known analytic posterior. <strong>A
+caveat carried over from the current release:</strong> on this same
+problem the realised under-dispersion is larger than finite-ensemble
+collapse alone predicts, and does not shrink materially as
+<code>nreal</code> grows from 24 to 8,000 (a sweep this vignette
+reproduces below) – evidence that a second, ensemble-size-independent
+source of under-dispersion is present in the current smoother alongside
+the classical effect. Inflation, which is designed against cause 1, does
+not close that residual gap; treat the sd-ratio numbers in this vignette
+as a lower bound on the smoother’s current calibration, not as “matches
+the analytic posterior once inflated”.</p>
 <p>PESTO addresses the first with <strong>covariance inflation</strong>
 (<a href="../html/pesto_inflation.html"><code>pesto_inflation()</code></a>)
 and the second with <strong>covariance localisation</strong> (<a href="../html/pesto_localisation.html"><code>pesto_localisation()</code></a>).
@@ -162,6 +176,42 @@ few):</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">bare</span><span class="op">$</span><span class="va">ess_ratio</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.315</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="is-this-finite-ensemble-collapse-or-something-else">Is this finite-ensemble collapse, or something else?<a class="anchor" aria-label="anchor" href="#is-this-finite-ensemble-collapse-or-something-else"></a>
+</h3>
+<p>If the under-dispersion above were purely finite-ensemble collapse,
+the sd-ratio should climb toward 1 as the ensemble grows – a larger
+sample gives the update a better estimate of the true covariance
+structure. The sweep below runs the same problem at increasing
+<code>nreal</code> (kept modest here for vignette build time; the
+pattern is the same out to 8,000 realisations):</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sweep_nreal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">24L</span>, <span class="fl">100L</span>, <span class="fl">500L</span><span class="op">)</span></span>
+<span><span class="va">sd_by_nreal</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">sweep_nreal</span>, <span class="kw">function</span><span class="op">(</span><span class="va">n</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42L</span><span class="op">)</span></span>
+<span>  <span class="va">prior_n</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span> <span class="op">*</span> <span class="va">npar</span><span class="op">)</span>, <span class="va">n</span>, <span class="va">npar</span>,</span>
+<span>                    dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"p"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">npar</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">fit_n</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span></span>
+<span>    forward_model <span class="op">=</span> <span class="va">forward</span>, prior_ensemble <span class="op">=</span> <span class="va">prior_n</span>,</span>
+<span>    obs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"o"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">nobs</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, obs_sd <span class="op">=</span> <span class="va">obs_sd</span>,</span>
+<span>    noptmax <span class="op">=</span> <span class="fl">12L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  <span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit_n</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span>, <span class="fl">2L</span>, <span class="va">sd</span><span class="op">)</span> <span class="op">/</span> <span class="va">post_sd</span><span class="op">)</span></span>
+<span><span class="op">}</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1L</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>nreal <span class="op">=</span> <span class="va">sweep_nreal</span>, sd_ratio <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">sd_by_nreal</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   nreal sd_ratio</span></span>
+<span><span class="co">#&gt; 1    24    0.216</span></span>
+<span><span class="co">#&gt; 2   100    0.213</span></span>
+<span><span class="co">#&gt; 3   500    0.211</span></span></code></pre></div>
+<p>The sd-ratio is essentially flat across a 20-fold change in ensemble
+size, not the rising trend finite-ensemble collapse alone would produce.
+That flatness is the evidence behind the caveat above: most of this
+problem’s under-dispersion comes from a source that does not respond to
+<code>nreal</code>, and inflation – being a remedy for the
+ensemble-size-dependent part – cannot be expected to close it
+either.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="inflation-re-expands-the-spread">Inflation re-expands the spread<a class="anchor" aria-label="anchor" href="#inflation-re-expands-the-spread"></a>
@@ -172,7 +222,7 @@ relaxation to prior spread (<code>"rtps"</code>, Whitaker &amp; Hamill
 pre-update spread, so the directions that collapsed hardest are
 re-inflated most. The <code>"adaptive"</code> method instead targets a
 global spread-retention floor.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rtps</span>     <span class="op">&lt;-</span> <span class="fu">run_ies</span><span class="op">(</span>inflation <span class="op">=</span> <span class="fu"><a href="../reference/pesto_inflation.html">pesto_inflation</a></span><span class="op">(</span><span class="st">"rtps"</span>, alpha <span class="op">=</span> <span class="fl">0.6</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">adaptive</span> <span class="op">&lt;-</span> <span class="fu">run_ies</span><span class="op">(</span>inflation <span class="op">=</span> <span class="fu"><a href="../reference/pesto_inflation.html">pesto_inflation</a></span><span class="op">(</span><span class="st">"adaptive"</span>,</span>
 <span>                                                retention_floor <span class="op">=</span> <span class="fl">0.7</span><span class="op">)</span><span class="op">)</span></span>
@@ -188,14 +238,14 @@ global spread-retention floor.</p>
 <span><span class="co">#&gt; 3 adaptive    0.310      0.459</span></span></code></pre></div>
 <p>RTPS roughly doubles the retained posterior spread and lifts the
 spread-ESS ratio. A caveat worth stating plainly: inflation
-<em>mitigates</em> collapse, it does not abolish it. A finite-ensemble
-GLM smoother of this size still under-estimates the posterior spread;
-inflation moves it substantially closer to the truth without claiming to
-reach it. Larger ensembles narrow the residual gap.</p>
+<em>mitigates</em> finite-ensemble collapse, it does not abolish it, and
+– per the sweep above – it does not touch the ensemble-size-independent
+residual either. Read the <code>sd_ratio</code> improvement as “closer
+than the bare smoother”, not as “close to the analytic posterior”.</p>
 <p>The spread-ESS diagnostic (<a href="../html/ensemble_spread_ess.html"><code>ensemble_spread_ess()</code></a>)
 is recorded on <strong>every</strong> iteration regardless of method, so
 the collapse trajectory is always available in the result:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span></span>
 <span>  <span class="va">forward</span>, <span class="va">prior</span>, <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="va">y</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"o"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">nobs</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  obs_sd <span class="op">=</span> <span class="va">obs_sd</span>, noptmax <span class="op">=</span> <span class="fl">12L</span>,</span>
@@ -206,7 +256,18 @@ the collapse trajectory is always available in the result:</p>
 <span>  type <span class="op">=</span> <span class="st">"b"</span>, pch <span class="op">=</span> <span class="fl">19</span>, xlab <span class="op">=</span> <span class="st">"iteration"</span>, ylab <span class="op">=</span> <span class="st">"spread-ESS ratio"</span>,</span>
 <span>  main <span class="op">=</span> <span class="st">"Dispersion held up under RTPS inflation"</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><img src="inflation-localisation_files/figure-html/ess-trace-1.png" class="r-plt" alt="" width="672"></p>
+<div class="figure">
+<img src="inflation-localisation_files/figure-html/ess-trace-1.png" class="r-plt" alt="Line plot of the spread-ESS ratio (y axis, 0 to 1) against IES iteration number (x axis, 1 to 12) under RTPS inflation. The ratio drops over the first few iterations and then levels off at a stable plateau rather than continuing to decay toward zero." width="672"><p class="caption">
+Spread-ESS ratio by IES iteration under RTPS inflation: the trajectory
+stabilises rather than decaying toward zero, so inflation is holding the
+ensemble spread against collapse iteration over iteration.
+</p>
+</div>
+<p>The plateau, rather than a continued slide toward zero, is what
+“inflation holds the ensemble spread against collapse” looks like
+iteration by iteration – distinct from the sd-ratio numbers above, which
+compare the <em>final</em> ensemble against the analytic posterior
+rather than tracking the trajectory.</p>
 </div>
 <div class="section level2">
 <h2 id="localisation-suppresses-spurious-correlations">Localisation suppresses spurious correlations<a class="anchor" aria-label="anchor" href="#localisation-suppresses-spurious-correlations"></a>
@@ -216,20 +277,20 @@ coordinate, the recommended localiser is the correlation-based automatic
 method (Luo &amp; Bhakta 2020). It needs no metric: it estimates a noise
 floor from the ensemble itself and damps sample correlations that fall
 below it.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">loc</span> <span class="op">&lt;-</span> <span class="fu">run_ies</span><span class="op">(</span>localisation <span class="op">=</span> <span class="fu"><a href="../reference/pesto_localisation.html">pesto_localisation</a></span><span class="op">(</span><span class="st">"correlation"</span>,</span>
 <span>                                                 taper <span class="op">=</span> <span class="st">"soft"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">loc</span><span class="op">$</span><span class="va">sd_ratio</span>, <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.737</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.807</span></span></code></pre></div>
 <p>The two countermeasures compose – inflation restores variance
 magnitude, localisation removes the spurious updates that drain it:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">both</span> <span class="op">&lt;-</span> <span class="fu">run_ies</span><span class="op">(</span></span>
 <span>  inflation    <span class="op">=</span> <span class="fu"><a href="../reference/pesto_inflation.html">pesto_inflation</a></span><span class="op">(</span><span class="st">"rtps"</span>, alpha <span class="op">=</span> <span class="fl">0.6</span><span class="op">)</span>,</span>
 <span>  localisation <span class="op">=</span> <span class="fu"><a href="../reference/pesto_localisation.html">pesto_localisation</a></span><span class="op">(</span><span class="st">"correlation"</span>, taper <span class="op">=</span> <span class="st">"soft"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">both</span><span class="op">$</span><span class="va">sd_ratio</span>, <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 2.663</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 2.515</span></span></code></pre></div>
 <p>When a genuine distance metric <em>does</em> exist, the classical
 Gaspari-Cohn taper is available via
 <code>pesto_localisation("distance", ...)</code>, supplying either a
@@ -253,7 +314,7 @@ Weather Review</em>, 140(9), 3078–3089.</p>
 <div class="section level2">
 <h2 id="session-information">Session information<a class="anchor" aria-label="anchor" href="#session-information"></a>
 </h2>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.6.1 (2026-06-24)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
@@ -279,15 +340,18 @@ Weather Review</em>, 140(9), 3078–3089.</p>
 <span><span class="co">#&gt; [1] PESTO_0.10.1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.3.0       </span></span>
-<span><span class="co">#&gt;  [5] xfun_0.60          otel_0.2.0         S7_0.2.2           textshaping_1.0.5 </span></span>
-<span><span class="co">#&gt;  [9] jsonlite_2.0.0     data.table_1.18.4  glue_1.8.1         htmltools_0.5.9   </span></span>
-<span><span class="co">#&gt; [13] ragg_1.5.2         sass_0.4.10        scales_1.4.0       rmarkdown_2.31    </span></span>
-<span><span class="co">#&gt; [17] grid_4.6.1         evaluate_1.0.5     jquerylib_0.1.4    fastmap_1.2.0     </span></span>
-<span><span class="co">#&gt; [21] yaml_2.3.12        lifecycle_1.0.5    compiler_4.6.1     RColorBrewer_1.1-3</span></span>
-<span><span class="co">#&gt; [25] fs_2.1.0           Rcpp_1.1.2         farver_2.1.2       systemfonts_1.3.2 </span></span>
-<span><span class="co">#&gt; [29] digest_0.6.39      R6_2.6.1           bslib_0.11.0       gtable_0.3.6      </span></span>
-<span><span class="co">#&gt; [33] tools_4.6.1        pkgdown_2.2.1      ggplot2_4.0.3      cachem_1.1.0      </span></span>
+<span><span class="co">#&gt;  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.51         </span></span>
+<span><span class="co">#&gt;  [4] rlang_1.3.0         xfun_0.60           otel_0.2.0         </span></span>
+<span><span class="co">#&gt;  [7] S7_0.2.2            textshaping_1.0.5   jsonlite_2.0.0     </span></span>
+<span><span class="co">#&gt; [10] data.table_1.18.6.1 glue_1.8.1          htmltools_0.5.9    </span></span>
+<span><span class="co">#&gt; [13] ragg_1.5.2          sass_0.4.10         scales_1.4.0       </span></span>
+<span><span class="co">#&gt; [16] rmarkdown_2.31      grid_4.6.1          evaluate_1.0.5     </span></span>
+<span><span class="co">#&gt; [19] jquerylib_0.1.4     fastmap_1.2.0       yaml_2.3.12        </span></span>
+<span><span class="co">#&gt; [22] lifecycle_1.0.5     compiler_4.6.1      RColorBrewer_1.1-3 </span></span>
+<span><span class="co">#&gt; [25] fs_2.1.0            Rcpp_1.1.2          farver_2.1.2       </span></span>
+<span><span class="co">#&gt; [28] systemfonts_1.3.2   digest_0.6.39       R6_2.6.1           </span></span>
+<span><span class="co">#&gt; [31] bslib_0.12.0        gtable_0.3.6        tools_4.6.1        </span></span>
+<span><span class="co">#&gt; [34] pkgdown_2.2.1       ggplot2_4.0.3       cachem_1.1.0       </span></span>
 <span><span class="co">#&gt; [37] desc_1.4.3</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -38,3 +38,16 @@ as_manifest(x, ...)
 ## Value
 
 A `pesto_ensemble_manifest` S7 object.
+
+## Examples
+
+``` r
+fit <- pesto_ies_callback(
+  function(t) t %*% t(matrix(1, 2L, 2L)),
+  matrix(rnorm(20L), 10L, 2L, dimnames = list(NULL, c("a", "b"))),
+  c(o1 = 0.1, o2 = -0.2), obs_sd = 0.1, noptmax = 2L, verbose = FALSE
+)
+m <- as_manifest(fit, seed = 1L)
+class(m)
+#> [1] "PESTO::pesto_ensemble_manifest" "S7_object"                     
+```

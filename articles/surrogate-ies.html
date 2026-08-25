@@ -195,16 +195,35 @@ artefact.</p>
 <div class="section level2">
 <h2 id="step-4-surrogate-assisted-ies-update">Step 4: surrogate-assisted IES update<a class="anchor" aria-label="anchor" href="#step-4-surrogate-assisted-ies-update"></a>
 </h2>
-<p><code><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update()</a></code> performs the full
-algorithm:</p>
+<p><code><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update()</a></code> performs the classification
+and blended update:</p>
 <ol style="list-style-type: decimal">
 <li>Train a GP from the current ensemble.</li>
 <li>Predict model outputs for all realisations.</li>
-<li>Classify by uncertainty: high -&gt; full model, low -&gt;
+<li>Classify by uncertainty: high -&gt; “full model”, low -&gt;
 surrogate.</li>
-<li>Apply the control-variate bias correction.</li>
+<li>Apply the mean-offset bias correction.</li>
 <li>Compute the IES update on the blended ensemble.</li>
 </ol>
+<p><strong>What it does not do (in this release):</strong> it does not
+itself call a forward model for the “full model” realisations –
+<code>obs_ensemble</code> above is the caller’s already-evaluated
+ensemble, and step 3’s classification only chooses which rows of that
+pre-computed ensemble to keep as-is versus replace with the surrogate
+prediction. <code>n_model_runs</code> and <code>savings_pct</code> below
+therefore report how many realisations <em>could</em> skip a
+forward-model call, not evaluations actually avoided in this run – the
+caller has already paid for every one of them. Realising the saving
+requires wiring a <code>forward_model</code> argument that this verb
+does not yet accept; treat the numbers as a projection of the achievable
+saving, not a report of compute already saved. The “mean-offset bias
+correction” is, as named, a single additive offset between the model-
+and surrogate-evaluated rows – not the variance-reduction
+control-variate estimator of Glasserman (2003) cited below, which
+<code><a href="../reference/mf_control_variate.html">mf_control_variate()</a></code> implements separately; and the
+prior-residual term in the blended update is held at zero, so this path
+does not pull the surrogate-corrected realisations back toward the prior
+the way the standard IES update does.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">weights</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">0.1</span>, <span class="va">n_obs</span><span class="op">)</span>    <span class="co"># 1 / obs_noise</span></span>
 <span><span class="va">parcov_inv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">1.5</span><span class="op">^</span><span class="fl">2</span>, <span class="va">n_par</span><span class="op">)</span>  <span class="co"># 1 / prior_var</span></span>
@@ -219,14 +238,15 @@ surrogate.</li>
 <span>  uncertainty_threshold <span class="op">=</span> <span class="fl">0.1</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Full model runs needed:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">n_model_runs</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Full model runs needed: 0</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Surrogate predictions:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">n_surrogate_runs</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Surrogate predictions: 50</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Realisations classified 'needs full model':"</span>, <span class="va">result</span><span class="op">$</span><span class="va">n_model_runs</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Realisations classified 'needs full model': 0</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Realisations classified 'surrogate suffices':"</span>, <span class="va">result</span><span class="op">$</span><span class="va">n_surrogate_runs</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Realisations classified 'surrogate suffices': 50</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Total realisations:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">n_total</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Total realisations: 50</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Model savings:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%.0f%%"</span>, <span class="va">result</span><span class="op">$</span><span class="va">savings_pct</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Model savings: 100%</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Projected saving if wired to skip forward-model calls:"</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%.0f%%"</span>, <span class="va">result</span><span class="op">$</span><span class="va">savings_pct</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Projected saving if wired to skip forward-model calls: 100%</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Mean GP uncertainty:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">mean_uncertainty</span>, <span class="fl">6</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Mean GP uncertainty: 0.009998</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"GP length scale:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">gp_length_scale</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
@@ -270,15 +290,19 @@ favourable regime, where it pays off.</p>
 <div class="section level2">
 <h2 id="when-the-surrogate-pays-off">When the surrogate pays off<a class="anchor" aria-label="anchor" href="#when-the-surrogate-pays-off"></a>
 </h2>
-<p>The saving is the fraction of realisations the surrogate handles,
-<span class="math inline">1 - n_{\text{model}}/n_{\text{total}}</span>.
-Because the GP is trained on the current ensemble and predicts at those
-same points, in a smooth regime it is confident enough to handle
-essentially the whole ensemble at the default threshold – so the saving
-is high <em>by construction</em>. What decides whether the surrogate is
-worth using is therefore not how many realisations it handles but
-whether its answer stays accurate, which the <em>Effect of
-nonlinearity</em> section measures next.</p>
+<p>The projected saving is the fraction of realisations classified as
+surrogate-safe, <span class="math inline">1 -
+n_{\text{model}}/n_{\text{total}}</span> – a <em>projection</em>, per
+the caveat in Step 4, since this release does not yet skip the
+forward-model call it counts as saved. Because the GP is trained on the
+current ensemble and predicts at those same points, in a smooth regime
+it is confident enough to classify essentially the whole ensemble as
+surrogate-safe at the default threshold – so the projected saving is
+high <em>by construction</em>. What decides whether wiring up the real
+saving would be worth it is therefore not how many realisations get
+classified as surrogate-safe but whether the surrogate’s answer stays
+accurate, which the <em>Effect of nonlinearity</em> section measures
+next.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">7</span><span class="op">)</span></span>
 <span><span class="va">np_f</span>  <span class="op">&lt;-</span> <span class="fl">4L</span></span>

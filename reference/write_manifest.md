@@ -31,17 +31,17 @@ write order).
 
 ## Details
 
-- `"rds"` (default) — RDS sidecars only. IEEE 754 doubles round-trip
+- `"rds"` (default) – RDS sidecars only. IEEE 754 doubles round-trip
   bit-exactly;
   [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
   recomputes the SHA-256 hash and confirms integrity.
 
-- `"both"` — RDS sidecars **plus** parallel inspection CSVs
+- `"both"` – RDS sidecars **plus** parallel inspection CSVs
   (`<basename>_params_inspection.csv`, etc.). The hash is still bound to
   the RDS form; the CSVs are decorative only and are recorded in the
   YAML's `inspection_csv:` block.
 
-- `"csv_unverified"` — CSV sidecars only. The hash is still recorded
+- `"csv_unverified"` – CSV sidecars only. The hash is still recorded
   (computed from the in-memory binary representation) but
   [`verify_manifest()`](https://max578.github.io/PESTO/reference/verify_manifest.md)
   cannot recompute it from disk: CSV write-formatter precision loss (~1
@@ -51,3 +51,18 @@ write order).
   review): the old name was indistinguishable at a glance from the
   verifiable modes, which the review judged a footgun. Old YAMLs with
   `format: csv` continue to read back correctly.
+
+## Examples
+
+``` r
+m <- as_manifest(
+  pesto_ies_callback(
+    function(t) t %*% t(matrix(1, 2L, 2L)),
+    matrix(rnorm(20L), 10L, 2L, dimnames = list(NULL, c("a", "b"))),
+    c(o1 = 0.1, o2 = -0.2), obs_sd = 0.1, noptmax = 2L, verbose = FALSE
+  ),
+  seed = 1L
+)
+f <- tempfile(fileext = ".yaml")
+write_manifest(m, f)
+```

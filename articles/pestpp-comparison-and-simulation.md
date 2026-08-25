@@ -260,10 +260,12 @@ The three methods separate exactly where the lineage table predicts.
   in C++, avoiding the per-evaluation file exchange and process spawn
   the file-coupled binaries pay on every call.
 - **Raw calibration is the weak spot.** PESTO’s *raw* ensemble credible
-  intervals under-cover (CI90 around 0.13 on the linear problem) – the
-  finite-ensemble under-dispersion the *Inflation and localisation*
-  vignette corrects. Apply inflation (and, for spatial problems,
-  localisation) before trusting raw intervals.
+  intervals under-cover (CI90 around 0.13 on the linear problem) – an
+  under-dispersion the *Inflation and localisation* vignette shows is
+  only partly finite-ensemble collapse. Apply inflation (and, for
+  spatial problems, localisation) before trusting raw intervals, and
+  measure coverage on your own problem rather than assuming inflation
+  restores it to nominal.
 
 ## Performance characteristics
 
@@ -538,11 +540,13 @@ re-implementation should show.
 
 Two limits travel with every PESTO IES result and are stated here once.
 
-- **Raw ensemble intervals under-cover.** A finite ensemble
-  under-disperses, so raw credible intervals are too narrow until
-  covariance inflation is applied. The *Inflation and localisation*
-  vignette quantifies this against an analytic posterior and shows the
-  remedy.
+- **Raw ensemble intervals under-cover.** Raw credible intervals are too
+  narrow, and covariance inflation only partly closes the gap. The
+  *Inflation and localisation* vignette quantifies this against an
+  analytic posterior, shows that the shortfall does not shrink
+  materially with ensemble size, and gives the current best practice:
+  measure coverage on your own problem rather than trusting a default
+  inflation setting to reach nominal.
 - **Inflation strength is problem-dependent.** Two independent
   instruments (a joint-calibration coverage test and this cross-tool
   benchmark) disagree on the optimal RTPS strength, which means there is
@@ -575,7 +579,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.3     data.table_1.18.4 PESTO_0.10.1     
+#> [1] ggplot2_4.0.3       data.table_1.18.6.1 PESTO_0.10.1       
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3        cli_3.6.6          knitr_1.51         rlang_1.3.0       
@@ -585,7 +589,7 @@ sessionInfo()
 #> [17] grid_4.6.1         evaluate_1.0.5     jquerylib_0.1.4    fastmap_1.2.0     
 #> [21] yaml_2.3.12        lifecycle_1.0.5    compiler_4.6.1     RColorBrewer_1.1-3
 #> [25] fs_2.1.0           Rcpp_1.1.2         farver_2.1.2       systemfonts_1.3.2 
-#> [29] digest_0.6.39      R6_2.6.1           bslib_0.11.0       withr_3.0.3       
+#> [29] digest_0.6.39      R6_2.6.1           bslib_0.12.0       withr_3.0.3       
 #> [33] gtable_0.3.6       tools_4.6.1        pkgdown_2.2.1      cachem_1.1.0      
 #> [37] desc_1.4.3
 ```
