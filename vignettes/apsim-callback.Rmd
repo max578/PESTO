@@ -70,7 +70,10 @@ prior <- matrix(rnorm(nreal * npar), nreal, npar,
                 dimnames = list(NULL, paste0("p", seq_len(npar))))
 ```
 
-Run six IES iterations with a single lambda:
+Run six IES iterations. `lambda` is left at its default: under the default
+ES-MDA scheme the Marquardt damping *is* the inflation factor
+(`alpha = lambda + 1`) and is set by the schedule, so it is chosen for you
+rather than fixed by hand (see `?pesto_ies_callback`).
 
 ```{r}
 fit <- pesto_ies_callback(
@@ -79,7 +82,6 @@ fit <- pesto_ies_callback(
   obs            = y,
   obs_sd         = sigma,
   noptmax        = 6L,
-  lambda         = 1.0,
   verbose        = FALSE
 )
 ```
@@ -246,13 +248,15 @@ The over-precise run's posterior spread is a small fraction of the
 well-specified run's, and its 90 per-cent credible band has stopped covering
 the truth entirely. The ensemble is confident and wrong.
 
-PESTO records the collapse directly. `ensemble_spread_ess()` -- the
-spectral participation ratio of the parameter anomaly covariance, the
-effective number of variance-carrying directions -- is logged on every
-iteration as `spread_ess` and as the ratio `spread_ess_ratio` (relative
-to the ensemble size). A ratio that falls steeply toward zero across
-iterations is the diagnostic signature of an ensemble draining its
-spread:
+`ensemble_spread_ess()` is logged on every iteration as `spread_ess` and
+as the ratio `spread_ess_ratio`, and it is worth being precise about what
+it can and cannot see. It is the spectral participation ratio of the
+parameter anomaly covariance -- the effective number of variance-carrying
+directions -- so it detects the *shape* of a collapse: variance draining
+into a few directions. It is a ratio of eigenvalue sums, hence invariant
+to a global rescaling of the anomalies, so a spread that is uniformly too
+small in every direction is invisible to it. Here the two runs differ in
+exactly that way:
 
 ```{r over-determination-ess}
 ess_ratio <- function(fit) {
@@ -264,6 +268,12 @@ rbind(
   `over-precise`    = round(ess_ratio(fit_collapsed), 3)
 )
 ```
+
+The two traces sit almost on top of each other even though one ensemble's
+spread is a fraction of the other's. Read `spread_ess_ratio` as the
+directional-collapse diagnostic it is, and read the coverage table above
+as the calibration check -- they answer different questions, and only the
+second catches a mis-specified `obs_sd`.
 
 The fix is to set `obs_sd` to the uncertainty the modelled value must
 actually reproduce -- the replicate-level measurement-plus-process
