@@ -21,8 +21,11 @@ contract_problem <- function() {
 
 test_that("bare function and typed forward model give identical posteriors", {
   p <- contract_problem()
+  # `seed =` fixes the ES-MDA observation-noise stream, so the two paths are
+  # compared on identical perturbed data and any difference is a genuine
+  # contract difference rather than two independent noise draws.
   args <- list(prior_ensemble = p$prior, obs = p$obs, obs_sd = 0.05,
-               noptmax = 4L, verbose = FALSE)
+               noptmax = 4L, seed = 4242L, verbose = FALSE)
 
   bare  <- do.call(pesto_ies_callback, c(list(forward_model = p$fn), args))
   typed <- do.call(pesto_ies_callback,
@@ -37,7 +40,7 @@ test_that("bare function and typed forward model give identical posteriors", {
 test_that("single-level multi-fidelity equals the plain callback path", {
   p <- contract_problem()
   args <- list(prior_ensemble = p$prior, obs = p$obs, obs_sd = 0.05,
-               noptmax = 4L, verbose = FALSE)
+               noptmax = 4L, seed = 4242L, verbose = FALSE)
 
   bare <- do.call(pesto_ies_callback, c(list(forward_model = p$fn), args))
   mf1  <- pesto_multifidelity_model(

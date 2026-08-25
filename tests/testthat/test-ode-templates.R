@@ -149,11 +149,16 @@ test_that("seir_forward_model produces an epidemic curve that recovers", {
   r0_post  <- post[["beta"]] / post[["gamma"]]
   expect_equal(r0_post, r0_truth, tolerance = 0.15)
 
-  # The posterior-mean curve fits the truth to within the noise level.
-  sim_post <- as.numeric(pesto_evaluate(
-    fm, matrix(post, nrow = 1L, dimnames = list(NULL, names(post)))
-  ))
-  expect_lt(sqrt(mean((sim_post - prev)^2)), 5)
+  # The posterior-predictive mean curve fits the truth to within the noise
+  # level (sd = 3). The graded quantity is E[g(theta)] -- the mean of the
+  # simulated ensemble the driver returns -- not g(E[theta]). SEIR is
+  # nonlinear, so once the posterior carries its proper spread the two differ
+  # by Jensen's inequality: pushing the posterior *mean parameter vector*
+  # through the model gives an RMSE of roughly 5--7 here while the predictive
+  # mean sits below 2. Grading g(E[theta]) would only pass on a collapsed
+  # ensemble.
+  sim_post <- colMeans(as.matrix(fit$obs_ensemble[, -1L]))
+  expect_lt(sqrt(mean((sim_post - prev)^2)), 3)
 })
 
 test_that("seir_forward_model rejects an infeasible seeding", {

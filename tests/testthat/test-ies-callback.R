@@ -26,7 +26,6 @@ test_that("linear-Gaussian recovery: posterior mean moves toward truth", {
     obs            = y,
     obs_sd         = sigma,
     noptmax        = 6L,
-    lambda         = 1.0,
     verbose        = FALSE
   )
 

@@ -197,9 +197,11 @@ test_that("NULL inflation/localisation leaves the callback driver unchanged", {
   f <- function(theta) theta %*% t(G)
   prior <- matrix(rnorm(nreal * npar), nreal, npar,
                   dimnames = list(NULL, paste0("p", seq_len(npar))))
+  # `seed =` pins the ES-MDA observation-noise stream so the two runs are
+  # compared on identical perturbed data.
   args <- list(forward_model = f, prior_ensemble = prior,
                obs = stats::setNames(y, paste0("o", seq_len(nobs))),
-               obs_sd = 0.05, noptmax = 5L, verbose = FALSE)
+               obs_sd = 0.05, noptmax = 5L, seed = 815L, verbose = FALSE)
   a <- do.call(pesto_ies_callback, args)
   b <- do.call(pesto_ies_callback,
                c(args, list(inflation = NULL, localisation = NULL)))

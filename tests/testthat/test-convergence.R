@@ -49,40 +49,74 @@ NULL
 test_that("phi_tol = NULL runs the full noptmax with no checker (BS1.4)", {
   p   <- .conv_linear()
   fit <- pesto_ies_callback(p$fn, p$prior, p$obs, obs_sd = 0.05,
-                            noptmax = 6L, verbose = FALSE)
+                            noptmax = 6L, seed = 606L, verbose = FALSE)
   expect_false(fit$converged)
   expect_equal(fit$n_iterations, 6L)
+  # Same `seed =`, so the two runs see the same ES-MDA noise stream and the
+  # comparison isolates the absence of the checker.
   fit2 <- pesto_ies_callback(p$fn, p$prior, p$obs, obs_sd = 0.05,
-                             noptmax = 6L, phi_tol = NULL, verbose = FALSE)
+                             noptmax = 6L, phi_tol = NULL, seed = 606L,
+                             verbose = FALSE)
   expect_identical(as.matrix(fit$par_ensemble[, -1L]),
                    as.matrix(fit2$par_ensemble[, -1L]))
 })
 
 test_that("the checker stops the run early on convergence (BS4.3/4.4)", {
   p   <- .conv_crop()
-  fit <- pesto_ies_callback(p$fm, p$prior, p$obs, obs_sd = 20,
-                            noptmax = 15L, phi_tol = 0.2, verbose = FALSE)
+  # Stopping early truncates the ES-MDA schedule, so the driver warns that
+  # less than one likelihood was assimilated; that warning is asserted in
+  # its own test below.
+  fit <- suppressWarnings(pesto_ies_callback(
+    p$fm, p$prior, p$obs, obs_sd = 20,
+    noptmax = 15L, phi_tol = 0.2, verbose = FALSE
+  ))
   expect_true(fit$converged)
   expect_lt(fit$n_iterations, 15L)
   expect_equal(length(fit$iterations), fit$n_iterations)   # records trimmed
 })
 
 test_that("a checker-stopped run equals the equivalent fixed-length run (BS4.6)", {
+  # The equivalence is a property of the deterministic update path, so it is
+  # graded there. It cannot hold under `obs_perturbation = "mda"`: the ES-MDA
+  # inflation schedule is a function of `noptmax`, so a run truncated at
+  # iteration k assimilated alpha = noptmax at every step while a k-iteration
+  # run would have used alpha = k. That is the interaction the driver warns
+  # about (asserted in the next test), not a bug in the checker.
   p <- .conv_linear()
   stopped <- pesto_ies_callback(p$fn, p$prior, p$obs, obs_sd = 0.05,
-                                noptmax = 12L, phi_tol = 0.5, verbose = FALSE)
+                                noptmax = 12L, phi_tol = 0.5,
+                                obs_perturbation = "none", verbose = FALSE)
   fixed <- pesto_ies_callback(p$fn, p$prior, p$obs, obs_sd = 0.05,
-                              noptmax = stopped$n_iterations, verbose = FALSE)
+                              noptmax = stopped$n_iterations,
+                              obs_perturbation = "none", verbose = FALSE)
   expect_identical(as.matrix(stopped$par_ensemble[, -1L]),
                    as.matrix(fixed$par_ensemble[, -1L]))
 })
 
+test_that("an early stop under ES-MDA warns that the schedule was truncated", {
+  p <- .conv_linear()
+  expect_warning(
+    pesto_ies_callback(p$fn, p$prior, p$obs, obs_sd = 0.05,
+                       noptmax = 12L, phi_tol = 0.5, verbose = FALSE),
+    "under.*assimilated"
+  )
+  # No truncation, no warning.
+  expect_no_warning(
+    pesto_ies_callback(p$fn, p$prior, p$obs, obs_sd = 0.05,
+                       noptmax = 4L, verbose = FALSE)
+  )
+})
+
 test_that("a stricter tolerance yields more iterations (BS4.7)", {
   p <- .conv_crop()
-  loose  <- pesto_ies_callback(p$fm, p$prior, p$obs, obs_sd = 20,
-                               noptmax = 15L, phi_tol = 0.5, verbose = FALSE)
-  strict <- pesto_ies_callback(p$fm, p$prior, p$obs, obs_sd = 20,
-                               noptmax = 15L, phi_tol = 0.05, verbose = FALSE)
+  loose  <- suppressWarnings(pesto_ies_callback(
+    p$fm, p$prior, p$obs, obs_sd = 20,
+    noptmax = 15L, phi_tol = 0.5, verbose = FALSE
+  ))
+  strict <- suppressWarnings(pesto_ies_callback(
+    p$fm, p$prior, p$obs, obs_sd = 20,
+    noptmax = 15L, phi_tol = 0.05, verbose = FALSE
+  ))
   expect_gt(strict$n_iterations, loose$n_iterations)
 })
 
