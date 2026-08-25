@@ -217,6 +217,10 @@ pesto_ies_filter <- function(forward_model,
       call. = FALSE
     )
   }
+  # NOTE: see the identical NOTE in R/pesto_run.R -- an `nreal <= npar`
+  # "over-determination guard" was considered and dropped as unsound (it
+  # would conflict with PESTO's own SVD-truncation-supported
+  # highly-parameterised-problem capability).
 
   # Coerce observations + weights ---------------------------------------
   obs_vec <- as.numeric(obs)
@@ -358,6 +362,7 @@ pesto_ies_filter <- function(forward_model,
         localisation  = localisation,
         obs_noise     = obs_noise_last
       )
+      if (is_pesto_abstention(blk)) return(blk)
       par_mat   <- blk$par_mat
       last_phi  <- blk$phi
       last_ok   <- blk$ok
@@ -483,16 +488,19 @@ pesto_ies_filter <- function(forward_model,
                            obs_noise = NULL) {
   ok <- stats::complete.cases(obs_block)
   if (sum(ok) < 2L) {
-    stop(
-      sprintf(
-        paste0(
-          "Window %d: fewer than 2 successful realisations. ",
-          "Cannot continue."
-        ),
-        window
+    # Reliability gate: degenerate ensemble (mirrors pesto_ies_callback();
+    # see R/pesto_run.R). Returns a typed abstention rather than stopping;
+    # the caller (pesto_ies_filter()) recognises it via is_pesto_abstention()
+    # and returns it immediately.
+    return(pesto_abstention(
+      "degenerate_ensemble",
+      detail = sprintf(
+        "window %d: %d of %d realisations succeeded (fewer than 2).",
+        window, sum(ok), nrow(obs_block)
       ),
-      call. = FALSE
-    )
+      diagnostics = list(window = window, n_ok = sum(ok),
+                        nreal = nrow(obs_block))
+    ))
   }
   par_ok <- par_mat[ok, , drop = FALSE]
   obs_ok <- obs_block[ok, , drop = FALSE]

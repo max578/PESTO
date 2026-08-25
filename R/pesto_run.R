@@ -770,6 +770,15 @@ pesto_ies_callback <- function(forward_model,
       call. = FALSE
     )
   }
+  # NOTE: an `nreal <= npar` structural guard was considered here as the
+  # "over-determination guard" reliability gate and deliberately dropped --
+  # PESTO's own srr-audited test-edge-conditions.R::G5.8d exercises exactly
+  # this regime (npar=10, nreal=3) as a *supported* capability (SVD
+  # truncation keeps the update finite), and DESCRIPTION advertises
+  # "highly-parameterised problems" as a design goal. A dimension-ratio
+  # guard here would silently withdraw a validated capability rather than
+  # decline an untrustworthy one. See PESTO_refusals.md (P-08 completion
+  # report) for the fuller rationale and the follow-up this leaves open.
 
   # Coerce observations -------------------------------------------------
   obs_vec <- as.numeric(obs)
@@ -882,16 +891,17 @@ pesto_ies_callback <- function(forward_model,
     # NA / NaN failures and any non-finite (Inf) outputs (srr G2.16).
     ok <- rowSums(!is.finite(obs_mat)) == 0L
     if (sum(ok) < 2L) {
-      stop(
-        sprintf(
-          paste0(
-            "Iteration %d: fewer than 2 successful realisations. ",
-            "Cannot continue."
-          ),
-          k
+      # Reliability gate: degenerate ensemble. Formerly a bare `stop()`;
+      # now a typed abstention (P-08) carrying the same trigger condition
+      # so the orchestra's refusal contract can see the decline.
+      return(pesto_abstention(
+        "degenerate_ensemble",
+        detail = sprintf(
+          "iteration %d: %d of %d realisations succeeded (fewer than 2).",
+          k, sum(ok), nreal
         ),
-        call. = FALSE
-      )
+        diagnostics = list(iteration = k, n_ok = sum(ok), nreal = nreal)
+      ))
     }
     par_ok <- par_mat[ok, , drop = FALSE]
     obs_ok <- obs_mat[ok, , drop = FALSE]

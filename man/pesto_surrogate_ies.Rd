@@ -44,6 +44,10 @@ A list containing:
 \item{savings_pct}{Percentage of model runs saved}
 \item{gp_diagnostics}{GP training diagnostics}
 }
+or, when the training-point-to-parameter ratio falls below
+\code{\link[=check_surrogate_regime]{check_surrogate_regime()}}'s favourable floor, a
+\code{\link[=pesto_abstention]{pesto_abstention()}} with \code{reason = "surrogate_off_design"} -- the
+surrogate is not trained and no upgrade is computed.
 }
 \description{
 Performs a single IES iteration using a Gaussian Process surrogate
@@ -64,7 +68,7 @@ This typically saves 50-90\% of model evaluations per iteration.
 \examples{
 \donttest{
 set.seed(7L)
-n_real <- 15L; n_par <- 5L; n_obs <- 8L
+n_real <- 30L; n_par <- 5L; n_obs <- 8L   # n_real/n_par = 6, a favourable ratio
 par_ens <- matrix(rnorm(n_real * n_par), n_real, n_par,
                   dimnames = list(NULL, paste0("k", 1:n_par)))
 obs_ens <- matrix(rnorm(n_real * n_obs), n_real, n_obs,

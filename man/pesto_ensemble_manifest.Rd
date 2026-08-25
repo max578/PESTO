@@ -63,6 +63,14 @@ iteration.}
 
 \item{failure_rate}{Numeric in \verb{[0, 1]}. Fraction of forward
 evaluations that returned \code{NA}.}
+
+\item{summary}{A \code{list(abstained, reason, detail)} typed verdict, or
+\code{NULL} (default). Set by \code{\link[=as_manifest]{as_manifest()}} when applied to a
+\code{\link[=pesto_abstention]{pesto_abstention()}}: \code{abstained} is \code{TRUE} and \code{reason} / \code{detail}
+carry the abstention's reason code and human-readable detail, so a
+downstream consumer of the manifest can see that a PESTO reliability
+gate declined the run without inspecting PESTO-internal objects.
+\code{NULL} for a manifest built from a completed run.}
 }
 \description{
 A versioned, hashed, provenance-tracked container for the result of a

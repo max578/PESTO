@@ -31,6 +31,10 @@
 #'     \item{savings_pct}{Percentage of model runs saved}
 #'     \item{gp_diagnostics}{GP training diagnostics}
 #'   }
+#'   or, when the training-point-to-parameter ratio falls below
+#'   [check_surrogate_regime()]'s favourable floor, a
+#'   [pesto_abstention()] with `reason = "surrogate_off_design"` -- the
+#'   surrogate is not trained and no upgrade is computed.
 #' @references
 #' Rasmussen, C.E. & Williams, C.K.I. (2006). Gaussian Processes for
 #' Machine Learning. MIT Press.
@@ -40,7 +44,7 @@
 #' @examples
 #' \donttest{
 #' set.seed(7L)
-#' n_real <- 15L; n_par <- 5L; n_obs <- 8L
+#' n_real <- 30L; n_par <- 5L; n_obs <- 8L   # n_real/n_par = 6, a favourable ratio
 #' par_ens <- matrix(rnorm(n_real * n_par), n_real, n_par,
 #'                   dimnames = list(NULL, paste0("k", 1:n_par)))
 #' obs_ens <- matrix(rnorm(n_real * n_obs), n_real, n_obs,
@@ -78,6 +82,34 @@ pesto_surrogate_ies <- function(par_ensemble,
     obs_mat <- as.matrix(obs_ensemble[, .SD, .SDcols = is.numeric])
   } else {
     obs_mat <- as.matrix(obs_ensemble)
+  }
+
+  # Reliability gate: surrogate off-design. check_surrogate_regime() has
+  # existed since an earlier release as a stand-alone, opt-in helper (its own
+  # warn-and-return-logical contract is unchanged and still directly
+  # callable -- see test-export-surface.R); it was never wired into the
+  # driver itself. This closes that gap as a typed abstention (P-08) rather
+  # than a silent low-value run: below the favourable training-point floor
+  # the GP posterior variance stays high and the surrogate/model split this
+  # function computes is not one a caller should trust. The regime check's
+  # own warning is suppressed here so the caller sees one signal (the typed
+  # abstention), not a duplicate console warning.
+  favourable <- suppressWarnings(
+    check_surrogate_regime(n_params = ncol(par_mat), n_train = nrow(par_mat))
+  )
+  if (!isTRUE(favourable)) {
+    return(pesto_abstention(
+      "surrogate_off_design",
+      detail = sprintf(
+        paste0(
+          "surrogate training regime is unfavourable: n_train = %d for ",
+          "n_params = %d (ratio %.2f < the check_surrogate_regime() ",
+          "default floor of 5)."
+        ),
+        nrow(par_mat), ncol(par_mat), nrow(par_mat) / ncol(par_mat)
+      ),
+      diagnostics = list(n_train = nrow(par_mat), n_params = ncol(par_mat))
+    ))
   }
 
   result <- surrogate_ensemble_update(
