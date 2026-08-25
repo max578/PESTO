@@ -331,11 +331,23 @@ print.pesto_localisation <- function(x, ...) {
 # the callback and filter drivers. `par_ok` / `obs_ok` are the
 # complete-case nreal_ok x npar and nreal_ok x nobs matrices for this step;
 # `obs_vec` is the length-nobs target; `prior_mean` the (window- or run-level)
-# prior parameter mean. Returns the updated ensemble block, the per-realisation
-# phi, and a diagnostics list (spread-ESS + inflation + localisation).
+# prior parameter mean. `obs_noise` is the nobs x nreal_ok observation-noise
+# ensemble for this step (already restricted to the complete-case columns), or
+# NULL for the unperturbed update. Returns the updated ensemble block, the
+# per-realisation phi, and a diagnostics list (spread-ESS + inflation +
+# localisation).
+#
+# Each realisation assimilates its own perturbed data d_j = d + e_j, which is
+# what makes the updated ensemble a posterior sample rather than a cloud
+# around the maximum-likelihood fit (see R/obs_perturbation.R). The reported
+# phi is deliberately computed against the *unperturbed* observations -- it is
+# the fit to the data the user supplied, the quantity `phi_tol` and the
+# per-iteration trace are read against, and it is what `pestpp-ies` reports as
+# the actual (as opposed to measurement) objective function.
 .ies_apply_update <- function(par_ok, obs_ok, obs_vec, weights, parcov_inv,
                               prior_mean, lambda, eigthresh, use_approx, iter,
-                              inflation = NULL, localisation = NULL) {
+                              inflation = NULL, localisation = NULL,
+                              obs_noise = NULL) {
   nreal_ok <- nrow(par_ok)
   npar     <- ncol(par_ok)
   nobs     <- ncol(obs_ok)
@@ -344,10 +356,11 @@ print.pesto_localisation <- function(x, ...) {
   obs_mean  <- colMeans(obs_ok)
   par_diff  <- t(sweep(par_ok, 2L, par_mean, "-"))        # npar x nreal_ok
   obs_diff  <- t(sweep(obs_ok, 2L, obs_mean, "-"))        # nobs x nreal_ok
-  obs_resid <- matrix(obs_vec, nrow = nobs, ncol = nreal_ok) - t(obs_ok)
+  obs_plain <- matrix(obs_vec, nrow = nobs, ncol = nreal_ok) - t(obs_ok)
+  obs_resid <- if (is.null(obs_noise)) obs_plain else obs_plain + obs_noise
   par_resid <- t(sweep(par_ok, 2L, prior_mean, "-"))
 
-  phi_vec <- compute_phi(obs_resid, weights)
+  phi_vec <- compute_phi(obs_plain, weights)
 
   # Localisation: build the taper (per-iteration for the correlation method).
   loc_block <- .localisation_rho(localisation, par_diff, obs_diff)

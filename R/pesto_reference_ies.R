@@ -34,8 +34,15 @@
 #'   parameter ensemble (each column is one realisation).
 #' @param obs_ensemble Numeric matrix `(n_obs x n_real)`. Simulated
 #'   observations from the current ensemble.
-#' @param obs_target Numeric vector `(n_obs)`. Target (measured)
-#'   observation values.
+#' @param obs_target Numeric vector `(n_obs)`, or numeric matrix
+#'   `(n_obs x n_real)`. Target (measured) observation values. A vector is
+#'   the textbook single-target form: every realisation assimilates the same
+#'   unperturbed data, which validates the update *arithmetic* but reproduces
+#'   the spread collapse that unperturbed assimilation causes. Pass a matrix
+#'   -- one perturbed data vector \eqn{d_j = d + e_j} per column -- to make
+#'   the reference update the same posterior-sampling update the drivers run
+#'   (see *Posterior spread and observation perturbation* in
+#'   [pesto_ies_callback()]).
 #' @param weights Numeric vector `(n_obs)`. Observation weights
 #'   (typically `1 / sd(obs_noise)`).
 #' @param lambda Numeric scalar. Marquardt damping parameter. `1.0` is
@@ -106,8 +113,14 @@ pesto_reference_ies <- function(par_ensemble,
   obs_diff <- obs_ensemble - obs_mean
 
   # Residuals (textbook obs - sim sign convention) -----------------------
-  y_resid <- matrix(rep(obs_target, n_real), nrow = length(obs_target)) -
-             obs_ensemble
+  # `obs_target` is either one shared target vector, broadcast across the
+  # ensemble, or an already-per-realisation (perturbed) target matrix.
+  target_mat <- if (is.matrix(obs_target)) {
+    obs_target
+  } else {
+    matrix(rep(obs_target, n_real), nrow = length(obs_target))
+  }
+  y_resid <- target_mat - obs_ensemble
 
   # SVD of the scaled, weighted observation difference matrix ------------
   svd_res  <- svd(scale * w_diag %*% obs_diff)
@@ -140,20 +153,31 @@ pesto_reference_ies <- function(par_ensemble,
   .assert_same_ncol(par_ensemble, obs_ensemble,
     "par_ensemble", "obs_ensemble"
   )
-  if (length(obs_target) != nrow(obs_ensemble)) {
+  n_obs <- if (is.matrix(obs_target)) nrow(obs_target) else length(obs_target)
+  if (is.matrix(obs_target) && ncol(obs_target) != ncol(obs_ensemble)) {
     stop(
       sprintf(
-        "`obs_target` length (%d) must equal `nrow(obs_ensemble)` (%d).",
-        length(obs_target), nrow(obs_ensemble)
+        paste0("A matrix `obs_target` must be n_obs x n_real: got %d ",
+               "columns against %d realisations."),
+        ncol(obs_target), ncol(obs_ensemble)
       ),
       call. = FALSE
     )
   }
-  if (length(weights) != length(obs_target)) {
+  if (n_obs != nrow(obs_ensemble)) {
+    stop(
+      sprintf(
+        "`obs_target` length (%d) must equal `nrow(obs_ensemble)` (%d).",
+        n_obs, nrow(obs_ensemble)
+      ),
+      call. = FALSE
+    )
+  }
+  if (length(weights) != n_obs) {
     stop(
       sprintf(
         "`weights` (length %d) must match `obs_target` (length %d).",
-        length(weights), length(obs_target)
+        length(weights), n_obs
       ),
       call. = FALSE
     )

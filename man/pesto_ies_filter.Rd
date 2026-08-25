@@ -19,7 +19,10 @@ pesto_ies_filter(
   inflation = NULL,
   localisation = NULL,
   on_failure = c("na", "stop"),
-  verbose = TRUE
+  verbose = TRUE,
+  obs_perturbation = c("mda", "none"),
+  mda_alpha = NULL,
+  seed = NULL
 )
 }
 \arguments{
@@ -49,7 +52,11 @@ filter per window). A scalar is recycled; a short vector is
 right-padded with its last value.}
 
 \item{lambda}{Numeric scalar or per-window vector. Marquardt lambda
-(default \code{1.0}; recycled / right-padded across windows).}
+(default \code{1.0}; recycled / right-padded across windows). Only available
+under \code{obs_perturbation = "none"}: under the default \code{"mda"} the
+damping is the ES-MDA inflation of the inner iterations
+(\code{alpha = lambda + 1}) and is set through \code{mda_alpha}, so supplying
+\code{lambda} there is an error rather than a silently ignored argument.}
 
 \item{fidelity_schedule}{Integer vector or \code{NULL}. Per-window fidelity
 level for a \code{\link[=pesto_multifidelity_model]{pesto_multifidelity_model()}} (see \emph{Multi-fidelity}).}
@@ -75,6 +82,24 @@ finite-sample correlations. See \code{\link[=pesto_ies_callback]{pesto_ies_callb
 realisations; \code{"stop"} aborts on any failure.}
 
 \item{verbose}{Logical. Print a per-window phi summary.}
+
+\item{obs_perturbation}{Character, \code{"mda"} (default) or \code{"none"}. Whether
+each realisation assimilates its own perturbed observation block. See
+\emph{Posterior spread and observation perturbation} in
+\code{\link[=pesto_ies_callback]{pesto_ies_callback()}}; the scheme is identical, applied window by
+window.}
+
+\item{mda_alpha}{Numeric vector or \code{NULL}. The ES-MDA inflation schedule
+used \emph{within} each window, one entry per inner iteration (recycled /
+right-padded to \code{window_noptmax}). \code{NULL} (default) uses the uniform
+schedule \eqn{\alpha_j = }\code{window_noptmax}. Windows are disjoint, so
+each observation block is assimilated exactly once and the
+\eqn{\sum_j 1/\alpha_j = 1} budget is spent inside a window, not
+across windows.}
+
+\item{seed}{Integer or \code{NULL}. As in \code{\link[=pesto_ies_callback]{pesto_ies_callback()}}: when
+supplied, \code{set.seed(seed)} runs once before the filter and the value is
+recorded on the result for \code{\link[=as_manifest]{as_manifest()}} to carry.}
 }
 \value{
 A list of class
@@ -86,12 +111,17 @@ window's observation block).}
 \item{obs_ensemble}{Final simulated-observation ensemble, full
 \code{nobs} columns (data.table).}
 \item{windows}{List of per-window metadata: assimilated indices,
-lambda, mean phi, per-parameter ensemble mean and standard
+lambda, the window's ES-MDA inflation schedule \code{mda_alpha},
+mean phi, per-parameter ensemble mean and standard
 deviation (the sd trace shows the posterior tightening), and
 failure count.}
 \item{runtime_seconds, n_forward_evals, failure_rate}{Run totals.}
 \item{fidelity}{Multi-fidelity provenance (or \code{NULL}), as in
 \code{\link[=pesto_ies_callback]{pesto_ies_callback()}}.}
+\item{obs_perturbation}{Assimilation-scheme provenance: \code{scheme}, the
+per-window ES-MDA inflation schedules \code{alpha}, the run \code{seed}, and
+\code{obs_noise} -- the noise ensemble of the final inner update, whose
+rows are the \emph{last window's} observation block.}
 }
 }
 \description{
@@ -145,6 +175,9 @@ Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
 iterative ensemble smoother for efficient history matching and
 uncertainty quantification. \emph{Computational Geosciences}, 17(4),
 689--703.
+
+Emerick, A.A. & Reynolds, A.C. (2013). Ensemble smoother with multiple
+data assimilation. \emph{Computers & Geosciences}, 55, 3--15.
 }
 \seealso{
 \code{\link[=pesto_ies_callback]{pesto_ies_callback()}} for the batch smoother;

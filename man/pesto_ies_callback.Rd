@@ -19,7 +19,10 @@ pesto_ies_callback(
   localisation = NULL,
   on_failure = c("na", "stop"),
   verbose = TRUE,
-  phi_tol = NULL
+  phi_tol = NULL,
+  obs_perturbation = c("mda", "none"),
+  mda_alpha = NULL,
+  seed = NULL
 )
 }
 \arguments{
@@ -50,7 +53,13 @@ standard deviation(s); the IES weights are \code{1/obs_sd}.}
 
 \item{lambda}{Numeric scalar or vector. Marquardt lambda per iteration.
 A scalar is recycled; a vector shorter than \code{noptmax} is right-padded
-with its last value (default 1.0).}
+with its last value (default 1.0). Under the default
+\code{obs_perturbation = "mda"} the Marquardt damping \emph{is} the ES-MDA
+inflation (\code{alpha = lambda + 1}), so supplying \code{lambda} there fixes the
+inflation schedule and it must satisfy \code{sum(1 / (lambda + 1)) == 1}; if
+it does not, the call errors rather than returning a mis-calibrated
+posterior. Leave \code{lambda} alone and use \code{mda_alpha} to choose the
+schedule in its natural units.}
 
 \item{fidelity_schedule}{Integer vector or \code{NULL}. Only consulted when
 \code{forward_model} is a \code{\link[=pesto_multifidelity_model]{pesto_multifidelity_model()}}: the fidelity level to
@@ -90,7 +99,35 @@ mean objective function (phi) between successive iterations falls below
 \code{phi_tol} -- the phi-reduction stopping rule of White (2018). \code{NULL}
 (default) runs the full \code{noptmax} iterations, leaving the update
 byte-identical to the unchecked smoother. Use a smaller \code{phi_tol} to
-demand more iterations, a larger one to stop sooner.}
+demand more iterations, a larger one to stop sooner. Note that stopping
+early truncates the ES-MDA schedule, so under \code{obs_perturbation = "mda"}
+less than one likelihood is assimilated and the posterior comes back too
+\emph{wide}; the driver warns when this happens.}
+
+\item{obs_perturbation}{Character, \code{"mda"} (default) or \code{"none"}. How the
+observations enter the update. See \emph{Posterior spread and observation
+perturbation}. \code{"mda"} gives each realisation its own perturbed data
+vector under the ensemble-smoother-with-multiple-data-assimilation
+scheme, which is what makes the returned ensemble a posterior sample.
+\code{"none"} assimilates the same unperturbed vector into every
+realisation: the ensemble \emph{mean} still converges to the maximum a
+posteriori fit, but the spread is not a posterior spread and must not be
+read as uncertainty.}
+
+\item{mda_alpha}{Numeric vector or \code{NULL}. The ES-MDA inflation schedule
+\eqn{\alpha_k}, one entry per iteration (recycled / right-padded).
+\code{NULL} (default) uses the uniform schedule \eqn{\alpha_k = }\code{noptmax}
+of Emerick & Reynolds (2013). Any schedule must satisfy
+\eqn{\sum_k 1/\alpha_k = 1}; the Marquardt lambda schedule is then
+derived as \eqn{\lambda_k = \alpha_k - 1}. Only meaningful when
+\code{obs_perturbation = "mda"}.}
+
+\item{seed}{Integer or \code{NULL}. When supplied, \code{set.seed(seed)} is called
+once before the run (so it advances the session stream exactly as a
+direct \code{set.seed()} would) and the value is recorded on the result, from
+where \code{\link[=as_manifest]{as_manifest()}} carries it into the manifest's \code{seed} slot. \code{NULL}
+(default) draws the observation noise from the session stream and records
+\code{NA}; reproducibility is then the caller's own \code{set.seed()}.}
 }
 \value{
 A list of class \code{c("pesto_ies_callback_result", "pesto_ies_result")}
@@ -99,7 +136,13 @@ with components:
 \item{phi}{data.table of per-realisation phi by iteration.}
 \item{par_ensemble}{Final parameter ensemble (data.table).}
 \item{obs_ensemble}{Final simulated-observation ensemble (data.table).}
-\item{iterations}{List of per-iteration metadata: \code{lambda}, \code{mean_phi},
+\item{obs_perturbation}{Assimilation-scheme provenance:
+\code{scheme} (\code{"mda"} or \code{"none"}), the realised ES-MDA inflation
+schedule \code{alpha}, the run \code{seed} (\code{NA} when none was supplied), and
+\code{obs_noise} -- the \verb{nobs x nreal} noise ensemble of the final
+assimilation step (\code{NULL} under \code{"none"}).}
+\item{iterations}{List of per-iteration metadata: \code{lambda},
+\code{mda_alpha}, \code{mean_phi},
 \code{n_failures}, and the dispersion diagnostics \code{spread_ess} /
 \code{spread_ess_ratio} (\code{\link[=ensemble_spread_ess]{ensemble_spread_ess()}}), plus
 \code{inflation_method} / \code{inflation_factor} / \code{retention} and
@@ -146,6 +189,40 @@ Phase-2 enhancement; for the common case of a well-behaved forward model
 with \code{lambda = 1}, the GLM update reduces phi reliably (see vignette
 \code{apsim-callback}).
 }
+\section{Posterior spread and observation perturbation}{
+
+An ensemble smoother that assimilates the same, unperturbed observation
+vector into every realisation does not return a posterior sample. Every
+member feels an identical data pull, so the between-member spread is only
+the prior variance the update failed to remove, and it does not shrink
+towards the right answer as the ensemble grows. PESTO's default therefore
+gives realisation \eqn{j} its own perturbed data,
+\deqn{d_j = d + \sqrt{\alpha_k}\,e_j, \qquad e_j \sim N(0, C_D),}
+and, because an iterative smoother assimilates the \emph{same} data at every
+step, inflates the measurement covariance by \eqn{\alpha_k} subject to
+\eqn{\sum_k 1/\alpha_k = 1} so that exactly one likelihood is
+assimilated in total. That is the ensemble smoother with multiple data
+assimilation (ES-MDA) of Emerick & Reynolds (2013); the update step is
+\deqn{m_j \leftarrow m_j + C_{MD}(C_{DD} + \alpha_k C_D)^{-1}
+      (d + \sqrt{\alpha_k}\,e_j - g(m_j)).}
+PESTO's GLM kernel already computes that form: with \eqn{C_D = W^{-2}}
+the Marquardt damping and the MDA inflation are the same number,
+\eqn{\alpha_k = \lambda_k + 1}, so the lambda schedule is derived from
+\code{mda_alpha} rather than set independently.
+
+On a linear-Gaussian problem the resulting ensemble covariance matches the
+closed-form conjugate posterior (graded in
+\code{tests/testthat/test-posterior-calibration.R}), and the nominal coverage of
+its central intervals is realised. The reported \code{phi} is unaffected: it is
+always computed against the unperturbed observations, so it remains the fit
+to the data the user supplied.
+
+\code{obs_perturbation = "none"} restores the unperturbed update. It is the
+right choice when a single best-fit parameter vector is wanted and the
+spread will be discarded, and the wrong choice for anything that reads the
+ensemble as uncertainty.
+}
+
 \section{Multi-fidelity}{
 
 When \code{forward_model} is a \code{\link[=pesto_multifidelity_model]{pesto_multifidelity_model()}}, \code{fidelity_schedule}
@@ -179,6 +256,12 @@ colMeans(as.matrix(fit$par_ensemble[, -1]))  # should approach theta_true
 Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
 iterative ensemble smoother for efficient history matching and
 uncertainty quantification. \emph{Computational Geosciences}, 17(4), 689--703.
+
+Emerick, A.A. & Reynolds, A.C. (2013). Ensemble smoother with multiple
+data assimilation. \emph{Computers & Geosciences}, 55, 3--15.
+
+Evensen, G. (2018). Analysis of iterative ensemble smoothers for solving
+inverse problems. \emph{Computational Geosciences}, 22(3), 885--908.
 
 White, J.T. (2018). A model-independent iterative ensemble smoother for
 efficient history-matching and uncertainty quantification in very high

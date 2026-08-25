@@ -518,6 +518,38 @@ pestpp_available <- function(which = "pestpp-ies") {
 #' with `lambda = 1`, the GLM update reduces phi reliably (see vignette
 #' `apsim-callback`).
 #'
+#' @section Posterior spread and observation perturbation:
+#' An ensemble smoother that assimilates the same, unperturbed observation
+#' vector into every realisation does not return a posterior sample. Every
+#' member feels an identical data pull, so the between-member spread is only
+#' the prior variance the update failed to remove, and it does not shrink
+#' towards the right answer as the ensemble grows. PESTO's default therefore
+#' gives realisation \eqn{j} its own perturbed data,
+#' \deqn{d_j = d + \sqrt{\alpha_k}\,e_j, \qquad e_j \sim N(0, C_D),}
+#' and, because an iterative smoother assimilates the *same* data at every
+#' step, inflates the measurement covariance by \eqn{\alpha_k} subject to
+#' \eqn{\sum_k 1/\alpha_k = 1} so that exactly one likelihood is
+#' assimilated in total. That is the ensemble smoother with multiple data
+#' assimilation (ES-MDA) of Emerick & Reynolds (2013); the update step is
+#' \deqn{m_j \leftarrow m_j + C_{MD}(C_{DD} + \alpha_k C_D)^{-1}
+#'       (d + \sqrt{\alpha_k}\,e_j - g(m_j)).}
+#' PESTO's GLM kernel already computes that form: with \eqn{C_D = W^{-2}}
+#' the Marquardt damping and the MDA inflation are the same number,
+#' \eqn{\alpha_k = \lambda_k + 1}, so the lambda schedule is derived from
+#' `mda_alpha` rather than set independently.
+#'
+#' On a linear-Gaussian problem the resulting ensemble covariance matches the
+#' closed-form conjugate posterior (graded in
+#' `tests/testthat/test-posterior-calibration.R`), and the nominal coverage of
+#' its central intervals is realised. The reported `phi` is unaffected: it is
+#' always computed against the unperturbed observations, so it remains the fit
+#' to the data the user supplied.
+#'
+#' `obs_perturbation = "none"` restores the unperturbed update. It is the
+#' right choice when a single best-fit parameter vector is wanted and the
+#' spread will be discarded, and the wrong choice for anything that reads the
+#' ensemble as uncertainty.
+#'
 #' @section Multi-fidelity:
 #' When `forward_model` is a [pesto_multifidelity_model()], `fidelity_schedule`
 #' selects which fidelity level each iteration evaluates -- a recycled / padded
@@ -550,14 +582,45 @@ pestpp_available <- function(which = "pestpp-ies") {
 #' @param noptmax Integer. Number of IES iterations (default 4).
 #' @param lambda Numeric scalar or vector. Marquardt lambda per iteration.
 #'   A scalar is recycled; a vector shorter than `noptmax` is right-padded
-#'   with its last value (default 1.0).
+#'   with its last value (default 1.0). Under the default
+#'   `obs_perturbation = "mda"` the Marquardt damping *is* the ES-MDA
+#'   inflation (`alpha = lambda + 1`), so supplying `lambda` there fixes the
+#'   inflation schedule and it must satisfy `sum(1 / (lambda + 1)) == 1`; if
+#'   it does not, the call errors rather than returning a mis-calibrated
+#'   posterior. Leave `lambda` alone and use `mda_alpha` to choose the
+#'   schedule in its natural units.
+#' @param obs_perturbation Character, `"mda"` (default) or `"none"`. How the
+#'   observations enter the update. See *Posterior spread and observation
+#'   perturbation*. `"mda"` gives each realisation its own perturbed data
+#'   vector under the ensemble-smoother-with-multiple-data-assimilation
+#'   scheme, which is what makes the returned ensemble a posterior sample.
+#'   `"none"` assimilates the same unperturbed vector into every
+#'   realisation: the ensemble *mean* still converges to the maximum a
+#'   posteriori fit, but the spread is not a posterior spread and must not be
+#'   read as uncertainty.
+#' @param mda_alpha Numeric vector or `NULL`. The ES-MDA inflation schedule
+#'   \eqn{\alpha_k}, one entry per iteration (recycled / right-padded).
+#'   `NULL` (default) uses the uniform schedule \eqn{\alpha_k = }`noptmax`
+#'   of Emerick & Reynolds (2013). Any schedule must satisfy
+#'   \eqn{\sum_k 1/\alpha_k = 1}; the Marquardt lambda schedule is then
+#'   derived as \eqn{\lambda_k = \alpha_k - 1}. Only meaningful when
+#'   `obs_perturbation = "mda"`.
+#' @param seed Integer or `NULL`. When supplied, `set.seed(seed)` is called
+#'   once before the run (so it advances the session stream exactly as a
+#'   direct `set.seed()` would) and the value is recorded on the result, from
+#'   where [as_manifest()] carries it into the manifest's `seed` slot. `NULL`
+#'   (default) draws the observation noise from the session stream and records
+#'   `NA`; reproducibility is then the caller's own `set.seed()`.
 #' @param phi_tol Numeric scalar or `NULL`. Optional convergence tolerance:
 #'   when non-`NULL`, iteration stops early once the relative reduction in the
 #'   mean objective function (phi) between successive iterations falls below
 #'   `phi_tol` -- the phi-reduction stopping rule of White (2018). `NULL`
 #'   (default) runs the full `noptmax` iterations, leaving the update
 #'   byte-identical to the unchecked smoother. Use a smaller `phi_tol` to
-#'   demand more iterations, a larger one to stop sooner.
+#'   demand more iterations, a larger one to stop sooner. Note that stopping
+#'   early truncates the ES-MDA schedule, so under `obs_perturbation = "mda"`
+#'   less than one likelihood is assimilated and the posterior comes back too
+#'   *wide*; the driver warns when this happens.
 #' @param fidelity_schedule Integer vector or `NULL`. Only consulted when
 #'   `forward_model` is a [pesto_multifidelity_model()]: the fidelity level to
 #'   evaluate at each iteration (recycled / right-padded to `noptmax`). `NULL`
@@ -588,7 +651,13 @@ pestpp_available <- function(which = "pestpp-ies") {
 #'     \item{phi}{data.table of per-realisation phi by iteration.}
 #'     \item{par_ensemble}{Final parameter ensemble (data.table).}
 #'     \item{obs_ensemble}{Final simulated-observation ensemble (data.table).}
-#'     \item{iterations}{List of per-iteration metadata: `lambda`, `mean_phi`,
+#'     \item{obs_perturbation}{Assimilation-scheme provenance:
+#'       `scheme` (`"mda"` or `"none"`), the realised ES-MDA inflation
+#'       schedule `alpha`, the run `seed` (`NA` when none was supplied), and
+#'       `obs_noise` -- the `nobs x nreal` noise ensemble of the final
+#'       assimilation step (`NULL` under `"none"`).}
+#'     \item{iterations}{List of per-iteration metadata: `lambda`,
+#'       `mda_alpha`, `mean_phi`,
 #'       `n_failures`, and the dispersion diagnostics `spread_ess` /
 #'       `spread_ess_ratio` ([ensemble_spread_ess()]), plus
 #'       `inflation_method` / `inflation_factor` / `retention` and
@@ -612,6 +681,12 @@ pestpp_available <- function(which = "pestpp-ies") {
 #' Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
 #' iterative ensemble smoother for efficient history matching and
 #' uncertainty quantification. *Computational Geosciences*, 17(4), 689--703.
+#'
+#' Emerick, A.A. & Reynolds, A.C. (2013). Ensemble smoother with multiple
+#' data assimilation. *Computers & Geosciences*, 55, 3--15.
+#'
+#' Evensen, G. (2018). Analysis of iterative ensemble smoothers for solving
+#' inverse problems. *Computational Geosciences*, 22(3), 885--908.
 #'
 #' White, J.T. (2018). A model-independent iterative ensemble smoother for
 #' efficient history-matching and uncertainty quantification in very high
@@ -649,15 +724,27 @@ pesto_ies_callback <- function(forward_model,
                                localisation = NULL,
                                on_failure = c("na", "stop"),
                                verbose = TRUE,
-                               phi_tol = NULL) {
+                               phi_tol = NULL,
+                               obs_perturbation = c("mda", "none"),
+                               mda_alpha = NULL,
+                               seed = NULL) {
 
   # Validate inputs -----------------------------------------------------
+  lambda_supplied <- !missing(lambda)
   on_failure <- match.arg(on_failure)
+  obs_perturbation <- .check_obs_perturbation(obs_perturbation)
   .check_pesto_ies_callback_inputs(forward_model, noptmax, eigthresh)
   .check_inflation(inflation)
   .check_localisation(localisation)
   noptmax <- as.integer(noptmax)
   if (!is.null(phi_tol)) .assert_positive_scalar(phi_tol, "phi_tol")
+  if (obs_perturbation == "none" && !is.null(mda_alpha)) {
+    stop(
+      paste0("`mda_alpha` is only meaningful when ",
+             "`obs_perturbation = \"mda\"`."),
+      call. = FALSE
+    )
+  }
 
   # Coerce prior ensemble -----------------------------------------------
   if (data.table::is.data.table(prior_ensemble) ||
@@ -719,15 +806,33 @@ pesto_ies_callback <- function(forward_model,
   }
   parcov_inv <- 1.0 / parcov_diag
 
-  # Lambda schedule -----------------------------------------------------
-  lambda_seq <- as.numeric(lambda)
-  if (length(lambda_seq) < noptmax) {
-    lambda_seq <- c(
-      lambda_seq,
-      rep(lambda_seq[length(lambda_seq)], noptmax - length(lambda_seq))
-    )
+  # Lambda / ES-MDA inflation schedule -----------------------------------
+  # Under `obs_perturbation = "mda"` the Marquardt damping and the MDA
+  # inflation are the same number (alpha = lambda + 1, see
+  # R/obs_perturbation.R), so the lambda schedule is *derived* from the alpha
+  # schedule and the sum(1 / alpha) == 1 condition is enforced.
+  if (obs_perturbation == "mda") {
+    mda <- .mda_alpha_schedule(mda_alpha, lambda, lambda_supplied, noptmax)
+    alpha_seq  <- mda$alpha
+    lambda_seq <- mda$lambda
+  } else {
+    alpha_seq  <- rep(NA_real_, noptmax)
+    lambda_seq <- .recycle_to(as.numeric(lambda), noptmax)
   }
-  lambda_seq <- lambda_seq[seq_len(noptmax)]
+
+  # Observation-noise stream --------------------------------------------
+  # `seed` is recorded so the manifest can carry it; when it is NULL the
+  # noise is drawn from the session stream and reproducibility is the
+  # caller's own set.seed(), as for any other stochastic R function.
+  noise_seed <- NA_integer_
+  if (!is.null(seed)) {
+    noise_seed <- suppressWarnings(as.integer(seed))
+    if (length(noise_seed) != 1L || is.na(noise_seed)) {
+      stop("`seed` must be a single integer, or NULL.", call. = FALSE)
+    }
+    set.seed(noise_seed)
+  }
+  obs_noise_last <- NULL
 
   # Forward-model evaluation contract -----------------------------------
   # Accept a bare function, a typed pesto_forward_model, or a
@@ -796,6 +901,19 @@ pesto_ies_callback <- function(forward_model,
     # localised gain, the (optional) inflation, and the spread-ESS diagnostic.
     # The C++ kernels return the *negative-direction* step (Chen-Oliver 2013);
     # `.ies_apply_update()` applies it by subtraction so phi descends.
+    # ES-MDA: a fresh N(0, alpha_k C_D) noise ensemble per assimilation
+    # step, so realisation j assimilates d + sqrt(alpha_k) e_j rather than
+    # the bare d every other realisation also sees.
+    if (obs_perturbation == "mda") {
+      obs_noise_last <- .draw_obs_noise(nobs, nreal, obs_sd_vec,
+                                        scale = alpha_seq[k])
+      dimnames(obs_noise_last) <- list(obs_names_local,
+                                       paste0("real_", seq_len(nreal)))
+      noise_k <- obs_noise_last[, ok, drop = FALSE]
+    } else {
+      noise_k <- NULL
+    }
+
     step <- .ies_apply_update(
       par_ok       = par_ok,
       obs_ok       = obs_ok,
@@ -808,7 +926,8 @@ pesto_ies_callback <- function(forward_model,
       use_approx   = use_approx,
       iter         = k,
       inflation    = inflation,
-      localisation = localisation
+      localisation = localisation,
+      obs_noise    = noise_k
     )
     phi_vec <- step$phi
     phi_history[[k]] <- data.table::data.table(
@@ -830,6 +949,7 @@ pesto_ies_callback <- function(forward_model,
     iter_meta[[k]] <- c(
       list(
         lambda     = lambda_seq[k],
+        mda_alpha  = alpha_seq[k],
         mean_phi   = mean(phi_vec),
         n_failures = nreal - nreal_ok
       ),
@@ -847,6 +967,20 @@ pesto_ies_callback <- function(forward_model,
           (prev_phi - cur_phi) / prev_phi < phi_tol) {
         converged  <- TRUE
         n_iter_run <- k
+        if (obs_perturbation == "mda" && k < noptmax) {
+          warning(
+            sprintf(
+              paste0("`phi_tol` stopped the run after %d of %d ES-MDA steps, ",
+                     "so only sum(1 / alpha) = %.4g of one likelihood was ",
+                     "assimilated. The posterior ensemble is correspondingly ",
+                     "*under*-assimilated (too wide). Drop `phi_tol`, or ",
+                     "supply an `mda_alpha` schedule whose first %d entries ",
+                     "sum to 1 in reciprocal."),
+              k, noptmax, sum(1 / alpha_seq[seq_len(k)]), k
+            ),
+            call. = FALSE
+          )
+        }
         break
       }
     }
@@ -912,7 +1046,17 @@ pesto_ies_callback <- function(forward_model,
     # manifest emitter) can reconstruct the full run context.
     obs_target      = stats::setNames(obs_vec, obs_names_local),
     obs_sd          = stats::setNames(obs_sd_vec, obs_names_local),
-    weights         = stats::setNames(weights, obs_names_local)
+    weights         = stats::setNames(weights, obs_names_local),
+    # Assimilation-scheme provenance: which perturbation scheme ran, the
+    # realised ES-MDA inflation schedule, the run seed (NA when the caller
+    # relied on the session stream), and the noise ensemble of the final
+    # assimilation step.
+    obs_perturbation = list(
+      scheme     = obs_perturbation,
+      alpha      = alpha_seq[seq_len(n_iter_run)],
+      seed       = noise_seed,
+      obs_noise  = obs_noise_last
+    )
   )
   class(output) <- c("pesto_ies_callback_result", "pesto_ies_result")
   output
