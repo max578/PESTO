@@ -35,6 +35,20 @@
 * `pesto_reference_ies()` accepts a per-realisation `obs_target` matrix as well
   as a single target vector, so the textbook reference can reproduce the
   posterior-sampling update rather than only the unperturbed one.
+* New `pesto_abstention()` / `is_pesto_abstention()`: a classed decline
+  (`class = "pesto_abstention"`, `$abstained = TRUE`, `$reason`, `$detail`,
+  `$diagnostics`) recognised by the orchestra's cross-package refusal
+  contract by its `_abstention` class suffix. `pesto_ies_callback()` and
+  `pesto_ies_filter()` now return one with `reason = "degenerate_ensemble"`
+  when fewer than two realisations survive a step, in place of the previous
+  bare `stop()`. `pesto_surrogate_ies()` now checks
+  `check_surrogate_regime()` before training and returns one with
+  `reason = "surrogate_off_design"` below the favourable
+  training-point-to-parameter floor, rather than proceeding into a
+  low-value run. `as_manifest()` gains a method for `pesto_abstention`:
+  it emits an empty-payload `pesto_ensemble_manifest` whose new `summary`
+  slot carries `list(abstained = TRUE, reason, detail)`, so an abstained
+  run still produces a typed C2 record rather than none at all.
 
 ## Breaking changes
 
@@ -48,6 +62,11 @@
 * `phi_tol` stopping early truncates the ES-MDA schedule, so less than one
   likelihood is assimilated and the posterior comes back too wide. The driver
   now warns when this happens.
+* A degenerate ensemble (fewer than two realisations surviving a step) is no
+  longer a raised error from `pesto_ies_callback()` / `pesto_ies_filter()`;
+  callers that caught the previous `stop("... fewer than 2 successful
+  realisations ...")` should check `is_pesto_abstention()` on the return
+  value instead.
 
 ## Testing
 
