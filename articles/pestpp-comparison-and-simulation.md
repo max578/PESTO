@@ -259,13 +259,22 @@ The three methods separate exactly where the lineage table predicts.
   PESTO evaluates the forward model in-process and updates the ensemble
   in C++, avoiding the per-evaluation file exchange and process spawn
   the file-coupled binaries pay on every call.
-- **Raw calibration is the weak spot.** PESTO’s *raw* ensemble credible
-  intervals under-cover (CI90 around 0.13 on the linear problem) – an
-  under-dispersion the *Inflation and localisation* vignette shows is
-  only partly finite-ensemble collapse. Apply inflation (and, for
-  spatial problems, localisation) before trusting raw intervals, and
-  measure coverage on your own problem rather than assuming inflation
-  restores it to nominal.
+- **The CI90 row is a pre-fix figure.** PESTO’s benchmarked *raw*
+  ensemble credible intervals under-cover badly (CI90 around 0.13 on the
+  linear problem against a nominal 0.90). The cause has since been
+  identified and fixed: the smoother assimilated the same unperturbed
+  observation vector into every realisation, so the ensemble was a cloud
+  around the best fit rather than a posterior sample. The development
+  version perturbs the observations per realisation under an ES-MDA
+  schedule and recovers the analytic posterior covariance and nominal
+  interval coverage on a linear-Gaussian problem with a closed-form
+  answer (see *Posterior spread and observation perturbation* in
+  [`?pesto_ies_callback`](https://max578.github.io/PESTO/html/pesto_ies_callback.md)).
+  Re-running this benchmark needs the external PEST and PEST++ binaries,
+  which are absent here, so the table above still carries the pre-fix
+  PESTO calibration row. The accuracy, cost and forward-evaluation
+  columns are unaffected. Measure coverage on your own problem
+  regardless.
 
 ## Performance characteristics
 
@@ -427,7 +436,7 @@ phi_trace_pesto <- vapply(fit_A$iterations, `[[`, numeric(1L), "mean_phi")
 
 cat(sprintf("PESTO native IES: 6 iterations in %.2fs; posterior RMSE = %.4f\n",
             runtime_pesto_A, rmse_pesto_A))
-#> PESTO native IES: 6 iterations in 0.05s; posterior RMSE = 0.3081
+#> PESTO native IES: 6 iterations in 0.05s; posterior RMSE = 0.3090
 ```
 
 ### Comparison with the reference smoother
@@ -481,14 +490,14 @@ knitr::kable(agreement,
 
 | parameter | truth | PESTO_mean | PESTO_q05 | PESTO_q95 | ref_mean | ref_q05 | ref_q95 | rel_diff_pct |
 |:---|---:|---:|---:|---:|---:|---:|---:|---:|
-| p1 | 1.20 | 0.5063 | -0.0601 | 1.1308 | 0.3343 | 0.1491 | 0.5620 | 51.45 |
-| p2 | 0.85 | 0.4144 | -0.3309 | 1.0690 | 0.4269 | 0.2208 | 0.8497 | 2.93 |
-| p3 | 0.55 | 0.4255 | -0.2131 | 1.0478 | 0.4277 | 0.1613 | 0.8239 | 0.51 |
-| p4 | 0.40 | 0.5079 | -0.0180 | 1.0502 | 0.2854 | 0.0745 | 0.5547 | 77.96 |
-| p5 | 0.30 | 0.3769 | -0.2122 | 0.9879 | 0.2716 | 0.1125 | 0.5962 | 38.77 |
-| p6 | 0.22 | 0.4022 | -0.2085 | 1.1317 | 0.2754 | 0.1491 | 0.4011 | 46.04 |
-| p7 | 0.16 | 0.0499 | -0.4078 | 0.5115 | 0.2985 | 0.1580 | 0.4556 | 83.28 |
-| p8 | 0.10 | 0.1992 | -0.3840 | 0.7439 | 0.2658 | 0.1386 | 0.4441 | 25.06 |
+| p1 | 1.20 | 0.5035 | -0.0581 | 1.2018 | 0.3343 | 0.1491 | 0.5620 | 50.61 |
+| p2 | 0.85 | 0.4165 | -0.3687 | 1.0050 | 0.4269 | 0.2208 | 0.8497 | 2.44 |
+| p3 | 0.55 | 0.4193 | -0.2369 | 1.0642 | 0.4277 | 0.1613 | 0.8239 | 1.96 |
+| p4 | 0.40 | 0.5098 | -0.0910 | 1.0120 | 0.2854 | 0.0745 | 0.5547 | 78.63 |
+| p5 | 0.30 | 0.3799 | -0.2349 | 0.9375 | 0.2716 | 0.1125 | 0.5962 | 39.87 |
+| p6 | 0.22 | 0.3988 | -0.2279 | 1.1164 | 0.2754 | 0.1491 | 0.4011 | 44.81 |
+| p7 | 0.16 | 0.0478 | -0.4237 | 0.4891 | 0.2985 | 0.1580 | 0.4556 | 83.99 |
+| p8 | 0.10 | 0.2031 | -0.3773 | 0.7306 | 0.2658 | 0.1386 | 0.4441 | 23.59 |
 
 Posterior summaries: PESTO native IES vs the reference. {.table}
 
@@ -540,13 +549,15 @@ re-implementation should show.
 
 Two limits travel with every PESTO IES result and are stated here once.
 
-- **Raw ensemble intervals under-cover.** Raw credible intervals are too
-  narrow, and covariance inflation only partly closes the gap. The
-  *Inflation and localisation* vignette quantifies this against an
-  analytic posterior, shows that the shortfall does not shrink
-  materially with ensemble size, and gives the current best practice:
-  measure coverage on your own problem rather than trusting a default
-  inflation setting to reach nominal.
+- **The benchmark’s calibration row predates the
+  observation-perturbation fix.** The under-coverage it reports was
+  caused by assimilating the same unperturbed observations into every
+  realisation; the development version perturbs per realisation under an
+  ES-MDA schedule and is graded against the closed-form conjugate
+  posterior in both moments. The frozen benchmark cannot be re-run
+  without the external binaries, so its PESTO CI90 row still shows the
+  old behaviour. Measure coverage on your own problem in any case – that
+  is the standing advice, before and after.
 - **Inflation strength is problem-dependent.** Two independent
   instruments (a joint-calibration coverage test and this cross-tool
   benchmark) disagree on the optimal RTPS strength, which means there is

@@ -64,7 +64,10 @@ Each iteration:</p>
 <span>  localisation <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  on_failure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"na"</span>, <span class="st">"stop"</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  phi_tol <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  phi_tol <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  obs_perturbation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mda"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
+<span>  mda_alpha <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -110,7 +113,13 @@ standard deviation(s); the IES weights are <code>1/obs_sd</code>.</p></dd>
 <dt id="arg-lambda">lambda<a class="anchor" aria-label="anchor" href="#arg-lambda"></a></dt>
 <dd><p>Numeric scalar or vector. Marquardt lambda per iteration.
 A scalar is recycled; a vector shorter than <code>noptmax</code> is right-padded
-with its last value (default 1.0).</p></dd>
+with its last value (default 1.0). Under the default
+<code>obs_perturbation = "mda"</code> the Marquardt damping <em>is</em> the ES-MDA
+inflation (<code>alpha = lambda + 1</code>), so supplying <code>lambda</code> there fixes the
+inflation schedule and it must satisfy <code>sum(1 / (lambda + 1)) == 1</code>; if
+it does not, the call errors rather than returning a mis-calibrated
+posterior. Leave <code>lambda</code> alone and use <code>mda_alpha</code> to choose the
+schedule in its natural units.</p></dd>
 
 
 <dt id="arg-fidelity-schedule">fidelity_schedule<a class="anchor" aria-label="anchor" href="#arg-fidelity-schedule"></a></dt>
@@ -168,7 +177,41 @@ mean objective function (phi) between successive iterations falls below
 <code>phi_tol</code> – the phi-reduction stopping rule of White (2018). <code>NULL</code>
 (default) runs the full <code>noptmax</code> iterations, leaving the update
 byte-identical to the unchecked smoother. Use a smaller <code>phi_tol</code> to
-demand more iterations, a larger one to stop sooner.</p></dd>
+demand more iterations, a larger one to stop sooner. Note that stopping
+early truncates the ES-MDA schedule, so under <code>obs_perturbation = "mda"</code>
+less than one likelihood is assimilated and the posterior comes back too
+<em>wide</em>; the driver warns when this happens.</p></dd>
+
+
+<dt id="arg-obs-perturbation">obs_perturbation<a class="anchor" aria-label="anchor" href="#arg-obs-perturbation"></a></dt>
+<dd><p>Character, <code>"mda"</code> (default) or <code>"none"</code>. How the
+observations enter the update. See <em>Posterior spread and observation
+perturbation</em>. <code>"mda"</code> gives each realisation its own perturbed data
+vector under the ensemble-smoother-with-multiple-data-assimilation
+scheme, which is what makes the returned ensemble a posterior sample.
+<code>"none"</code> assimilates the same unperturbed vector into every
+realisation: the ensemble <em>mean</em> still converges to the maximum a
+posteriori fit, but the spread is not a posterior spread and must not be
+read as uncertainty.</p></dd>
+
+
+<dt id="arg-mda-alpha">mda_alpha<a class="anchor" aria-label="anchor" href="#arg-mda-alpha"></a></dt>
+<dd><p>Numeric vector or <code>NULL</code>. The ES-MDA inflation schedule
+\(\alpha_k\), one entry per iteration (recycled / right-padded).
+<code>NULL</code> (default) uses the uniform schedule \(\alpha_k = \)<code>noptmax</code>
+of Emerick &amp; Reynolds (2013). Any schedule must satisfy
+\(\sum_k 1/\alpha_k = 1\); the Marquardt lambda schedule is then
+derived as \(\lambda_k = \alpha_k - 1\). Only meaningful when
+<code>obs_perturbation = "mda"</code>.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Integer or <code>NULL</code>. When supplied, <code>set.seed(seed)</code> is called
+once before the run (so it advances the session stream exactly as a
+direct <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> would) and the value is recorded on the result, from
+where <code><a href="as_manifest.html">as_manifest()</a></code> carries it into the manifest's <code>seed</code> slot. <code>NULL</code>
+(default) draws the observation noise from the session stream and records
+<code>NA</code>; reproducibility is then the caller's own <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -183,8 +226,16 @@ with components:</p><dl><dt>phi</dt>
 <dt>obs_ensemble</dt>
 <dd><p>Final simulated-observation ensemble (data.table).</p></dd>
 
+<dt>obs_perturbation</dt>
+<dd><p>Assimilation-scheme provenance:
+<code>scheme</code> (<code>"mda"</code> or <code>"none"</code>), the realised ES-MDA inflation
+schedule <code>alpha</code>, the run <code>seed</code> (<code>NA</code> when none was supplied), and
+<code>obs_noise</code> – the <code>nobs x nreal</code> noise ensemble of the final
+assimilation step (<code>NULL</code> under <code>"none"</code>).</p></dd>
+
 <dt>iterations</dt>
-<dd><p>List of per-iteration metadata: <code>lambda</code>, <code>mean_phi</code>,
+<dd><p>List of per-iteration metadata: <code>lambda</code>,
+<code>mda_alpha</code>, <code>mean_phi</code>,
 <code>n_failures</code>, and the dispersion diagnostics <code>spread_ess</code> /
 <code>spread_ess_ratio</code> (<code><a href="ensemble_spread_ess.html">ensemble_spread_ess()</a></code>), plus
 <code>inflation_method</code> / <code>inflation_factor</code> / <code>retention</code> and
@@ -238,6 +289,39 @@ with <code>lambda = 1</code>, the GLM update reduces phi reliably (see vignette
 <code>apsim-callback</code>).</p>
     </div>
     <div class="section level2">
+    <h2 id="posterior-spread-and-observation-perturbation">Posterior spread and observation perturbation<a class="anchor" aria-label="anchor" href="#posterior-spread-and-observation-perturbation"></a></h2>
+
+
+<p>An ensemble smoother that assimilates the same, unperturbed observation
+vector into every realisation does not return a posterior sample. Every
+member feels an identical data pull, so the between-member spread is only
+the prior variance the update failed to remove, and it does not shrink
+towards the right answer as the ensemble grows. PESTO's default therefore
+gives realisation \(j\) its own perturbed data,
+$$d_j = d + \sqrt{\alpha_k}\,e_j, \qquad e_j \sim N(0, C_D),$$
+and, because an iterative smoother assimilates the <em>same</em> data at every
+step, inflates the measurement covariance by \(\alpha_k\) subject to
+\(\sum_k 1/\alpha_k = 1\) so that exactly one likelihood is
+assimilated in total. That is the ensemble smoother with multiple data
+assimilation (ES-MDA) of Emerick &amp; Reynolds (2013); the update step is
+$$m_j \leftarrow m_j + C_{MD}(C_{DD} + \alpha_k C_D)^{-1}
+      (d + \sqrt{\alpha_k}\,e_j - g(m_j)).$$
+PESTO's GLM kernel already computes that form: with \(C_D = W^{-2}\)
+the Marquardt damping and the MDA inflation are the same number,
+\(\alpha_k = \lambda_k + 1\), so the lambda schedule is derived from
+<code>mda_alpha</code> rather than set independently.</p>
+<p>On a linear-Gaussian problem the resulting ensemble covariance matches the
+closed-form conjugate posterior (graded in
+<code>tests/testthat/test-posterior-calibration.R</code>), and the nominal coverage of
+its central intervals is realised. The reported <code>phi</code> is unaffected: it is
+always computed against the unperturbed observations, so it remains the fit
+to the data the user supplied.</p>
+<p><code>obs_perturbation = "none"</code> restores the unperturbed update. It is the
+right choice when a single best-fit parameter vector is wanted and the
+spread will be discarded, and the wrong choice for anything that reads the
+ensemble as uncertainty.</p>
+    </div>
+    <div class="section level2">
     <h2 id="multi-fidelity">Multi-fidelity<a class="anchor" aria-label="anchor" href="#multi-fidelity"></a></h2>
 
 
@@ -255,6 +339,10 @@ is the plug-in point for bias-corrected surrogate cascades.</p>
     <p>Chen, Y. &amp; Oliver, D.S. (2013). Levenberg-Marquardt forms of the
 iterative ensemble smoother for efficient history matching and
 uncertainty quantification. <em>Computational Geosciences</em>, 17(4), 689–703.</p>
+<p>Emerick, A.A. &amp; Reynolds, A.C. (2013). Ensemble smoother with multiple
+data assimilation. <em>Computers &amp; Geosciences</em>, 55, 3–15.</p>
+<p>Evensen, G. (2018). Analysis of iterative ensemble smoothers for solving
+inverse problems. <em>Computational Geosciences</em>, 22(3), 885–908.</p>
 <p>White, J.T. (2018). A model-independent iterative ensemble smoother for
 efficient history-matching and uncertainty quantification in very high
 dimensions. <em>Environmental Modelling &amp; Software</em>, 109, 191–201.</p>
@@ -283,7 +371,7 @@ for the apsimx adapter.</p></div>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>  <span class="co"># should approach theta_true</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         p1         p2         p3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  1.0136905 -0.4936753  1.9847267 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  1.0156788 -0.4975924  1.9837106 </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

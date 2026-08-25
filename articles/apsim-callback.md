@@ -61,7 +61,11 @@ prior <- matrix(rnorm(nreal * npar), nreal, npar,
                 dimnames = list(NULL, paste0("p", seq_len(npar))))
 ```
 
-Run six IES iterations with a single lambda:
+Run six IES iterations. `lambda` is left at its default: under the
+default ES-MDA scheme the Marquardt damping *is* the inflation factor
+(`alpha = lambda + 1`) and is set by the schedule, so it is chosen for
+you rather than fixed by hand (see
+[`?pesto_ies_callback`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)).
 
 ``` r
 
@@ -71,7 +75,6 @@ fit <- pesto_ies_callback(
   obs            = y,
   obs_sd         = sigma,
   noptmax        = 6L,
-  lambda         = 1.0,
   verbose        = FALSE
 )
 ```
@@ -87,12 +90,12 @@ post_rmse  <- sqrt(mean((post_mean - theta_true)^2))
 cat(sprintf("prior RMSE: %.4f\n", prior_rmse))
 #> prior RMSE: 1.1300
 cat(sprintf("posterior RMSE: %.4f\n", post_rmse))
-#> posterior RMSE: 0.0232
+#> posterior RMSE: 0.0260
 
 mean_phi <- vapply(fit$iterations, `[[`, numeric(1L), "mean_phi")
 print(mean_phi)
-#> [1] 17452.123014     1.534500     1.533925     1.533362     1.532812
-#> [6]     1.532273
+#> [1] 17452.123014    27.446844    13.277312     9.449656     7.524900
+#> [6]     6.334244
 ```
 
 Posterior RMSE should be a small fraction of prior RMSE, and mean phi
@@ -149,7 +152,7 @@ identical(
   as.matrix(fit_typed$par_ensemble[, -1L]),
   as.matrix(fit$par_ensemble[, -1L])
 )
-#> [1] TRUE
+#> [1] FALSE
 ```
 
 ### Parallel, fault-tolerant ensembles
@@ -257,22 +260,24 @@ data.frame(
                             coverage_90(fit_collapsed, theta_true))
 )
 #>        obs_sd                      case mean_post_sd coverage_90_pct
-#> 1 0.050000000           field-realistic 3.560357e-03              50
-#> 2 0.007905694 over-precise (SE of mean) 9.266982e-05               0
+#> 1 0.050000000           field-realistic  0.034612644             100
+#> 2 0.007905694 over-precise (SE of mean)  0.005608787              50
 ```
 
 The over-precise run’s posterior spread is a small fraction of the
 well-specified run’s, and its 90 per-cent credible band has stopped
 covering the truth entirely. The ensemble is confident and wrong.
 
-PESTO records the collapse directly.
 [`ensemble_spread_ess()`](https://max578.github.io/PESTO/reference/ensemble_spread_ess.md)
-– the spectral participation ratio of the parameter anomaly covariance,
-the effective number of variance-carrying directions – is logged on
-every iteration as `spread_ess` and as the ratio `spread_ess_ratio`
-(relative to the ensemble size). A ratio that falls steeply toward zero
-across iterations is the diagnostic signature of an ensemble draining
-its spread:
+is logged on every iteration as `spread_ess` and as the ratio
+`spread_ess_ratio`, and it is worth being precise about what it can and
+cannot see. It is the spectral participation ratio of the parameter
+anomaly covariance – the effective number of variance-carrying
+directions – so it detects the *shape* of a collapse: variance draining
+into a few directions. It is a ratio of eigenvalue sums, hence invariant
+to a global rescaling of the anomalies, so a spread that is uniformly
+too small in every direction is invisible to it. Here the two runs
+differ in exactly that way:
 
 ``` r
 
@@ -285,9 +290,15 @@ rbind(
   `over-precise`    = round(ess_ratio(fit_collapsed), 3)
 )
 #>                  [,1]  [,2]  [,3]  [,4]  [,5]  [,6]
-#> field-realistic 0.341 0.342 0.342 0.343 0.344 0.345
-#> over-precise    0.340 0.340 0.340 0.340 0.340 0.340
+#> field-realistic 0.534 0.466 0.474 0.498 0.483 0.479
+#> over-precise    0.496 0.512 0.537 0.511 0.499 0.495
 ```
+
+The two traces sit almost on top of each other even though one
+ensemble’s spread is a fraction of the other’s. Read `spread_ess_ratio`
+as the directional-collapse diagnostic it is, and read the coverage
+table above as the calibration check – they answer different questions,
+and only the second catches a mis-specified `obs_sd`.
 
 The fix is to set `obs_sd` to the uncertainty the modelled value must
 actually reproduce – the replicate-level measurement-plus-process
@@ -417,7 +428,7 @@ mf_rmse <- sqrt(mean(
   (colMeans(as.matrix(fit_mf$par_ensemble[, -1L])) - theta_true)^2
 ))
 cat(sprintf("multi-fidelity posterior RMSE: %.4f\n", mf_rmse))
-#> multi-fidelity posterior RMSE: 0.2592
+#> multi-fidelity posterior RMSE: 0.1119
 ```
 
 When a cheap level is run over the whole ensemble and the expensive
@@ -489,9 +500,9 @@ fit_crop <- pesto_ies_callback(crop, prior_crop, y_crop, obs_sd = 20,
                                noptmax = 8L, verbose = FALSE)
 post_crop <- colMeans(as.matrix(fit_crop$par_ensemble[, -1L]))[names(theta_crop)]
 rbind(truth = theta_crop, posterior = round(post_crop, 3))
-#>               r    b_max     b0
-#> truth     0.060 1400.000 20.000
-#> posterior 0.063 1371.492 18.251
+#>               r    b_max    b0
+#> truth     0.060 1400.000 20.00
+#> posterior 0.062 1382.806 18.11
 ```
 
 [`seir_forward_model()`](https://max578.github.io/PESTO/reference/seir_forward_model.md)
@@ -525,7 +536,7 @@ post_seir <- colMeans(as.matrix(fit_seir$par_ensemble[, -1L]))[names(theta_seir)
 cat(sprintf("R0 truth = %.1f, R0 posterior = %.2f\n",
             theta_seir[["beta"]] / theta_seir[["gamma"]],
             post_seir[["beta"]] / post_seir[["gamma"]]))
-#> R0 truth = 6.0, R0 posterior = 5.54
+#> R0 truth = 6.0, R0 posterior = 5.31
 ```
 
 Because both templates return a
@@ -574,9 +585,9 @@ data.frame(
   mean_par_sd = round(sd_trace, 4)
 )
 #>   window obs_assim mean_par_sd
-#> 1      1         3      0.4007
-#> 2      2         3      0.0180
-#> 3      3         2      0.0152
+#> 1      1         3      0.4132
+#> 2      2         3      0.0388
+#> 3      3         2      0.0331
 ```
 
 The posterior at the final window matches what the batch smoother would

@@ -27,7 +27,10 @@ pesto_ies_filter(
   inflation = NULL,
   localisation = NULL,
   on_failure = c("na", "stop"),
-  verbose = TRUE
+  verbose = TRUE,
+  obs_perturbation = c("mda", "none"),
+  mda_alpha = NULL,
+  seed = NULL
 )
 ```
 
@@ -79,7 +82,11 @@ pesto_ies_filter(
 - lambda:
 
   Numeric scalar or per-window vector. Marquardt lambda (default `1.0`;
-  recycled / right-padded across windows).
+  recycled / right-padded across windows). Only available under
+  `obs_perturbation = "none"`: under the default `"mda"` the damping is
+  the ES-MDA inflation of the inner iterations (`alpha = lambda + 1`)
+  and is set through `mda_alpha`, so supplying `lambda` there is an
+  error rather than a silently ignored argument.
 
 - fidelity_schedule:
 
@@ -127,6 +134,32 @@ pesto_ies_filter(
 
   Logical. Print a per-window phi summary.
 
+- obs_perturbation:
+
+  Character, `"mda"` (default) or `"none"`. Whether each realisation
+  assimilates its own perturbed observation block. See *Posterior spread
+  and observation perturbation* in
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md);
+  the scheme is identical, applied window by window.
+
+- mda_alpha:
+
+  Numeric vector or `NULL`. The ES-MDA inflation schedule used *within*
+  each window, one entry per inner iteration (recycled / right-padded to
+  `window_noptmax`). `NULL` (default) uses the uniform schedule
+  \\\alpha_j = \\`window_noptmax`. Windows are disjoint, so each
+  observation block is assimilated exactly once and the \\\sum_j
+  1/\alpha_j = 1\\ budget is spent inside a window, not across windows.
+
+- seed:
+
+  Integer or `NULL`. As in
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md):
+  when supplied, `set.seed(seed)` runs once before the filter and the
+  value is recorded on the result for
+  [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
+  to carry.
+
 ## Value
 
 A list of class `c("pesto_ies_filter_result", "pesto_ies_result")` with
@@ -148,9 +181,10 @@ components:
 
 - windows:
 
-  List of per-window metadata: assimilated indices, lambda, mean phi,
-  per-parameter ensemble mean and standard deviation (the sd trace shows
-  the posterior tightening), and failure count.
+  List of per-window metadata: assimilated indices, lambda, the window's
+  ES-MDA inflation schedule `mda_alpha`, mean phi, per-parameter
+  ensemble mean and standard deviation (the sd trace shows the posterior
+  tightening), and failure count.
 
 - runtime_seconds, n_forward_evals, failure_rate:
 
@@ -160,6 +194,13 @@ components:
 
   Multi-fidelity provenance (or `NULL`), as in
   [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md).
+
+- obs_perturbation:
+
+  Assimilation-scheme provenance: `scheme`, the per-window ES-MDA
+  inflation schedules `alpha`, the run `seed`, and `obs_noise` – the
+  noise ensemble of the final inner update, whose rows are the *last
+  window's* observation block.
 
 ## Filter vs smoother
 
@@ -186,6 +227,9 @@ fidelity.
 Chen, Y. & Oliver, D.S. (2013). Levenberg-Marquardt forms of the
 iterative ensemble smoother for efficient history matching and
 uncertainty quantification. *Computational Geosciences*, 17(4), 689–703.
+
+Emerick, A.A. & Reynolds, A.C. (2013). Ensemble smoother with multiple
+data assimilation. *Computers & Geosciences*, 55, 3–15.
 
 ## See also
 
@@ -215,5 +259,5 @@ fit <- pesto_ies_filter(
 )
 # Posterior sd should shrink window over window:
 vapply(fit$windows, function(w) mean(w$par_sd), numeric(1))
-#> [1] 0.052603202 0.003631259 0.003615228
+#> [1] 0.14098877 0.02331351 0.02170929
 ```

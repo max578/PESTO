@@ -32,7 +32,15 @@ pesto_reference_ies(
 
 - obs_target:
 
-  Numeric vector `(n_obs)`. Target (measured) observation values.
+  Numeric vector `(n_obs)`, or numeric matrix `(n_obs x n_real)`. Target
+  (measured) observation values. A vector is the textbook single-target
+  form: every realisation assimilates the same unperturbed data, which
+  validates the update *arithmetic* but reproduces the spread collapse
+  that unperturbed assimilation causes. Pass a matrix – one perturbed
+  data vector \\d_j = d + e_j\\ per column – to make the reference
+  update the same posterior-sampling update the drivers run (see
+  *Posterior spread and observation perturbation* in
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)).
 
 - weights:
 

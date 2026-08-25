@@ -76,8 +76,15 @@ observations from the current ensemble.</p></dd>
 
 
 <dt id="arg-obs-target">obs_target<a class="anchor" aria-label="anchor" href="#arg-obs-target"></a></dt>
-<dd><p>Numeric vector <code>(n_obs)</code>. Target (measured)
-observation values.</p></dd>
+<dd><p>Numeric vector <code>(n_obs)</code>, or numeric matrix
+<code>(n_obs x n_real)</code>. Target (measured) observation values. A vector is
+the textbook single-target form: every realisation assimilates the same
+unperturbed data, which validates the update <em>arithmetic</em> but reproduces
+the spread collapse that unperturbed assimilation causes. Pass a matrix
+– one perturbed data vector \(d_j = d + e_j\) per column – to make
+the reference update the same posterior-sampling update the drivers run
+(see <em>Posterior spread and observation perturbation</em> in
+<code><a href="pesto_ies_callback.html">pesto_ies_callback()</a></code>).</p></dd>
 
 
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>

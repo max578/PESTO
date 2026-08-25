@@ -76,7 +76,10 @@ window and is available after each.</p>
 <span>  inflation <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  localisation <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  on_failure <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"na"</span>, <span class="st">"stop"</span><span class="op">)</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  obs_perturbation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mda"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
+<span>  mda_alpha <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -123,7 +126,11 @@ right-padded with its last value.</p></dd>
 
 <dt id="arg-lambda">lambda<a class="anchor" aria-label="anchor" href="#arg-lambda"></a></dt>
 <dd><p>Numeric scalar or per-window vector. Marquardt lambda
-(default <code>1.0</code>; recycled / right-padded across windows).</p></dd>
+(default <code>1.0</code>; recycled / right-padded across windows). Only available
+under <code>obs_perturbation = "none"</code>: under the default <code>"mda"</code> the
+damping is the ES-MDA inflation of the inner iterations
+(<code>alpha = lambda + 1</code>) and is set through <code>mda_alpha</code>, so supplying
+<code>lambda</code> there is an error rather than a silently ignored argument.</p></dd>
 
 
 <dt id="arg-fidelity-schedule">fidelity_schedule<a class="anchor" aria-label="anchor" href="#arg-fidelity-schedule"></a></dt>
@@ -166,6 +173,30 @@ realisations; <code>"stop"</code> aborts on any failure.</p></dd>
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Logical. Print a per-window phi summary.</p></dd>
 
+
+<dt id="arg-obs-perturbation">obs_perturbation<a class="anchor" aria-label="anchor" href="#arg-obs-perturbation"></a></dt>
+<dd><p>Character, <code>"mda"</code> (default) or <code>"none"</code>. Whether
+each realisation assimilates its own perturbed observation block. See
+<em>Posterior spread and observation perturbation</em> in
+<code><a href="pesto_ies_callback.html">pesto_ies_callback()</a></code>; the scheme is identical, applied window by
+window.</p></dd>
+
+
+<dt id="arg-mda-alpha">mda_alpha<a class="anchor" aria-label="anchor" href="#arg-mda-alpha"></a></dt>
+<dd><p>Numeric vector or <code>NULL</code>. The ES-MDA inflation schedule
+used <em>within</em> each window, one entry per inner iteration (recycled /
+right-padded to <code>window_noptmax</code>). <code>NULL</code> (default) uses the uniform
+schedule \(\alpha_j = \)<code>window_noptmax</code>. Windows are disjoint, so
+each observation block is assimilated exactly once and the
+\(\sum_j 1/\alpha_j = 1\) budget is spent inside a window, not
+across windows.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Integer or <code>NULL</code>. As in <code><a href="pesto_ies_callback.html">pesto_ies_callback()</a></code>: when
+supplied, <code>set.seed(seed)</code> runs once before the filter and the value is
+recorded on the result for <code><a href="as_manifest.html">as_manifest()</a></code> to carry.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -183,7 +214,8 @@ window's observation block).</p></dd>
 
 <dt>windows</dt>
 <dd><p>List of per-window metadata: assimilated indices,
-lambda, mean phi, per-parameter ensemble mean and standard
+lambda, the window's ES-MDA inflation schedule <code>mda_alpha</code>,
+mean phi, per-parameter ensemble mean and standard
 deviation (the sd trace shows the posterior tightening), and
 failure count.</p></dd>
 
@@ -193,6 +225,12 @@ failure count.</p></dd>
 <dt>fidelity</dt>
 <dd><p>Multi-fidelity provenance (or <code>NULL</code>), as in
 <code><a href="pesto_ies_callback.html">pesto_ies_callback()</a></code>.</p></dd>
+
+<dt>obs_perturbation</dt>
+<dd><p>Assimilation-scheme provenance: <code>scheme</code>, the
+per-window ES-MDA inflation schedules <code>alpha</code>, the run <code>seed</code>, and
+<code>obs_noise</code> – the noise ensemble of the final inner update, whose
+rows are the <em>last window's</em> observation block.</p></dd>
 
 
 </dl></div>
@@ -223,6 +261,8 @@ final ensemble refresh always uses the highest fidelity.</p>
 iterative ensemble smoother for efficient history matching and
 uncertainty quantification. <em>Computational Geosciences</em>, 17(4),
 689–703.</p>
+<p>Emerick, A.A. &amp; Reynolds, A.C. (2013). Ensemble smoother with multiple
+data assimilation. <em>Computers &amp; Geosciences</em>, 55, 3–15.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -249,7 +289,7 @@ to wrap the result in the ensemble-manifest contract.</p></div>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># Posterior sd should shrink window over window:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">windows</span>, <span class="kw">function</span><span class="op">(</span><span class="va">w</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">w</span><span class="op">$</span><span class="va">par_sd</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.052603202 0.003631259 0.003615228</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.14098877 0.02331351 0.02170929</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

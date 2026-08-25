@@ -18,18 +18,18 @@ becomes over-confident:
     Acting on them injects noise into the update and accelerates
     collapse.
 
-This vignette demonstrates inflation and localisation against cause 1 on
-a linear-Gaussian problem with a known analytic posterior. **A caveat
-carried over from the current release:** on this same problem the
-realised under-dispersion is larger than finite-ensemble collapse alone
-predicts, and does not shrink materially as `nreal` grows from 24 to
-8,000 (a sweep this vignette reproduces below) – evidence that a second,
-ensemble-size-independent source of under-dispersion is present in the
-current smoother alongside the classical effect. Inflation, which is
-designed against cause 1, does not close that residual gap; treat the
-sd-ratio numbers in this vignette as a lower bound on the smoother’s
-current calibration, not as “matches the analytic posterior once
-inflated”.
+A third pathology used to sit alongside these two and was by far the
+largest: assimilating the *same*, unperturbed observation vector into
+every realisation. That gives every member an identical data pull, so
+the between-member spread stops being a posterior spread at all – and,
+unlike cause 1, it does not shrink as the ensemble grows. PESTO’s
+smoother now perturbs the observations per realisation under an ES-MDA
+schedule (see *Posterior spread and observation perturbation* in
+[`?pesto_ies_callback`](https://max578.github.io/PESTO/html/pesto_ies_callback.md)),
+so what remains on this problem is the classical,
+ensemble-size-dependent collapse that inflation and localisation were
+designed for. The sweep below is the evidence for that: the sd-ratio now
+climbs toward 1 with `nreal` instead of sitting flat.
 
 PESTO addresses the first with **covariance inflation**
 ([`pesto_inflation()`](https://max578.github.io/PESTO/html/pesto_inflation.md))
@@ -88,6 +88,9 @@ run_ies <- function(inflation = NULL, localisation = NULL) {
     noptmax        = 12L,
     inflation      = inflation,
     localisation   = localisation,
+    # Pin the ES-MDA observation-noise stream so every configuration below
+    # is compared on identical perturbed data.
+    seed           = 42L,
     verbose        = FALSE
   )
   par_post  <- as.matrix(fit$par_ensemble[, -1])
@@ -99,35 +102,38 @@ run_ies <- function(inflation = NULL, localisation = NULL) {
 }
 ```
 
-## The bare smoother collapses
+## The bare smoother under-disperses
 
 ``` r
 
 bare <- run_ies()
 round(bare$sd_ratio, 3)
-#> [1] 0.222
+#> [1] 0.916
 ```
 
-The mean posterior standard deviation is only a fraction of the analytic
-value – the ensemble is badly over-confident. The spread-ESS ratio
-quantifies the same collapse from the eigenspectrum of the parameter
-anomaly covariance (1 means variance is spread isotropically across all
-directions; small values mean it has collapsed onto a few):
+The mean posterior standard deviation falls short of the analytic value
+– with only 24 realisations for 6 parameters the ensemble is
+over-confident. The spread-ESS ratio quantifies the same collapse from
+the eigenspectrum of the parameter anomaly covariance (1 means variance
+is spread isotropically across all directions; small values mean it has
+collapsed onto a few):
 
 ``` r
 
 round(bare$ess_ratio, 3)
-#> [1] 0.315
+#> [1] 0.339
 ```
 
 ### Is this finite-ensemble collapse, or something else?
 
-If the under-dispersion above were purely finite-ensemble collapse, the
-sd-ratio should climb toward 1 as the ensemble grows – a larger sample
-gives the update a better estimate of the true covariance structure. The
-sweep below runs the same problem at increasing `nreal` (kept modest
-here for vignette build time; the pattern is the same out to 8,000
-realisations):
+The question is worth asking of any under-dispersed ensemble, and it has
+a cheap answer. If the shortfall is finite-ensemble collapse, the
+sd-ratio climbs toward 1 as the ensemble grows – a larger sample gives
+the update a better estimate of the true covariance structure. If it is
+flat in `nreal`, the cause is structural and no amount of inflation will
+reach it. The sweep below runs the same problem at increasing `nreal`
+(kept modest here for vignette build time; the pattern continues out to
+8,000 realisations):
 
 ``` r
 
@@ -146,17 +152,19 @@ sd_by_nreal <- vapply(sweep_nreal, function(n) {
 
 data.frame(nreal = sweep_nreal, sd_ratio = round(sd_by_nreal, 3))
 #>   nreal sd_ratio
-#> 1    24    0.216
-#> 2   100    0.213
-#> 3   500    0.211
+#> 1    24    0.897
+#> 2   100    1.056
+#> 3   500    1.001
 ```
 
-The sd-ratio is essentially flat across a 20-fold change in ensemble
-size, not the rising trend finite-ensemble collapse alone would produce.
-That flatness is the evidence behind the caveat above: most of this
-problem’s under-dispersion comes from a source that does not respond to
-`nreal`, and inflation – being a remedy for the ensemble-size-dependent
-part – cannot be expected to close it either.
+The sd-ratio rises toward 1 across a 20-fold change in ensemble size:
+the residual shortfall at `nreal = 24` is the ensemble-size-dependent
+collapse, which is what inflation and localisation address. Run this
+sweep on your own problem before reaching for either – a flat trend
+would say the cause lies elsewhere and inflation would only be papering
+over it. (This sweep is also the diagnostic that exposed the
+unperturbed-observation defect: before PESTO perturbed the observations
+the same sweep sat flat at about 0.21 from 24 realisations to 8,000.)
 
 ## Inflation re-expands the spread
 
@@ -169,9 +177,9 @@ targets a global spread-retention floor.
 
 ``` r
 
-rtps     <- run_ies(inflation = pesto_inflation("rtps", alpha = 0.6))
+rtps     <- run_ies(inflation = pesto_inflation("rtps", alpha = 0.2))
 adaptive <- run_ies(inflation = pesto_inflation("adaptive",
-                                                retention_floor = 0.7))
+                                                retention_floor = 0.6))
 
 data.frame(
   method        = c("none", "rtps", "adaptive"),
@@ -179,17 +187,19 @@ data.frame(
   spread_ess    = round(c(bare$ess_ratio, rtps$ess_ratio, adaptive$ess_ratio), 3)
 )
 #>     method sd_ratio spread_ess
-#> 1     none    0.222      0.315
-#> 2     rtps    0.507      0.436
-#> 3 adaptive    0.310      0.459
+#> 1     none    0.916      0.339
+#> 2     rtps    1.060      0.344
+#> 3 adaptive    0.947      0.319
 ```
 
-RTPS roughly doubles the retained posterior spread and lifts the
-spread-ESS ratio. A caveat worth stating plainly: inflation *mitigates*
-finite-ensemble collapse, it does not abolish it, and – per the sweep
-above – it does not touch the ensemble-size-independent residual either.
-Read the `sd_ratio` improvement as “closer than the bare smoother”, not
-as “close to the analytic posterior”.
+Both methods lift the retained posterior spread toward the analytic
+value. The caveat worth stating plainly is the other one: inflation is a
+*tunable* remedy, not a self-correcting one. The strengths used here
+(`alpha = 0.2`, `retention_floor = 0.6`) were chosen against this
+problem’s known posterior; a stronger setting overshoots and returns an
+ensemble that is too wide, which is no more honest than one that is too
+narrow. Measure the sd-ratio or the interval coverage on your own
+problem and tune to it – do not carry these numbers across.
 
 The spread-ESS diagnostic
 ([`ensemble_spread_ess()`](https://max578.github.io/PESTO/html/ensemble_spread_ess.md))
@@ -198,33 +208,42 @@ trajectory is always available in the result:
 
 ``` r
 
-fit <- pesto_ies_callback(
-  forward, prior, setNames(y, paste0("o", seq_len(nobs))),
-  obs_sd = obs_sd, noptmax = 12L,
-  inflation = pesto_inflation("rtps", alpha = 0.6), verbose = FALSE
-)
-plot(
-  vapply(fit$iterations, function(d) d$spread_ess_ratio, numeric(1L)),
-  type = "b", pch = 19, xlab = "iteration", ylab = "spread-ESS ratio",
-  main = "Dispersion held up under RTPS inflation", ylim = c(0, 1)
-)
+ess_trace <- function(inflation = NULL) {
+  fit <- pesto_ies_callback(
+    forward, prior, setNames(y, paste0("o", seq_len(nobs))),
+    obs_sd = obs_sd, noptmax = 12L, inflation = inflation,
+    seed = 42L, verbose = FALSE
+  )
+  vapply(fit$iterations, function(d) d$spread_ess_ratio, numeric(1L))
+}
+tr_bare <- ess_trace()
+tr_rtps <- ess_trace(pesto_inflation("rtps", alpha = 0.2))
+
+plot(tr_bare, type = "b", pch = 19, col = "grey40", ylim = c(0, 1),
+     xlab = "iteration", ylab = "spread-ESS ratio",
+     main = "Dispersion trajectory, bare vs RTPS inflation")
+lines(tr_rtps, type = "b", pch = 17, col = "#1B7837")
+legend("topright", c("bare", "RTPS"), pch = c(19, 17),
+       col = c("grey40", "#1B7837"), bty = "n")
 ```
 
-![Line plot of the spread-ESS ratio (y axis, 0 to 1) against IES
-iteration number (x axis, 1 to 12) under RTPS inflation. The ratio drops
-over the first few iterations and then levels off at a stable plateau
-rather than continuing to decay toward
-zero.](inflation-localisation_files/figure-html/ess-trace-1.png)
+![Two lines plotted against IES iteration number (x axis, 1 to 12) with
+the spread-ESS ratio on the y axis from 0 to 1. Both start near 0.5 to
+0.6 and decline gradually to between 0.3 and 0.35 by iteration 12. The
+inflated line sits consistently above the bare line by roughly
+0.04.](inflation-localisation_files/figure-html/ess-trace-1.png)
 
-Spread-ESS ratio by IES iteration under RTPS inflation: the trajectory
-stabilises rather than decaying toward zero, so inflation is holding the
-ensemble spread against collapse iteration over iteration.
+Spread-ESS ratio by IES iteration, without and with RTPS inflation. Both
+decline gently as the update concentrates the ensemble on the informed
+directions; the inflated run sits above the bare one at every iteration,
+which is what inflation buys here – a slower drain, not a flat line.
 
-The plateau, rather than a continued slide toward zero, is what
-“inflation holds the ensemble spread against collapse” looks like
-iteration by iteration – distinct from the sd-ratio numbers above, which
-compare the *final* ensemble against the analytic posterior rather than
-tracking the trajectory.
+Read the gap between the two lines, not the shape of either. The gentle
+decline is the update doing its job – concentrating the ensemble on the
+directions the data inform – and the inflated run holding above the bare
+one at every iteration is the effect being demonstrated. The trace is a
+trajectory diagnostic; the sd-ratio numbers above are the calibration
+check, comparing the *final* ensemble against the analytic posterior.
 
 ## Localisation suppresses spurious correlations
 
@@ -237,9 +256,9 @@ below it.
 ``` r
 
 loc <- run_ies(localisation = pesto_localisation("correlation",
-                                                 taper = "soft"))
+                                                 taper = "hard"))
 round(loc$sd_ratio, 3)
-#> [1] 0.807
+#> [1] 0.954
 ```
 
 The two countermeasures compose – inflation restores variance magnitude,
@@ -248,11 +267,11 @@ localisation removes the spurious updates that drain it:
 ``` r
 
 both <- run_ies(
-  inflation    = pesto_inflation("rtps", alpha = 0.6),
-  localisation = pesto_localisation("correlation", taper = "soft")
+  inflation    = pesto_inflation("rtps", alpha = 0.1),
+  localisation = pesto_localisation("correlation", taper = "hard")
 )
 round(both$sd_ratio, 3)
-#> [1] 2.515
+#> [1] 1.045
 ```
 
 When a genuine distance metric *does* exist, the classical Gaspari-Cohn

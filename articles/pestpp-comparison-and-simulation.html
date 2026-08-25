@@ -425,13 +425,21 @@ uses the fewest. PESTO evaluates the forward model in-process and
 updates the ensemble in C++, avoiding the per-evaluation file exchange
 and process spawn the file-coupled binaries pay on every call.</li>
 <li>
-<strong>Raw calibration is the weak spot.</strong> PESTO’s
-<em>raw</em> ensemble credible intervals under-cover (CI90 around 0.13
-on the linear problem) – an under-dispersion the <em>Inflation and
-localisation</em> vignette shows is only partly finite-ensemble
-collapse. Apply inflation (and, for spatial problems, localisation)
-before trusting raw intervals, and measure coverage on your own problem
-rather than assuming inflation restores it to nominal.</li>
+<strong>The CI90 row is a pre-fix figure.</strong> PESTO’s
+benchmarked <em>raw</em> ensemble credible intervals under-cover badly
+(CI90 around 0.13 on the linear problem against a nominal 0.90). The
+cause has since been identified and fixed: the smoother assimilated the
+same unperturbed observation vector into every realisation, so the
+ensemble was a cloud around the best fit rather than a posterior sample.
+The development version perturbs the observations per realisation under
+an ES-MDA schedule and recovers the analytic posterior covariance and
+nominal interval coverage on a linear-Gaussian problem with a
+closed-form answer (see <em>Posterior spread and observation
+perturbation</em> in <a href="../html/pesto_ies_callback.html"><code>?pesto_ies_callback</code></a>).
+Re-running this benchmark needs the external PEST and PEST++ binaries,
+which are absent here, so the table above still carries the pre-fix
+PESTO calibration row. The accuracy, cost and forward-evaluation columns
+are unaffected. Measure coverage on your own problem regardless.</li>
 </ul>
 </div>
 </div>
@@ -583,7 +591,7 @@ full contract).</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"PESTO native IES: 6 iterations in %.2fs; posterior RMSE = %.4f\n"</span>,</span>
 <span>            <span class="va">runtime_pesto_A</span>, <span class="va">rmse_pesto_A</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; PESTO native IES: 6 iterations in 0.05s; posterior RMSE = 0.3081</span></span></code></pre></div>
+<span><span class="co">#&gt; PESTO native IES: 6 iterations in 0.05s; posterior RMSE = 0.3090</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="comparison-with-the-reference-smoother">Comparison with the reference smoother<a class="anchor" aria-label="anchor" href="#comparison-with-the-reference-smoother"></a>
@@ -656,90 +664,90 @@ reference.</caption>
 <tr class="odd">
 <td align="left">p1</td>
 <td align="right">1.20</td>
-<td align="right">0.5063</td>
-<td align="right">-0.0601</td>
-<td align="right">1.1308</td>
+<td align="right">0.5035</td>
+<td align="right">-0.0581</td>
+<td align="right">1.2018</td>
 <td align="right">0.3343</td>
 <td align="right">0.1491</td>
 <td align="right">0.5620</td>
-<td align="right">51.45</td>
+<td align="right">50.61</td>
 </tr>
 <tr class="even">
 <td align="left">p2</td>
 <td align="right">0.85</td>
-<td align="right">0.4144</td>
-<td align="right">-0.3309</td>
-<td align="right">1.0690</td>
+<td align="right">0.4165</td>
+<td align="right">-0.3687</td>
+<td align="right">1.0050</td>
 <td align="right">0.4269</td>
 <td align="right">0.2208</td>
 <td align="right">0.8497</td>
-<td align="right">2.93</td>
+<td align="right">2.44</td>
 </tr>
 <tr class="odd">
 <td align="left">p3</td>
 <td align="right">0.55</td>
-<td align="right">0.4255</td>
-<td align="right">-0.2131</td>
-<td align="right">1.0478</td>
+<td align="right">0.4193</td>
+<td align="right">-0.2369</td>
+<td align="right">1.0642</td>
 <td align="right">0.4277</td>
 <td align="right">0.1613</td>
 <td align="right">0.8239</td>
-<td align="right">0.51</td>
+<td align="right">1.96</td>
 </tr>
 <tr class="even">
 <td align="left">p4</td>
 <td align="right">0.40</td>
-<td align="right">0.5079</td>
-<td align="right">-0.0180</td>
-<td align="right">1.0502</td>
+<td align="right">0.5098</td>
+<td align="right">-0.0910</td>
+<td align="right">1.0120</td>
 <td align="right">0.2854</td>
 <td align="right">0.0745</td>
 <td align="right">0.5547</td>
-<td align="right">77.96</td>
+<td align="right">78.63</td>
 </tr>
 <tr class="odd">
 <td align="left">p5</td>
 <td align="right">0.30</td>
-<td align="right">0.3769</td>
-<td align="right">-0.2122</td>
-<td align="right">0.9879</td>
+<td align="right">0.3799</td>
+<td align="right">-0.2349</td>
+<td align="right">0.9375</td>
 <td align="right">0.2716</td>
 <td align="right">0.1125</td>
 <td align="right">0.5962</td>
-<td align="right">38.77</td>
+<td align="right">39.87</td>
 </tr>
 <tr class="even">
 <td align="left">p6</td>
 <td align="right">0.22</td>
-<td align="right">0.4022</td>
-<td align="right">-0.2085</td>
-<td align="right">1.1317</td>
+<td align="right">0.3988</td>
+<td align="right">-0.2279</td>
+<td align="right">1.1164</td>
 <td align="right">0.2754</td>
 <td align="right">0.1491</td>
 <td align="right">0.4011</td>
-<td align="right">46.04</td>
+<td align="right">44.81</td>
 </tr>
 <tr class="odd">
 <td align="left">p7</td>
 <td align="right">0.16</td>
-<td align="right">0.0499</td>
-<td align="right">-0.4078</td>
-<td align="right">0.5115</td>
+<td align="right">0.0478</td>
+<td align="right">-0.4237</td>
+<td align="right">0.4891</td>
 <td align="right">0.2985</td>
 <td align="right">0.1580</td>
 <td align="right">0.4556</td>
-<td align="right">83.28</td>
+<td align="right">83.99</td>
 </tr>
 <tr class="even">
 <td align="left">p8</td>
 <td align="right">0.10</td>
-<td align="right">0.1992</td>
-<td align="right">-0.3840</td>
-<td align="right">0.7439</td>
+<td align="right">0.2031</td>
+<td align="right">-0.3773</td>
+<td align="right">0.7306</td>
 <td align="right">0.2658</td>
 <td align="right">0.1386</td>
 <td align="right">0.4441</td>
-<td align="right">25.06</td>
+<td align="right">23.59</td>
 </tr>
 </tbody>
 </table>
@@ -790,13 +798,15 @@ re-implementation should show.</p>
 once.</p>
 <ul>
 <li>
-<strong>Raw ensemble intervals under-cover.</strong> Raw credible
-intervals are too narrow, and covariance inflation only partly closes
-the gap. The <em>Inflation and localisation</em> vignette quantifies
-this against an analytic posterior, shows that the shortfall does not
-shrink materially with ensemble size, and gives the current best
-practice: measure coverage on your own problem rather than trusting a
-default inflation setting to reach nominal.</li>
+<strong>The benchmark’s calibration row predates the
+observation-perturbation fix.</strong> The under-coverage it reports was
+caused by assimilating the same unperturbed observations into every
+realisation; the development version perturbs per realisation under an
+ES-MDA schedule and is graded against the closed-form conjugate
+posterior in both moments. The frozen benchmark cannot be re-run without
+the external binaries, so its PESTO CI90 row still shows the old
+behaviour. Measure coverage on your own problem in any case – that is
+the standing advice, before and after.</li>
 <li>
 <strong>Inflation strength is problem-dependent.</strong> Two
 independent instruments (a joint-calibration coverage test and this

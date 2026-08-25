@@ -54,13 +54,13 @@ m <- as_manifest(fit, seed = 20260516L,
                  apsim_version = NA_character_)
 print(m)
 #> <pesto_ensemble_manifest> schema 1.1.0
-#>   run_id        : ies_callback_20260825_093156_fe6542df
+#>   run_id        : ies_callback_20260825_102427_591509ce
 #>   method        : ies_callback  (noptmax=4)
 #>   ensemble      : 60 realisations x 3 parameters | 6 observations
 #>   failure rate  : 0.00%
 #>   pesto version : 0.10.1  apsim: NA
-#>   timestamp     : 2026-08-25T09:31:56+0000
-#>   data hash     : sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
+#>   timestamp     : 2026-08-25T10:24:27+0000
+#>   data hash     : sha256:846795b4af38a597bcac6db7ee44a7c11e1c4cbf761223c1d8054549ed6d6677
 ```
 
 Slots are reachable via the standard S7 `@` accessor:
@@ -68,19 +68,19 @@ Slots are reachable via the standard S7 `@` accessor:
 ``` r
 
 m@run_id
-#> [1] "ies_callback_20260825_093156_fe6542df"
+#> [1] "ies_callback_20260825_102427_591509ce"
 m@data_hash
-#> [1] "sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6"
+#> [1] "sha256:846795b4af38a597bcac6db7ee44a7c11e1c4cbf761223c1d8054549ed6d6677"
 m@noptmax
 #> [1] 4
 head(m@params)
 #>   real_name       p1         p2       p3
-#> 1    real_1 1.029000 -0.4654747 2.011874
-#> 2    real_2 1.026500 -0.4658594 2.013726
-#> 3    real_3 1.032378 -0.4622419 2.014441
-#> 4    real_4 1.031622 -0.4617477 2.015089
-#> 5    real_5 1.034491 -0.4633193 2.014088
-#> 6    real_6 1.034192 -0.4611789 2.017081
+#> 1    real_1 1.008854 -0.4904845 2.019736
+#> 2    real_2 1.030996 -0.4665497 1.989613
+#> 3    real_3 1.016110 -0.4604560 2.022441
+#> 4    real_4 1.022782 -0.4681156 2.034433
+#> 5    real_5 1.025115 -0.4672582 1.977069
+#> 6    real_6 1.076050 -0.4467034 1.999730
 ```
 
 ## Writing, reading, and verifying
@@ -117,8 +117,8 @@ A peek at what the YAML actually looks like (truncated):
 cat(paste(readLines(file.path(dir, "wagga_2026_run01.yaml"))[1:14],
           collapse = "\n"))
 #> schema_version: 1.1.0
-#> run_id: ies_callback_20260825_093156_fe6542df
-#> data_hash: sha256:e7b630ad06429b528fa6a57a4973894eb9bf2709a6a3ffeb01366ede48b78ed6
+#> run_id: ies_callback_20260825_102427_591509ce
+#> data_hash: sha256:846795b4af38a597bcac6db7ee44a7c11e1c4cbf761223c1d8054549ed6d6677
 #> format: rds
 #> integrity: verifiable
 #> obs_schema: ~

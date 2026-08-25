@@ -122,7 +122,11 @@ model through a <code>fidelity_schedule</code>.</li>
 <span></span>
 <span><span class="va">prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nreal</span> <span class="op">*</span> <span class="va">npar</span><span class="op">)</span>, <span class="va">nreal</span>, <span class="va">npar</span>,</span>
 <span>                dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"p"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">npar</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>Run six IES iterations with a single lambda:</p>
+<p>Run six IES iterations. <code>lambda</code> is left at its default:
+under the default ES-MDA scheme the Marquardt damping <em>is</em> the
+inflation factor (<code>alpha = lambda + 1</code>) and is set by the
+schedule, so it is chosen for you rather than fixed by hand (see
+<code><a href="../reference/pesto_ies_callback.html">?pesto_ies_callback</a></code>).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span></span>
 <span>  forward_model  <span class="op">=</span> <span class="va">forward</span>,</span>
@@ -130,7 +134,6 @@ model through a <code>fidelity_schedule</code>.</li>
 <span>  obs            <span class="op">=</span> <span class="va">y</span>,</span>
 <span>  obs_sd         <span class="op">=</span> <span class="va">sigma</span>,</span>
 <span>  noptmax        <span class="op">=</span> <span class="fl">6L</span>,</span>
-<span>  lambda         <span class="op">=</span> <span class="fl">1.0</span>,</span>
 <span>  verbose        <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Diagnostics:</p>
@@ -142,12 +145,12 @@ model through a <code>fidelity_schedule</code>.</li>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"prior RMSE: %.4f\n"</span>, <span class="va">prior_rmse</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; prior RMSE: 1.1300</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"posterior RMSE: %.4f\n"</span>, <span class="va">post_rmse</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; posterior RMSE: 0.0232</span></span>
+<span><span class="co">#&gt; posterior RMSE: 0.0260</span></span>
 <span></span>
 <span><span class="va">mean_phi</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">iterations</span>, <span class="va">`[[`</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1L</span><span class="op">)</span>, <span class="st">"mean_phi"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">mean_phi</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 17452.123014     1.534500     1.533925     1.533362     1.532812</span></span>
-<span><span class="co">#&gt; [6]     1.532273</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 17452.123014    27.446844    13.277312     9.449656     7.524900</span></span>
+<span><span class="co">#&gt; [6]     6.334244</span></span></code></pre></div>
 <p>Posterior RMSE should be a small fraction of prior RMSE, and mean phi
 should decrease across iterations.</p>
 <p>The full per-realisation phi trajectory:</p>
@@ -194,7 +197,7 @@ travels between modes unchanged.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit_typed</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="parallel-fault-tolerant-ensembles">Parallel, fault-tolerant ensembles<a class="anchor" aria-label="anchor" href="#parallel-fault-tolerant-ensembles"></a>
 </h3>
@@ -292,19 +295,21 @@ whether the credible interval still covers the truth:</p>
 <span>                            <span class="fu">coverage_90</span><span class="op">(</span><span class="va">fit_collapsed</span>, <span class="va">theta_true</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt;        obs_sd                      case mean_post_sd coverage_90_pct</span></span>
-<span><span class="co">#&gt; 1 0.050000000           field-realistic 3.560357e-03              50</span></span>
-<span><span class="co">#&gt; 2 0.007905694 over-precise (SE of mean) 9.266982e-05               0</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 0.050000000           field-realistic  0.034612644             100</span></span>
+<span><span class="co">#&gt; 2 0.007905694 over-precise (SE of mean)  0.005608787              50</span></span></code></pre></div>
 <p>The over-precise run’s posterior spread is a small fraction of the
 well-specified run’s, and its 90 per-cent credible band has stopped
 covering the truth entirely. The ensemble is confident and wrong.</p>
-<p>PESTO records the collapse directly.
-<code><a href="../reference/ensemble_spread_ess.html">ensemble_spread_ess()</a></code> – the spectral participation ratio of
-the parameter anomaly covariance, the effective number of
-variance-carrying directions – is logged on every iteration as
-<code>spread_ess</code> and as the ratio <code>spread_ess_ratio</code>
-(relative to the ensemble size). A ratio that falls steeply toward zero
-across iterations is the diagnostic signature of an ensemble draining
-its spread:</p>
+<p><code><a href="../reference/ensemble_spread_ess.html">ensemble_spread_ess()</a></code> is logged on every iteration as
+<code>spread_ess</code> and as the ratio <code>spread_ess_ratio</code>,
+and it is worth being precise about what it can and cannot see. It is
+the spectral participation ratio of the parameter anomaly covariance –
+the effective number of variance-carrying directions – so it detects the
+<em>shape</em> of a collapse: variance draining into a few directions.
+It is a ratio of eigenvalue sums, hence invariant to a global rescaling
+of the anomalies, so a spread that is uniformly too small in every
+direction is invisible to it. Here the two runs differ in exactly that
+way:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ess_ratio</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">iterations</span>, <span class="va">`[[`</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1L</span><span class="op">)</span>, <span class="st">"spread_ess_ratio"</span><span class="op">)</span></span>
@@ -315,8 +320,14 @@ its spread:</p>
 <span>  `over-precise`    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu">ess_ratio</span><span class="op">(</span><span class="va">fit_collapsed</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt;                  [,1]  [,2]  [,3]  [,4]  [,5]  [,6]</span></span>
-<span><span class="co">#&gt; field-realistic 0.341 0.342 0.342 0.343 0.344 0.345</span></span>
-<span><span class="co">#&gt; over-precise    0.340 0.340 0.340 0.340 0.340 0.340</span></span></code></pre></div>
+<span><span class="co">#&gt; field-realistic 0.534 0.466 0.474 0.498 0.483 0.479</span></span>
+<span><span class="co">#&gt; over-precise    0.496 0.512 0.537 0.511 0.499 0.495</span></span></code></pre></div>
+<p>The two traces sit almost on top of each other even though one
+ensemble’s spread is a fraction of the other’s. Read
+<code>spread_ess_ratio</code> as the directional-collapse diagnostic it
+is, and read the coverage table above as the calibration check – they
+answer different questions, and only the second catches a mis-specified
+<code>obs_sd</code>.</p>
 <p>The fix is to set <code>obs_sd</code> to the uncertainty the modelled
 value must actually reproduce – the replicate-level
 measurement-plus-process spread, never the standard error of an
@@ -441,7 +452,7 @@ final ensemble is always refreshed at the highest fidelity.</p>
 <span>  <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit_mf</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="op">-</span> <span class="va">theta_true</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"multi-fidelity posterior RMSE: %.4f\n"</span>, <span class="va">mf_rmse</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; multi-fidelity posterior RMSE: 0.2592</span></span></code></pre></div>
+<span><span class="co">#&gt; multi-fidelity posterior RMSE: 0.1119</span></span></code></pre></div>
 <p>When a cheap level is run over the whole ensemble and the expensive
 level over only a subset, <code><a href="../reference/mf_control_variate.html">mf_control_variate()</a></code> lifts the
 cheap outputs toward the expensive ones with the variance-minimising
@@ -502,9 +513,9 @@ observed biomass-over-time series.</p>
 <span>                               noptmax <span class="op">=</span> <span class="fl">8L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="va">post_crop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit_crop</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">theta_crop</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span>truth <span class="op">=</span> <span class="va">theta_crop</span>, posterior <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">post_crop</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;               r    b_max     b0</span></span>
-<span><span class="co">#&gt; truth     0.060 1400.000 20.000</span></span>
-<span><span class="co">#&gt; posterior 0.063 1371.492 18.251</span></span></code></pre></div>
+<span><span class="co">#&gt;               r    b_max    b0</span></span>
+<span><span class="co">#&gt; truth     0.060 1400.000 20.00</span></span>
+<span><span class="co">#&gt; posterior 0.062 1382.806 18.11</span></span></code></pre></div>
 <p><code><a href="../reference/seir_forward_model.html">seir_forward_model()</a></code> is the closed-population
 Susceptible-Exposed-Infectious-Recovered epidemic model, calibrating the
 transmission, latency, and recovery rates <code>beta</code>,
@@ -533,7 +544,7 @@ summary an outbreak curve identifies most sharply:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"R0 truth = %.1f, R0 posterior = %.2f\n"</span>,</span>
 <span>            <span class="va">theta_seir</span><span class="op">[[</span><span class="st">"beta"</span><span class="op">]</span><span class="op">]</span> <span class="op">/</span> <span class="va">theta_seir</span><span class="op">[[</span><span class="st">"gamma"</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>            <span class="va">post_seir</span><span class="op">[[</span><span class="st">"beta"</span><span class="op">]</span><span class="op">]</span> <span class="op">/</span> <span class="va">post_seir</span><span class="op">[[</span><span class="st">"gamma"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; R0 truth = 6.0, R0 posterior = 5.54</span></span></code></pre></div>
+<span><span class="co">#&gt; R0 truth = 6.0, R0 posterior = 5.31</span></span></code></pre></div>
 <p>Because both templates return a <code><a href="../reference/pesto_forward_model.html">pesto_forward_model()</a></code>,
 the cheap-coarse / fine-grid fidelity trick from the previous section
 applies verbatim: build one template at a coarse <code>n_steps</code>
@@ -577,9 +588,9 @@ the posterior tightens window by window.</p>
 <span>  mean_par_sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">sd_trace</span>, <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt;   window obs_assim mean_par_sd</span></span>
-<span><span class="co">#&gt; 1      1         3      0.4007</span></span>
-<span><span class="co">#&gt; 2      2         3      0.0180</span></span>
-<span><span class="co">#&gt; 3      3         2      0.0152</span></span></code></pre></div>
+<span><span class="co">#&gt; 1      1         3      0.4132</span></span>
+<span><span class="co">#&gt; 2      2         3      0.0388</span></span>
+<span><span class="co">#&gt; 3      3         2      0.0331</span></span></code></pre></div>
 <p>The posterior at the final window matches what the batch smoother
 would recover, but you also have the intermediate posteriors – the value
 of the filter is the <em>trajectory</em>, not just the endpoint. A

@@ -2,6 +2,78 @@
 
 ## PESTO (development version)
 
+### Bug fixes
+
+- **The native IES now returns a posterior sample.** Every realisation
+  assimilated the same, unperturbed observation vector, so every member
+  felt an identical data pull and the returned spread was a cloud around
+  the best fit rather than a draw from the posterior. On a
+  linear-Gaussian problem with a closed-form conjugate posterior the
+  ensemble standard deviation was 4–13 per cent of the analytic value at
+  `nreal = 2000`, and the realised coverage of nominal 50 / 80 / 95 per
+  cent intervals was 0.13 / 0.14 / 0.17.
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+  and
+  [`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md)
+  now draw a per-realisation perturbation `d_j = d + sqrt(alpha_k) e_j`,
+  `e_j ~ N(0, C_D)`, under the
+  ensemble-smoother-with-multiple-data-assimilation schedule of Emerick
+  & Reynolds (2013), with the inflation factors constrained to
+  `sum(1 / alpha_k) == 1` so exactly one likelihood is assimilated
+  across the iterations. Because PESTO’s GLM kernel builds the inverse
+  term `(s^2 + (lambda + 1) I)^-1` on weight-scaled anomalies, the MDA
+  inflation and the Marquardt damping are the same number
+  (`alpha = lambda + 1`) and the lambda schedule is derived from
+  `mda_alpha`; no kernel change was needed. The ensemble covariance now
+  recovers the analytic posterior to under 15 per cent relative
+  Frobenius error and the intervals realise their nominal coverage.
+
+### New features
+
+- [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+  and
+  [`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md)
+  gain `obs_perturbation` (`"mda"`, the default, or `"none"` for the
+  previous unperturbed, maximum-likelihood-seeking update), `mda_alpha`
+  (the ES-MDA inflation schedule) and `seed` (recorded on the result and
+  carried into the manifest’s `seed` slot by
+  [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)).
+  The result gains an `obs_perturbation` provenance slot holding the
+  scheme, the realised schedule, the seed and the final assimilation
+  step’s noise ensemble; per-iteration metadata gains `mda_alpha`.
+- [`pesto_reference_ies()`](https://max578.github.io/PESTO/reference/pesto_reference_ies.md)
+  accepts a per-realisation `obs_target` matrix as well as a single
+  target vector, so the textbook reference can reproduce the
+  posterior-sampling update rather than only the unperturbed one.
+
+### Breaking changes
+
+- Under the default `obs_perturbation = "mda"` an explicit `lambda` is
+  read as `alpha - 1` and must satisfy `sum(1 / (lambda + 1)) == 1`; a
+  schedule that does not is now an error rather than a silently
+  mis-calibrated posterior. Pass `obs_perturbation = "none"` to control
+  `lambda` directly.
+  [`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md)
+  refuses an explicit `lambda` under `"mda"` outright, because there the
+  damping belongs to the inner iterations rather than to the window.
+- `phi_tol` stopping early truncates the ES-MDA schedule, so less than
+  one likelihood is assimilated and the posterior comes back too wide.
+  The driver now warns when this happens.
+
+### Testing
+
+- New `tests/testthat/test-posterior-calibration.R` grades the posterior
+  *second* moment and the realised coverage of nominal 50 / 80 / 95 per
+  cent intervals against the closed-form Gaussian-conjugate posterior
+  (Gelman et al., *Bayesian Data Analysis*, 3rd edn, ch. 14). The suite
+  previously graded only the posterior mean, and the spread-ESS
+  diagnostic – a participation ratio, invariant to a global rescaling of
+  the anomalies – cannot detect a uniformly collapsed spread, so nothing
+  in the package could see the defect above.
+- Restated the srr BS4.2 claim in `test-bayesian-recovery.R` to what is
+  actually graded there (the first moment), pointing at the new file for
+  the second moment and the coverage.
+
 ### Documentation
 
 - Replaced the last surviving reference to the fabricated “PEST++
@@ -19,6 +91,19 @@
   into the README performance section, which now states “matched
   accuracy, not matched calibration” in the same sentence as the speed
   claim.
+- Rewrote that diagnosis again once the cause was found and fixed. The
+  ensemble-size sweep now climbs toward 1 as it should, so the vignette
+  demonstrates inflation and localisation against the classical
+  finite-ensemble collapse they were designed for, with strengths
+  retuned to a smoother that is no longer badly collapsed and a
+  spread-ESS figure that contrasts the bare and inflated trajectories.
+  The *APSIM callback* vignette now states plainly that
+  `spread_ess_ratio` is a directional diagnostic and cannot see a
+  uniformly collapsed spread. The frozen benchmark tables in
+  *Benchmarking PESTO against PEST and PEST++* and the APSIM case study,
+  and the CI90 figure quoted in the README, are flagged as pre-fix: they
+  cannot be regenerated without the external PEST / PEST++ binaries and
+  a working APSIM installation.
 - Corrected the *Surrogate-accelerated IES* vignette and README: the
   current
   [`surrogate_ensemble_update()`](https://max578.github.io/PESTO/reference/surrogate_ensemble_update.md)

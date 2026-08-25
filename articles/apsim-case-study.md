@@ -256,17 +256,26 @@ band, without and with covariance inflation: the raw band is too narrow
 and misses several points, the inflated band covers more of
 them.](apsim-case-study_files/figure-html/validation-1.png)
 
-The raw 90% band covers well under 90% of the held-out truth – the
-under-dispersion the current release’s IES ensemble carries (part
-finite-ensemble collapse, part a residual that does not shrink with
-ensemble size; see the *Inflation and localisation* vignette). PESTO
-ships covariance inflation (and, for spatial problems, localisation) as
-a partial remedy, documented in that vignette. Re-running with RTPS
-inflation widens the posterior and lifts coverage toward nominal, though
-it does not by itself reach nominal coverage. Inflation strength is
-problem-dependent, so report coverage and tune it rather than trusting a
-default blindly – and treat coverage as measured, not assumed, until the
-residual under-dispersion is addressed.
+The raw 90% band covers well under 90% of the held-out truth. **Read
+this panel as a pre-fix figure.** The frozen result loaded above was
+produced by PESTO 0.8.0.9000, whose smoother assimilated the same
+unperturbed observation vector into every realisation – the dominant
+cause of the narrow band shown here, and one that inflation was never
+going to reach. The development version perturbs the observations per
+realisation under an ES-MDA schedule and recovers the analytic posterior
+covariance on a problem with a closed-form answer (see *Posterior spread
+and observation perturbation* in
+[`?pesto_ies_callback`](https://max578.github.io/PESTO/html/pesto_ies_callback.md),
+and the sweep in the *Inflation and localisation* vignette).
+Regenerating this case study needs a machine with APSIM installed –
+`system.file("case_studies/apsim_wheat_calibration.R", package = "PESTO")`
+is the runnable driver – so the panel above still shows the old
+behaviour, and the inflation comparison beside it is calibrated against
+that old behaviour rather than against the current smoother.
+
+What survives the fix unchanged is the practice: report coverage on your
+own held-out data, tune inflation to what you measure, and treat
+coverage as measured rather than assumed.
 
 ### The ensemble manifest
 
