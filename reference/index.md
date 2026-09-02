@@ -214,3 +214,13 @@ release.
 
 - [`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
   : Deprecated: ensemble solution with adaptive SVD backend
+
+## Typed declines
+
+The classed abstention PESTO returns instead of a number when a request
+is off design.
+
+- [`pesto_abstention()`](https://max578.github.io/PESTO/reference/pesto_abstention.md)
+  : Construct a typed PESTO abstention
+- [`is_pesto_abstention()`](https://max578.github.io/PESTO/reference/is_pesto_abstention.md)
+  : Is an object a PESTO abstention?

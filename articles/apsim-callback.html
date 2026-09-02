@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Calibrating APSIM with PESTO (in-process callback) • PESTO</title>
+<title>Wiring your own simulator into PESTO • PESTO</title>
 <!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="Calibrating APSIM with PESTO (in-process callback)">
+<meta property="og:title" content="Wiring your own simulator into PESTO">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -35,7 +35,7 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with PESTO</a></li>
+<li><a class="dropdown-item" href="../articles/getting-started.html">Your first inversion: from a season of measurements to a posterior</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul>
@@ -57,7 +57,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Calibrating APSIM with PESTO (in-process callback)</h1>
+      <h1>Wiring your own simulator into PESTO</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/max578/PESTO/blob/main/vignettes/apsim-callback.Rmd" class="external-link"><code>vignettes/apsim-callback.Rmd</code></a></small>
@@ -66,114 +66,145 @@
 
     
     
-<p>PESTO was built to calibrate process-based simulators from R, and its
-flagship partner is <strong>APSIM</strong> – the agricultural-systems
-model – coupled through the <code>apsimx</code> package by
-<code><a href="../reference/apsim_callback.html">apsim_callback()</a></code>. This vignette shows that coupling, the
-in-process callback driver behind it, and how the same pattern serves
-any other simulator.</p>
+<!-- Render time: ~5 s under rmarkdown::render(); macOS arm64 (Darwin 26.5),
+     R 4.5.2, one core. No external simulator runs: the APSIM adapter is
+     shown but not executed, and every timed block is a synthetic or ODE
+     forward model. -->
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/max578/PESTO" class="external-link">PESTO</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
-<h2 id="why-a-callback-driver">Why a callback driver?<a class="anchor" aria-label="anchor" href="#why-a-callback-driver"></a>
+<h2 id="why">Why<a class="anchor" aria-label="anchor" href="#why"></a>
 </h2>
-<p><code><a href="../reference/pesto_ies.html">pesto_ies()</a></code> shells out to the <code>pestpp-ies</code>
-binary, which writes and reads <code>.pst</code> / ensemble /
-observation files between every realisation. For an in-process R forward
-model – an <code>apsimx</code> wrapper for APSIM, a Python bridge, or a
-fast synthetic test problem – that file round-trip is pure overhead.
-<code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> keeps the same C++ ensemble kernel
-(<code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code>, Chen &amp; Oliver 2013) but drives
-the outer loop in R, calling the forward model in-process. For APSIM
-this is the difference between re-reading an <code>.apsimx</code> file
-every realisation and holding the model in memory across the whole
-ensemble.</p>
-<p>This document shows:</p>
-<ol style="list-style-type: decimal">
-<li>The driver on a synthetic linear-Gaussian problem (recovers
-truth).</li>
-<li>The typed forward-model contract
-(<code><a href="../reference/pesto_forward_model.html">pesto_forward_model()</a></code>) shared by both adapter modes,
-including parallel, fault-tolerant evaluation.</li>
-<li>The shape of the <code><a href="../reference/apsim_callback.html">apsim_callback()</a></code> adapter for
-<code>apsimx</code> (run block is disabled – needs APSIM
-installed).</li>
-<li>Multi-fidelity calibration: a cheap surrogate ramped to an expensive
-model through a <code>fidelity_schedule</code>.</li>
-</ol>
+<p>My simulator is APSIM, one run takes about a minute, and I want to
+calibrate it from R against a handful of seasons of measured yield. The
+question is: <em>how do I wire a simulator like that into PESTO without
+paying a file round-trip on every realisation, and what do I have to get
+right for the posterior that comes back to be worth anything?</em> This
+vignette answers both. The wiring is a typed forward-model contract that
+any R function can satisfy, demonstrated end to end on problems that run
+in seconds; the thing to get right is the observation standard
+deviation, and the middle of this vignette measures exactly how wrong an
+answer becomes when it is set the way most people first set it.</p>
 </div>
 <div class="section level2">
-<h2 id="a-synthetic-recovery-example">A synthetic recovery example<a class="anchor" aria-label="anchor" href="#a-synthetic-recovery-example"></a>
+<h2 id="what">What<a class="anchor" aria-label="anchor" href="#what"></a>
 </h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/max578/PESTO" class="external-link">PESTO</a></span><span class="op">)</span></span>
+<p><a href="../html/pesto_ies_callback.html"><code>pesto_ies_callback()</code></a>
+is the in-process driver. <a href="../html/pesto_ies.html"><code>pesto_ies()</code></a> shells out to
+the <code>pestpp-ies</code> binary, which writes and reads control,
+ensemble and observation files between every realisation; for an R
+forward model, whether that is an <code>apsimx</code> wrapper for APSIM,
+a bridge to another language, or a fast synthetic test problem, the file
+round-trip is pure overhead. The callback driver keeps the same C++
+ensemble kernel (<a href="../html/ensemble_solution.html"><code>ensemble_solution()</code></a>,
+after Chen and Oliver 2013) and drives the outer loop in R, calling the
+forward model in process. For APSIM this is the difference between
+re-reading an <code>.apsimx</code> file for every realisation and
+holding the model in memory across the whole ensemble.</p>
+<p><a href="../html/pesto_forward_model.html"><code>pesto_forward_model()</code></a>
+is the typed contract a forward model travels in. A bare
+<code>function(theta) -&gt; obs</code> is the quickest way in and
+carries no metadata: the driver cannot know the output dimension in
+advance, cannot run realisations in parallel, and cannot express a
+failure budget. The contract object declares all three, and <a href="../html/pesto_evaluate.html"><code>pesto_evaluate()</code></a>
+runs it. <a href="../html/apsim_callback.html"><code>apsim_callback()</code></a>
+builds one for APSIM through the <code>apsimx</code> package: a working
+copy of a template per realisation, parameter edits by a
+<code>param_map</code>, a run, and an extraction step.</p>
+<p><a href="../html/pesto_multifidelity_model.html"><code>pesto_multifidelity_model()</code></a>
+stacks an ordered set of fidelity levels, cheapest first, so early
+iterations can explore on a coarse model and late ones sharpen against
+the expensive one; <a href="../html/mf_control_variate.html"><code>mf_control_variate()</code></a>
+is the variance-minimising affine correction that lifts cheap outputs
+toward expensive ones. <a href="../html/ode_forward_model.html"><code>ode_forward_model()</code></a>
+and its two specialisations, <a href="../html/crop_growth_forward_model.html"><code>crop_growth_forward_model()</code></a>
+and <a href="../html/seir_forward_model.html"><code>seir_forward_model()</code></a>,
+are ready-made contracts for the large class of simulators that are a
+small system of ordinary differential equations rather than an
+executable. <a href="../html/pesto_ies_filter.html"><code>pesto_ies_filter()</code></a>
+assimilates time-ordered observation windows one after another rather
+than in one batch, which is what an in-season update needs.</p>
+<p>Two diagnostics run throughout. <a href="../html/ensemble_spread_ess.html"><code>ensemble_spread_ess()</code></a>
+is recorded on every iteration, and <a href="../html/pesto_abstention.html"><code>pesto_abstention()</code></a>
+is the typed decline a reliability gate returns in place of a
+result.</p>
+</div>
+<div class="section level2">
+<h2 id="do">Do<a class="anchor" aria-label="anchor" href="#do"></a>
+</h2>
+<div class="section level3">
+<h3 id="a-synthetic-recovery-example">A synthetic recovery example<a class="anchor" aria-label="anchor" href="#a-synthetic-recovery-example"></a>
+</h3>
+<p>The problem below is synthetic: a linear forward model at a known
+truth with Gaussian noise, which is the cheapest way to check that a
+driver recovers what it should before a real simulator is attached.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20260516L</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">npar</span>  <span class="op">&lt;-</span> <span class="fl">4L</span></span>
-<span><span class="va">nobs</span>  <span class="op">&lt;-</span> <span class="fl">8L</span></span>
+<span><span class="va">npar</span> <span class="op">&lt;-</span> <span class="fl">4L</span></span>
+<span><span class="va">nobs</span> <span class="op">&lt;-</span> <span class="fl">8L</span></span>
 <span><span class="va">nreal</span> <span class="op">&lt;-</span> <span class="fl">120L</span></span>
 <span><span class="va">sigma</span> <span class="op">&lt;-</span> <span class="fl">0.05</span></span>
 <span></span>
-<span><span class="va">G</span>          <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nobs</span> <span class="op">*</span> <span class="va">npar</span><span class="op">)</span>, <span class="va">nobs</span>, <span class="va">npar</span><span class="op">)</span></span>
+<span><span class="va">G</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nobs</span> <span class="op">*</span> <span class="va">npar</span><span class="op">)</span>, <span class="va">nobs</span>, <span class="va">npar</span><span class="op">)</span></span>
 <span><span class="va">theta_true</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.0</span>, <span class="op">-</span><span class="fl">0.5</span>, <span class="fl">2.0</span>, <span class="fl">0.25</span><span class="op">)</span></span>
-<span><span class="va">y</span>          <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">G</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">theta_true</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nobs</span>, sd <span class="op">=</span> <span class="va">sigma</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"o"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">nobs</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">G</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">theta_true</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nobs</span>, sd <span class="op">=</span> <span class="va">sigma</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"o"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">nobs</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Forward model: any function that takes an (nreal x npar) matrix and</span></span>
-<span><span class="co"># returns an (nreal x nobs) matrix.</span></span>
+<span><span class="co"># Forward model: any function taking an (nreal x npar) matrix and returning</span></span>
+<span><span class="co"># an (nreal x nobs) matrix.</span></span>
 <span><span class="va">forward</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">theta</span><span class="op">)</span> <span class="va">theta</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">G</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nreal</span> <span class="op">*</span> <span class="va">npar</span><span class="op">)</span>, <span class="va">nreal</span>, <span class="va">npar</span>,</span>
 <span>                dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"p"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">npar</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>Run six IES iterations. <code>lambda</code> is left at its default:
-under the default ES-MDA scheme the Marquardt damping <em>is</em> the
-inflation factor (<code>alpha = lambda + 1</code>) and is set by the
-schedule, so it is chosen for you rather than fixed by hand (see
-<code><a href="../reference/pesto_ies_callback.html">?pesto_ies_callback</a></code>).</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<p>Six iterations. <code>lambda</code> is left at its default: under the
+default ES-MDA scheme the Marquardt damping <em>is</em> the inflation
+factor (<code>alpha = lambda + 1</code>) and is set by the schedule, so
+it is chosen for you rather than fixed by hand (see <a href="../html/pesto_ies_callback.html"><code>?pesto_ies_callback</code></a>).</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span></span>
 <span>  forward_model  <span class="op">=</span> <span class="va">forward</span>,</span>
 <span>  prior_ensemble <span class="op">=</span> <span class="va">prior</span>,</span>
 <span>  obs            <span class="op">=</span> <span class="va">y</span>,</span>
 <span>  obs_sd         <span class="op">=</span> <span class="va">sigma</span>,</span>
 <span>  noptmax        <span class="op">=</span> <span class="fl">6L</span>,</span>
+<span>  seed           <span class="op">=</span> <span class="fl">42L</span>,</span>
 <span>  verbose        <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Diagnostics:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">prior_rmse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">prior</span><span class="op">)</span> <span class="op">-</span> <span class="va">theta_true</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">post_mean</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">post_rmse</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">post_mean</span> <span class="op">-</span> <span class="va">theta_true</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"prior RMSE: %.4f\n"</span>, <span class="va">prior_rmse</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; prior RMSE: 1.1300</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"posterior RMSE: %.4f\n"</span>, <span class="va">post_rmse</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; posterior RMSE: 0.0260</span></span>
-<span></span>
-<span><span class="va">mean_phi</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">iterations</span>, <span class="va">`[[`</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1L</span><span class="op">)</span>, <span class="st">"mean_phi"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">mean_phi</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 17452.123014    27.446844    13.277312     9.449656     7.524900</span></span>
-<span><span class="co">#&gt; [6]     6.334244</span></span></code></pre></div>
-<p>Posterior RMSE should be a small fraction of prior RMSE, and mean phi
-should decrease across iterations.</p>
-<p>The full per-realisation phi trajectory:</p>
+<span><span class="va">prior_rmse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">prior</span><span class="op">)</span> <span class="op">-</span> <span class="va">theta_true</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">post_mean</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">post_rmse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">post_mean</span> <span class="op">-</span> <span class="va">theta_true</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>prior_rmse <span class="op">=</span> <span class="va">prior_rmse</span>, posterior_rmse <span class="op">=</span> <span class="va">post_rmse</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span></span>
+<span><span class="co">#&gt;     prior_rmse posterior_rmse </span></span>
+<span><span class="co">#&gt;         1.1300         0.0231</span></span>
+<span><span class="va">vec_mean_phi</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">iterations</span>, <span class="va">`[[`</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1L</span><span class="op">)</span>, <span class="st">"mean_phi"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">vec_mean_phi</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 17452.123    25.006    13.566     9.622     7.592     5.924</span></span></code></pre></div>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_phi.html">plot_phi</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in melt.data.table(phi_dt, id.vars = iter_col, measure.vars = phi_cols,</span></span>
-<span><span class="co">#&gt; : 'measure.vars' [realisation, phi] are not all of the same type. By order of</span></span>
-<span><span class="co">#&gt; hierarchy, the molten data value column will be of type 'double'. All measure</span></span>
-<span><span class="co">#&gt; variables not of type 'double' will be coerced too. Check DETAILS in</span></span>
-<span><span class="co">#&gt; ?melt.data.table for more on coercion.</span></span></code></pre></div>
-<p><img src="apsim-callback_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="Per-realisation phi decreasing across IES iterations" width="576"></p>
+<code class="sourceCode R"><span><span class="va">tab_phi_wide</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/dcast.data.table.html" class="external-link">dcast</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit</span><span class="op">$</span><span class="va">phi</span>, <span class="va">iteration</span> <span class="op">~</span> <span class="va">realisation</span>, value.var <span class="op">=</span> <span class="st">"phi"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_phi.html">plot_phi</a></span><span class="op">(</span><span class="va">tab_phi_wide</span>, show_reals <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>         title <span class="op">=</span> <span class="st">"Misfit by iteration, synthetic recovery problem"</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="apsim-callback_files/figure-html/phi-figure-1.png" class="r-plt" alt="Objective function by iteration on the synthetic recovery problem. The ribbon spans the ensemble's minimum to maximum misfit and each faint line is one realisation; the mean falls by nearly three orders of magnitude between the first and second iterations and then declines slowly." width="1050"><p class="caption">
+Objective function by iteration on the synthetic recovery problem. The
+ribbon spans the ensemble’s minimum to maximum misfit and each faint
+line is one realisation; the mean falls by nearly three orders of
+magnitude between the first and second iterations and then declines
+slowly.
+</p>
 </div>
-<div class="section level2">
-<h2 id="the-forward-model-contract">The forward-model contract<a class="anchor" aria-label="anchor" href="#the-forward-model-contract"></a>
-</h2>
-<p>A bare <code>function(theta) -&gt; obs</code> is the quickest way in,
-but it carries no metadata: the driver cannot know the output dimension
-ahead of time, cannot run realisations in parallel, and cannot express a
-failure budget. <code><a href="../reference/pesto_forward_model.html">pesto_forward_model()</a></code> wraps the same
-callable in a typed contract that does. It is the single object both the
-native-callback driver here and the classic <code>.pst</code> path
-(<code><a href="../reference/pesto_ies.html">pesto_ies()</a></code>) are built to honour, so a forward model
-travels between modes unchanged.</p>
+</div>
+<div class="section level3">
+<h3 id="the-forward-model-contract">The forward-model contract<a class="anchor" aria-label="anchor" href="#the-forward-model-contract"></a>
+</h3>
+<p><code><a href="../reference/pesto_forward_model.html">pesto_forward_model()</a></code> wraps the same callable in a typed
+contract that carries the metadata a bare function cannot. It is the
+single object both the native callback driver here and the classic
+<code>.pst</code> path are built to honour, so a forward model travels
+between modes unchanged.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_forward_model.html">pesto_forward_model</a></span><span class="op">(</span></span>
 <span>  fn          <span class="op">=</span> <span class="va">forward</span>,</span>
@@ -185,29 +216,31 @@ travels between modes unchanged.</p>
 <span><span class="co"># A contract object is evaluated directly with pesto_evaluate(); the</span></span>
 <span><span class="co"># returned matrix carries the per-realisation failure count.</span></span>
 <span><span class="va">sim</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_evaluate.html">pesto_evaluate</a></span><span class="op">(</span><span class="va">fm</span>, <span class="va">prior</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"evaluated %d x %d; failures: %d\n"</span>,</span>
-<span>            <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">sim</span>, <span class="st">"n_failures"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; evaluated 120 x 8; failures: 0</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>realisations <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span>, outputs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">sim</span><span class="op">)</span>,</span>
+<span>  failures <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">sim</span>, <span class="st">"n_failures"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; realisations      outputs     failures </span></span>
+<span><span class="co">#&gt;          120            8            0</span></span>
 <span></span>
-<span><span class="co"># Passing the contract object to the driver is equivalent to passing the</span></span>
-<span><span class="co"># bare function -- the bare form is auto-wrapped internally.</span></span>
-<span><span class="va">fit_typed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span><span class="va">fm</span>, <span class="va">prior</span>, <span class="va">y</span>, <span class="va">sigma</span>,</span>
-<span>                                noptmax <span class="op">=</span> <span class="fl">6L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="co"># Passing the contract to the driver is equivalent to passing the bare</span></span>
+<span><span class="co"># function: the bare form is auto-wrapped internally.</span></span>
+<span><span class="va">fit_typed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span><span class="va">fm</span>, <span class="va">prior</span>, <span class="va">y</span>, <span class="va">sigma</span>, noptmax <span class="op">=</span> <span class="fl">6L</span>,</span>
+<span>                                seed <span class="op">=</span> <span class="fl">42L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit_typed</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+</div>
 <div class="section level3">
 <h3 id="parallel-fault-tolerant-ensembles">Parallel, fault-tolerant ensembles<a class="anchor" aria-label="anchor" href="#parallel-fault-tolerant-ensembles"></a>
 </h3>
-<p>For an expensive forward model – an APSIM ensemble especially – the
+<p>For an expensive forward model, an APSIM ensemble especially, the
 realisations within one iteration are embarrassingly parallel. Build the
 contract with <code>parallel = "multicore"</code> and the evaluation
-engine dispatches rows across forked workers via
+engine dispatches rows across forked workers through
 <code><a href="https://rdrr.io/r/parallel/mclapply.html" class="external-link">parallel::mclapply()</a></code>. For reproducible draws, set an
-<code>"L'Ecuyer-CMRG"</code> RNG first; each realisation then receives
-an independent stream.</p>
+<code>"L'Ecuyer-CMRG"</code> generator first, so each realisation
+receives an independent stream.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">RNGkind</a></span><span class="op">(</span><span class="st">"L'Ecuyer-CMRG"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42L</span><span class="op">)</span></span>
@@ -219,62 +252,56 @@ an independent stream.</p>
 <span>  n_cores  <span class="op">=</span> <span class="fl">4L</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">fit_par</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span><span class="va">fm_par</span>, <span class="va">prior</span>, <span class="va">y</span>, <span class="va">sigma</span>, noptmax <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span></span></code></pre></div>
-<p>A custom <code>map_fn</code> (any <code>lapply</code>-shaped
-function) is the escape hatch for cross-platform or cluster backends,
-for example <code>future.apply::future_lapply</code> or a
-<code>mirai</code> map. Failures are governed by <code>on_failure</code>
-(<code>"na"</code> tolerates, <code>"stop"</code> aborts) and by
-<code>max_fail_frac</code>, which aborts once the fraction of failed
-realisations in any single evaluation exceeds the budget – a guardrail
-against a silently collapsing ensemble.</p>
+<p>The chunk above is shown rather than run, because forking inside a
+vignette build is not portable. A custom <code>map_fn</code>, any
+function shaped like <code>lapply</code>, is the escape hatch for a
+cross-platform or cluster backend. Failures are governed by
+<code>on_failure</code>, where <code>"na"</code> tolerates and
+<code>"stop"</code> aborts, and by <code>max_fail_frac</code>, which
+aborts once the fraction of failed realisations in a single evaluation
+exceeds the budget: a guardrail against an ensemble collapsing
+silently.</p>
 </div>
-</div>
-<div class="section level2">
-<h2 id="guard-calibrate-to-field-realistic-uncertainty-not-the-means-standard-error">Guard: calibrate to field-realistic uncertainty, not the mean’s
-standard error<a class="anchor" aria-label="anchor" href="#guard-calibrate-to-field-realistic-uncertainty-not-the-means-standard-error"></a>
-</h2>
-<p>The single most consequential number you hand
-<code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> is <code>obs_sd</code> – the
-observation standard deviation, which sets the IES weights <span class="math inline">w = 1/\sigma_{\mathrm{obs}}</span>. It is also the
-easiest to get wrong, in a way that fails silently. The failure mode is
+<div class="section level3">
+<h3 id="the-number-that-decides-whether-to-believe-the-answer">The number that decides whether to believe the answer<a class="anchor" aria-label="anchor" href="#the-number-that-decides-whether-to-believe-the-answer"></a>
+</h3>
+<p>The single most consequential argument is <code>obs_sd</code>, the
+observation standard deviation, which sets the weights <span class="math inline">w = 1 / \sigma_{\mathrm{obs}}</span>. It is also the
+easiest to get wrong in a way that fails silently. The failure mode is
 <em>over-determination</em>: conditioning the ensemble on a likelihood
-that is far tighter than the data deserve. The smoother then drives
-every realisation onto the same point, the posterior spread collapses,
-and the run reports an answer with a credible interval far too narrow to
-be credible – confident and wrong.</p>
-<p>The usual route into this trap is statistical, not a typo. Suppose
-each target observation is itself the mean of <span class="math inline">m</span> field replicates. The <em>replicate</em>
-spread – the genuine measurement-plus-process noise a single modelled
-value must match – is <span class="math inline">\sigma</span>. The
-<em>standard error of that mean</em> is <span class="math inline">\sigma/\sqrt{m}</span>, which is smaller by a factor
-of <span class="math inline">\sqrt{m}</span> and shrinks further as you
-average more plots. Passing the standard error as <code>obs_sd</code>
-tells the smoother the data pin the model roughly <span class="math inline">\sqrt{m}</span> times more sharply than they really
-do. The forward model cannot be that right, so the ensemble has nowhere
-to go but onto a single collapsed point.</p>
-<p>The contrast below runs the same synthetic problem twice. The first
-call passes the field-realistic replicate spread <code>sigma</code>; the
-second passes the standard error of a mean over <code>m = 40</code>
-replicates, about eight times too small.</p>
+far tighter than the data deserve. The smoother then drives every
+realisation onto the same point, the posterior spread collapses, and the
+run reports an answer whose credible interval is far too narrow to be
+credible.</p>
+<p>The usual route into the trap is statistical rather than a typo.
+Suppose each target observation is itself the mean of <span class="math inline">m</span> field replicates. The <em>replicate</em>
+spread, the genuine measurement-plus-process noise a single modelled
+value must match, is <span class="math inline">\sigma</span>. The
+<em>standard error of that mean</em> is <span class="math inline">\sigma
+/ \sqrt{m}</span>, smaller by a factor of <span class="math inline">\sqrt{m}</span> and shrinking further as more plots
+are averaged. Passing the standard error as <code>obs_sd</code> tells
+the smoother the data pin the model roughly <span class="math inline">\sqrt{m}</span> times more sharply than they do. The
+forward model cannot be that right, so the ensemble has nowhere to go
+but onto a single collapsed point.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m</span>      <span class="op">&lt;-</span> <span class="fl">40L</span></span>
+<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fl">40L</span></span>
 <span><span class="va">obs_se</span> <span class="op">&lt;-</span> <span class="va">sigma</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span>   <span class="co"># the standard error of a 40-replicate mean</span></span>
 <span></span>
 <span><span class="va">fit_ok</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span></span>
 <span>  <span class="va">forward</span>, <span class="va">prior</span>, <span class="va">y</span>,</span>
 <span>  obs_sd  <span class="op">=</span> <span class="va">sigma</span>,          <span class="co"># field-realistic replicate spread</span></span>
-<span>  noptmax <span class="op">=</span> <span class="fl">6L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  noptmax <span class="op">=</span> <span class="fl">6L</span>, seed <span class="op">=</span> <span class="fl">42L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fit_collapsed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span></span>
 <span>  <span class="va">forward</span>, <span class="va">prior</span>, <span class="va">y</span>,</span>
-<span>  obs_sd  <span class="op">=</span> <span class="va">obs_se</span>,         <span class="co"># the over-precise likelihood -- the trap</span></span>
-<span>  noptmax <span class="op">=</span> <span class="fl">6L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  obs_sd  <span class="op">=</span> <span class="va">obs_se</span>,         <span class="co"># the over-precise likelihood, the trap</span></span>
+<span>  noptmax <span class="op">=</span> <span class="fl">6L</span>, seed <span class="op">=</span> <span class="fl">42L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The collapse does not announce itself in the posterior <em>mean</em>.
-On this linear-Gaussian toy both runs recover the truth to three
-figures. It announces itself in the posterior <em>spread</em> and in
-whether the credible interval still covers the truth:</p>
+On this linear-Gaussian problem both runs recover the truth to three
+figures. It announces itself in the posterior <em>spread</em>, and in
+whether the credible interval still covers the truth.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">spread</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span>, <span class="fl">2L</span>, <span class="va">sd</span><span class="op">)</span><span class="op">)</span></span>
@@ -287,80 +314,295 @@ whether the credible interval still covers the truth:</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">truth</span> <span class="op">&gt;=</span> <span class="va">lo</span> <span class="op">&amp;</span> <span class="va">truth</span> <span class="op">&lt;=</span> <span class="va">hi</span><span class="op">)</span>   <span class="co"># fraction of params inside the band</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  obs_sd          <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sigma</span>, <span class="va">obs_se</span><span class="op">)</span>,</span>
-<span>  case            <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"field-realistic"</span>, <span class="st">"over-precise (SE of mean)"</span><span class="op">)</span>,</span>
-<span>  mean_post_sd    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu">spread</span><span class="op">(</span><span class="va">fit_ok</span><span class="op">)</span>, <span class="fu">spread</span><span class="op">(</span><span class="va">fit_collapsed</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  coverage_90_pct <span class="op">=</span> <span class="fl">100</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu">coverage_90</span><span class="op">(</span><span class="va">fit_ok</span>, <span class="va">theta_true</span><span class="op">)</span>,</span>
-<span>                            <span class="fu">coverage_90</span><span class="op">(</span><span class="va">fit_collapsed</span>, <span class="va">theta_true</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt;        obs_sd                      case mean_post_sd coverage_90_pct</span></span>
-<span><span class="co">#&gt; 1 0.050000000           field-realistic  0.034612644             100</span></span>
-<span><span class="co">#&gt; 2 0.007905694 over-precise (SE of mean)  0.005608787              50</span></span></code></pre></div>
-<p>The over-precise run’s posterior spread is a small fraction of the
-well-specified run’s, and its 90 per-cent credible band has stopped
-covering the truth entirely. The ensemble is confident and wrong.</p>
+<span><span class="va">tab_two</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  Case <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"field-realistic"</span>, <span class="st">"over-precise (SE of a 40-replicate mean)"</span><span class="op">)</span>,</span>
+<span>  `obs_sd` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sigma</span>, <span class="va">obs_se</span><span class="op">)</span>,</span>
+<span>  `Mean posterior SD` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu">spread</span><span class="op">(</span><span class="va">fit_ok</span><span class="op">)</span>, <span class="fu">spread</span><span class="op">(</span><span class="va">fit_collapsed</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  `Coverage of the 90% band (%)` <span class="op">=</span> <span class="fl">100</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="fu">coverage_90</span><span class="op">(</span><span class="va">fit_ok</span>, <span class="va">theta_true</span><span class="op">)</span>, <span class="fu">coverage_90</span><span class="op">(</span><span class="va">fit_collapsed</span>, <span class="va">theta_true</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  check.names <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<caption>The same problem and the same data under a field-realistic and
+an over-precise observation standard deviation.</caption>
+<colgroup>
+<col width="43%">
+<col width="7%">
+<col width="18%">
+<col width="30%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Case</th>
+<th align="right">obs_sd</th>
+<th align="right">Mean posterior SD</th>
+<th align="right">Coverage of the 90% band (%)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">field-realistic</td>
+<td align="right">0.0500</td>
+<td align="right">0.0341</td>
+<td align="right">100</td>
+</tr>
+<tr class="even">
+<td align="left">over-precise (SE of a 40-replicate mean)</td>
+<td align="right">0.0079</td>
+<td align="right">0.0054</td>
+<td align="right">50</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="where-the-boundary-is">Where the boundary is<a class="anchor" aria-label="anchor" href="#where-the-boundary-is"></a>
+</h3>
+<p>Two cases show that the failure exists. A sweep shows where it
+starts. The block below repeats the run at replicate counts from 1 to
+160, each time passing the standard error of an <span class="math inline">m</span>-replicate mean as <code>obs_sd</code>, and
+records two things: the mean posterior standard deviation, and how far
+the posterior mean sits from the truth measured in its own posterior
+standard deviations. A calibrated posterior puts the truth within about
+one of its own standard deviations; a collapsed one puts it many.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vec_m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">2L</span>, <span class="fl">5L</span>, <span class="fl">10L</span>, <span class="fl">20L</span>, <span class="fl">40L</span>, <span class="fl">80L</span>, <span class="fl">160L</span><span class="op">)</span></span>
+<span><span class="va">tab_boundary</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/rbindlist.html" class="external-link">rbindlist</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">vec_m</span>, <span class="kw">function</span><span class="op">(</span><span class="va">mm</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">fit_m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span></span>
+<span>    <span class="va">forward</span>, <span class="va">prior</span>, <span class="va">y</span>, obs_sd <span class="op">=</span> <span class="va">sigma</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">mm</span><span class="op">)</span>,</span>
+<span>    noptmax <span class="op">=</span> <span class="fl">6L</span>, seed <span class="op">=</span> <span class="fl">42L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  <span class="op">)</span></span>
+<span>  <span class="va">pe</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit_m</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span></span>
+<span>  <span class="va">par_sd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">pe</span>, <span class="fl">2L</span>, <span class="va">sd</span><span class="op">)</span></span>
+<span>  <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
+<span>    m <span class="op">=</span> <span class="va">mm</span>,</span>
+<span>    obs_sd <span class="op">=</span> <span class="va">sigma</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="va">mm</span><span class="op">)</span>,</span>
+<span>    post_sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">par_sd</span><span class="op">)</span>,</span>
+<span>    z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">pe</span><span class="op">)</span> <span class="op">-</span> <span class="va">theta_true</span><span class="op">)</span> <span class="op">/</span> <span class="va">par_sd</span><span class="op">)</span>,</span>
+<span>    coverage <span class="op">=</span> <span class="fu">coverage_90</span><span class="op">(</span><span class="va">fit_m</span>, <span class="va">theta_true</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span><span class="op">)</span> <span class="co"># ends the sweep over replicate counts</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span></span>
+<span>  <span class="va">tab_boundary</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">m</span>, y <span class="op">=</span> <span class="va">z</span>, colour <span class="op">=</span> <span class="va">coverage</span><span class="op">)</span></span>
+<span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_hline</a></span><span class="op">(</span>yintercept <span class="op">=</span> <span class="fl">1</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span>,</span>
+<span>                      colour <span class="op">=</span> <span class="st">"grey40"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="st">"grey60"</span>, linewidth <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">3.4</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_log10</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_log10</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_colour_viridis_c</a></span><span class="op">(</span></span>
+<span>    name <span class="op">=</span> <span class="st">"90% coverage"</span>, limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>, end <span class="op">=</span> <span class="fl">0.9</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    x <span class="op">=</span> <span class="st">"replicates averaged into each observation (log scale)"</span>,</span>
+<span>    y <span class="op">=</span> <span class="st">"distance from truth, in posterior SDs (log scale)"</span>,</span>
+<span>    title <span class="op">=</span> <span class="st">"How over-precise an obs_sd can be before the answer misleads"</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="apsim-callback_files/figure-html/boundary-figure-1.png" class="r-plt" alt="The over-determination boundary. The horizontal axis is the number of replicates whose standard error was passed as obs_sd; the vertical axis is how far the posterior mean sits from the known truth, measured in posterior standard deviations. Point colour is the fraction of parameters whose 90 per cent credible band still covers the truth. The dashed line at one standard deviation is where a posterior stops being able to describe its own error, and everything to the right of the crossing is a run that reports false confidence." width="1050"><p class="caption">
+The over-determination boundary. The horizontal axis is the number of
+replicates whose standard error was passed as obs_sd; the vertical axis
+is how far the posterior mean sits from the known truth, measured in
+posterior standard deviations. Point colour is the fraction of
+parameters whose 90 per cent credible band still covers the truth. The
+dashed line at one standard deviation is where a posterior stops being
+able to describe its own error, and everything to the right of the
+crossing is a run that reports false confidence.
+</p>
+</div>
+<table style="width:100%;" class="table">
+<caption>The same inversion at eight settings of obs_sd, each the
+standard error of a mean over m replicates of a spread of
+0.05.</caption>
+<colgroup>
+<col width="12%">
+<col width="13%">
+<col width="17%">
+<col width="34%">
+<col width="22%">
+</colgroup>
+<thead><tr class="header">
+<th align="right">Replicates m</th>
+<th align="right">obs_sd passed</th>
+<th align="right">Mean posterior SD</th>
+<th align="right">Distance from truth (posterior SDs)</th>
+<th align="right">90% coverage (fraction)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">0.0500</td>
+<td align="right">0.0341</td>
+<td align="right">0.4594</td>
+<td align="right">1.00</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">0.0354</td>
+<td align="right">0.0241</td>
+<td align="right">0.6899</td>
+<td align="right">0.75</td>
+</tr>
+<tr class="odd">
+<td align="right">5</td>
+<td align="right">0.0224</td>
+<td align="right">0.0152</td>
+<td align="right">1.1395</td>
+<td align="right">0.75</td>
+</tr>
+<tr class="even">
+<td align="right">10</td>
+<td align="right">0.0158</td>
+<td align="right">0.0108</td>
+<td align="right">1.6481</td>
+<td align="right">0.50</td>
+</tr>
+<tr class="odd">
+<td align="right">20</td>
+<td align="right">0.0112</td>
+<td align="right">0.0076</td>
+<td align="right">2.3622</td>
+<td align="right">0.50</td>
+</tr>
+<tr class="even">
+<td align="right">40</td>
+<td align="right">0.0079</td>
+<td align="right">0.0054</td>
+<td align="right">3.3683</td>
+<td align="right">0.50</td>
+</tr>
+<tr class="odd">
+<td align="right">80</td>
+<td align="right">0.0056</td>
+<td align="right">0.0038</td>
+<td align="right">4.7885</td>
+<td align="right">0.50</td>
+</tr>
+<tr class="even">
+<td align="right">160</td>
+<td align="right">0.0040</td>
+<td align="right">0.0027</td>
+<td align="right">6.7951</td>
+<td align="right">0.25</td>
+</tr>
+</tbody>
+</table>
+<p>PESTO does not gate this automatically:
+<code><a href="../reference/pesto_abstention.html">pesto_abstention()</a></code>’s reason codes are not a closed set, and
+a caller who can measure the boundary can mint the gate. The function
+below is that gate, written against the sweep’s own statistic, and it
+returns a typed decline that a downstream tool recognises by class
+rather than by parsing a message.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">gate_over_determination</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">fit</span>, <span class="va">truth</span>, <span class="va">z_max</span> <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">pe</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span></span>
+<span>  <span class="va">par_sd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">pe</span>, <span class="fl">2L</span>, <span class="va">sd</span><span class="op">)</span></span>
+<span>  <span class="va">z</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">pe</span><span class="op">)</span> <span class="op">-</span> <span class="va">truth</span><span class="op">)</span> <span class="op">/</span> <span class="va">par_sd</span><span class="op">)</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="va">z</span> <span class="op">&gt;</span> <span class="va">z_max</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="fu"><a href="../reference/pesto_abstention.html">pesto_abstention</a></span><span class="op">(</span></span>
+<span>      <span class="st">"over_determined"</span>,</span>
+<span>      detail <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span></span>
+<span>        <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"posterior mean sits %.1f posterior SDs from the reference, "</span>,</span>
+<span>               <span class="st">"above the tolerance of %.1f; obs_sd is too small"</span><span class="op">)</span>,</span>
+<span>        <span class="va">z</span>, <span class="va">z_max</span></span>
+<span>      <span class="op">)</span>,</span>
+<span>      diagnostics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">z</span>, <span class="fl">2</span><span class="op">)</span>, mean_post_sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">par_sd</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="va">fit</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/is_pesto_abstention.html">is_pesto_abstention</a></span><span class="op">(</span><span class="fu">gate_over_determination</span><span class="op">(</span><span class="va">fit_ok</span>, <span class="va">theta_true</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span>
+<span><span class="fu">gate_over_determination</span><span class="op">(</span><span class="va">fit_collapsed</span>, <span class="va">theta_true</span><span class="op">)</span></span>
+<span><span class="co">#&gt; $reason</span></span>
+<span><span class="co">#&gt; [1] "over_determined"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $detail</span></span>
+<span><span class="co">#&gt; [1] "posterior mean sits 3.4 posterior SDs from the reference, above the tolerance of 1.5; obs_sd is too small"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $diagnostics</span></span>
+<span><span class="co">#&gt; $diagnostics$z</span></span>
+<span><span class="co">#&gt; [1] 3.37</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $diagnostics$mean_post_sd</span></span>
+<span><span class="co">#&gt; [1] 0.005380416</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $scope</span></span>
+<span><span class="co">#&gt; [1] "call"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $abstained</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; attr(,"class")</span></span>
+<span><span class="co">#&gt; [1] "pesto_abstention"</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="what-the-spread-ess-diagnostic-can-and-cannot-see">What the spread-ESS diagnostic can and cannot see<a class="anchor" aria-label="anchor" href="#what-the-spread-ess-diagnostic-can-and-cannot-see"></a>
+</h3>
 <p><code><a href="../reference/ensemble_spread_ess.html">ensemble_spread_ess()</a></code> is logged on every iteration as
 <code>spread_ess</code> and as the ratio <code>spread_ess_ratio</code>,
-and it is worth being precise about what it can and cannot see. It is
-the spectral participation ratio of the parameter anomaly covariance –
-the effective number of variance-carrying directions – so it detects the
-<em>shape</em> of a collapse: variance draining into a few directions.
-It is a ratio of eigenvalue sums, hence invariant to a global rescaling
-of the anomalies, so a spread that is uniformly too small in every
-direction is invisible to it. Here the two runs differ in exactly that
-way:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+and it is worth being precise about its reach. It is the spectral
+participation ratio of the parameter anomaly covariance, the effective
+number of variance-carrying directions, so it detects the <em>shape</em>
+of a collapse: variance draining into a few directions. It is a ratio of
+eigenvalue sums, hence invariant to a global rescaling of the anomalies,
+so a spread that is uniformly too small in every direction is invisible
+to it. The two runs above differ in exactly that way.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ess_ratio</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">fit</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">iterations</span>, <span class="va">`[[`</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1L</span><span class="op">)</span>, <span class="st">"spread_ess_ratio"</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>
+<span><span class="va">tab_ess</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>
 <span>  `field-realistic` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu">ess_ratio</span><span class="op">(</span><span class="va">fit_ok</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  `over-precise`    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu">ess_ratio</span><span class="op">(</span><span class="va">fit_collapsed</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
+<span><span class="va">tab_ess</span></span>
 <span><span class="co">#&gt;                  [,1]  [,2]  [,3]  [,4]  [,5]  [,6]</span></span>
-<span><span class="co">#&gt; field-realistic 0.534 0.466 0.474 0.498 0.483 0.479</span></span>
-<span><span class="co">#&gt; over-precise    0.496 0.512 0.537 0.511 0.499 0.495</span></span></code></pre></div>
-<p>The two traces sit almost on top of each other even though one
-ensemble’s spread is a fraction of the other’s. Read
-<code>spread_ess_ratio</code> as the directional-collapse diagnostic it
-is, and read the coverage table above as the calibration check – they
-answer different questions, and only the second catches a mis-specified
-<code>obs_sd</code>.</p>
+<span><span class="co">#&gt; field-realistic 0.556 0.518 0.503 0.508 0.504 0.483</span></span>
+<span><span class="co">#&gt; over-precise    0.550 0.522 0.504 0.509 0.507 0.487</span></span></code></pre></div>
+<p>Read <code>spread_ess_ratio</code> as the directional-collapse
+diagnostic it is, and read the coverage column of the boundary table as
+the calibration check. They answer different questions and only the
+second catches a mis-specified <code>obs_sd</code>.</p>
 <p>The fix is to set <code>obs_sd</code> to the uncertainty the modelled
-value must actually reproduce – the replicate-level
+value must actually reproduce, the replicate-level
 measurement-plus-process spread, never the standard error of an
 average:</p>
 <ul>
-<li>Use the replicate standard deviation <span class="math inline">\sigma</span>, not <span class="math inline">\sigma/\sqrt{m}</span>, when the target is a mean
-over <span class="math inline">m</span> measurements.</li>
-<li>Fold structural model-discrepancy into <code>obs_sd</code> – the
+<li>Use the replicate standard deviation <span class="math inline">\sigma</span>, not <span class="math inline">\sigma
+/ \sqrt{m}</span>, when the target is a mean over <span class="math inline">m</span> measurements.</li>
+<li>Fold structural model discrepancy into <code>obs_sd</code>. The
 forward model is an approximation, and the likelihood should not pretend
 it matches reality more tightly than the model can.</li>
 <li>When in genuine doubt, err wide. An over-wide <code>obs_sd</code>
-leaves spread on the table and merely under-uses the data; an
-over-narrow one destroys the ensemble and reports false confidence.</li>
+leaves spread on the table and under-uses the data; an over-narrow one
+destroys the ensemble and reports false confidence.</li>
 </ul>
-<p>When over-determination is unavoidable – many observations, few
-realisations – the covariance inflation and localisation countermeasures
-(<code><a href="../articles/inflation-localisation.html">vignette("inflation-localisation")</a></code>) actively replenish the
-collapsing spread rather than only diagnosing it. A correctly specified
-<code>obs_sd</code> is the first line of defence, those countermeasures
-the second.</p>
+<p>When over-determination is unavoidable, with many observations and
+few realisations, the covariance inflation and localisation
+countermeasures in <em>My posterior looks too confident: is the ensemble
+collapsing?</em> replenish the collapsing spread rather than only
+diagnosing it. A correctly specified <code>obs_sd</code> is the first
+line of defence and those countermeasures the second.</p>
 </div>
-<div class="section level2">
-<h2 id="driving-apsim-through-apsim_callback">Driving APSIM through <code>apsim_callback()</code><a class="anchor" aria-label="anchor" href="#driving-apsim-through-apsim_callback"></a>
-</h2>
+<div class="section level3">
+<h3 id="driving-apsim-through-apsim_callback">Driving APSIM through <code>apsim_callback()</code><a class="anchor" aria-label="anchor" href="#driving-apsim-through-apsim_callback"></a>
+</h3>
 <p>The adapter wraps <code>apsimx</code> so each realisation gets its
 own working copy of an APSIM template, parameter edits per
-<code>param_map</code>, a run, and an extraction step. The signature
-returned matches what <code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> expects.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">apsimx</span><span class="op">)</span>   <span class="co"># &gt;= 2.7.0 from CRAN</span></span>
-<span><span class="co"># Requires a working APSIM Next Gen installation.</span></span>
+<code>param_map</code>, a run, and an extraction step. What it returns
+matches what <code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> expects.</p>
+<p>The <code>apsimx</code> package is installed here but no APSIM
+executable is advertised through <code>PESTO_APSIM_EXE</code>, so the
+block below is shown rather than run.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">apsimx</span><span class="op">)</span>   <span class="co"># &gt;= 2.7.0 from CRAN; needs a working APSIM Next Gen</span></span>
 <span></span>
-<span><span class="va">forward</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/apsim_callback.html">apsim_callback</a></span><span class="op">(</span></span>
+<span><span class="va">forward_apsim</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/apsim_callback.html">apsim_callback</a></span><span class="op">(</span></span>
 <span>  template  <span class="op">=</span> <span class="st">"wheat_wagga.apsimx"</span>,</span>
 <span>  param_map <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>    RUE <span class="op">=</span> <span class="st">"Wheat.Leaf.Photosynthesis.RUE.FixedValue"</span>,</span>
@@ -372,61 +614,50 @@ returned matches what <code><a href="../reference/pesto_ies_callback.html">pesto
 <span>  <span class="op">}</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span>
-<span>  RUE <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">40</span>, <span class="fl">1.0</span>, <span class="fl">2.0</span><span class="op">)</span>,</span>
-<span>  CN2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">40</span>, <span class="fl">60</span>,  <span class="fl">90</span><span class="op">)</span></span>
+<span><span class="va">prior_apsim</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span>
+<span>  RUE <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">40L</span>, <span class="fl">1.0</span>, <span class="fl">2.0</span><span class="op">)</span>,</span>
+<span>  CN2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">40L</span>, <span class="fl">60</span>, <span class="fl">90</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span></span>
-<span>  forward_model  <span class="op">=</span> <span class="va">forward</span>,</span>
-<span>  prior_ensemble <span class="op">=</span> <span class="va">prior</span>,</span>
+<span><span class="va">fit_apsim</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span></span>
+<span>  forward_model  <span class="op">=</span> <span class="va">forward_apsim</span>,</span>
+<span>  prior_ensemble <span class="op">=</span> <span class="va">prior_apsim</span>,</span>
 <span>  obs            <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>y_2018 <span class="op">=</span> <span class="fl">4500</span>, y_2019 <span class="op">=</span> <span class="fl">5200</span>, y_2020 <span class="op">=</span> <span class="fl">4900</span><span class="op">)</span>,</span>
 <span>  obs_sd         <span class="op">=</span> <span class="fl">250</span>,</span>
 <span>  noptmax        <span class="op">=</span> <span class="fl">4L</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">)</span></span></code></pre></div>
-<div class="section level3">
-<h3 id="failure-handling">Failure handling<a class="anchor" aria-label="anchor" href="#failure-handling"></a>
-</h3>
-<p>Per-realisation APSIM crashes (corrupt config, solver divergence,
-missing report variable) are caught by the adapter and emerge as
-<code>NA</code> rows. <code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code>’s
-<code>on_failure = "na"</code> (default) carries those realisations
-forward unchanged so the ensemble survives partial failures. Setting
+<span><span class="op">)</span></span></code></pre></div>
+<p>Per-realisation APSIM crashes, whether a corrupt configuration, a
+solver divergence or a missing report variable, are caught by the
+adapter and emerge as <code>NA</code> rows. The driver’s default
+<code>on_failure = "na"</code> carries those realisations forward
+unchanged so the ensemble survives partial failure;
 <code>on_failure = "stop"</code> aborts as soon as one row is
 missing.</p>
-</div>
-<div class="section level3">
-<h3 id="concurrency">Concurrency<a class="anchor" aria-label="anchor" href="#concurrency"></a>
-</h3>
-<p>The <code><a href="../reference/apsim_callback.html">apsim_callback()</a></code> closure writes each realisation to
-its own uniquely-named working file, so it is safe to evaluate in
-parallel: wrap it in a
+<p>The closure writes each realisation to its own uniquely named working
+file, so it is safe to evaluate in parallel: wrap it in a
 <code>pesto_forward_model(parallel = "multicore")</code> exactly as
 above and the ensemble runs across forked workers, each invoking APSIM
-on its own input. Start with a modest <code>n_cores</code> –
-<code>apsimx</code>’s own thread-safety under heavy ensemble load has
-not been independently characterised. For pure-R synthetic models the
-serial loop is already fast enough that the overhead is dominated by
-<code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code> itself.</p>
+on its own input. Start with a modest <code>n_cores</code>, because the
+thread safety of <code>apsimx</code> itself under heavy ensemble load
+has not been independently characterised. For pure-R synthetic models
+the serial loop is already fast enough that the overhead is dominated by
+<code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code>.</p>
 </div>
-</div>
-<div class="section level2">
-<h2 id="multi-fidelity-calibration">Multi-fidelity calibration<a class="anchor" aria-label="anchor" href="#multi-fidelity-calibration"></a>
-</h2>
-<p>Process-based crop models expose a cost/accuracy dial: a daily
-time-step with a lite soil profile is cheap; a sub-daily step with the
-full profile is expensive. <code><a href="../reference/pesto_multifidelity_model.html">pesto_multifidelity_model()</a></code>
-makes that dial first-class. It bundles an ordered stack of fidelity
-levels – cheapest first – and the IES driver picks a level per iteration
-through a <code>fidelity_schedule</code>, so early iterations explore
-cheaply and late iterations sharpen against the expensive truth. The
-final ensemble is always refreshed at the highest fidelity.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="section level3">
+<h3 id="multi-fidelity-calibration">Multi-fidelity calibration<a class="anchor" aria-label="anchor" href="#multi-fidelity-calibration"></a>
+</h3>
+<p>Process-based crop models expose a cost-accuracy dial: a daily time
+step with a lite soil profile is cheap, a sub-daily step with the full
+profile is expensive. <code><a href="../reference/pesto_multifidelity_model.html">pesto_multifidelity_model()</a></code> makes
+that dial first class. It bundles an ordered stack of fidelity levels,
+cheapest first, and the driver picks a level per iteration through a
+<code>fidelity_schedule</code>, so early iterations explore cheaply and
+late ones sharpen against the expensive truth. The final ensemble is
+always refreshed at the highest fidelity.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Cheap level: the linear model with a small systematic bias.</span></span>
 <span><span class="co"># Expensive level: the unbiased truth.</span></span>
-<span><span class="va">cheap_fn</span>     <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">theta</span><span class="op">)</span> <span class="va">theta</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">G</span><span class="op">)</span> <span class="op">+</span> <span class="fl">0.30</span></span>
+<span><span class="va">cheap_fn</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">theta</span><span class="op">)</span> <span class="va">theta</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">G</span><span class="op">)</span> <span class="op">+</span> <span class="fl">0.30</span></span>
 <span><span class="va">expensive_fn</span> <span class="op">&lt;-</span> <span class="va">forward</span></span>
 <span></span>
 <span><span class="va">mf</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_multifidelity_model.html">pesto_multifidelity_model</a></span><span class="op">(</span></span>
@@ -434,7 +665,7 @@ final ensemble is always refreshed at the highest fidelity.</p>
 <span>    <span class="fu"><a href="../reference/pesto_forward_model.html">pesto_forward_model</a></span><span class="op">(</span>fn <span class="op">=</span> <span class="va">cheap_fn</span>,     n_obs <span class="op">=</span> <span class="va">nobs</span>, fidelity <span class="op">=</span> <span class="fl">0L</span><span class="op">)</span>,</span>
 <span>    <span class="fu"><a href="../reference/pesto_forward_model.html">pesto_forward_model</a></span><span class="op">(</span>fn <span class="op">=</span> <span class="va">expensive_fn</span>, n_obs <span class="op">=</span> <span class="va">nobs</span>, fidelity <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
 <span>  <span class="op">)</span>,</span>
-<span>  costs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">25</span><span class="op">)</span>   <span class="co"># the expensive level is ~25x dearer per run</span></span>
+<span>  costs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">25</span><span class="op">)</span>   <span class="co"># the expensive level is about 25 times dearer per run</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Ramp: two cheap iterations, then four expensive ones.</span></span>
@@ -445,92 +676,125 @@ final ensemble is always refreshed at the highest fidelity.</p>
 <span>  obs_sd            <span class="op">=</span> <span class="va">sigma</span>,</span>
 <span>  noptmax           <span class="op">=</span> <span class="fl">6L</span>,</span>
 <span>  fidelity_schedule <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0L</span>, <span class="fl">0L</span>, <span class="fl">1L</span>, <span class="fl">1L</span>, <span class="fl">1L</span>, <span class="fl">1L</span><span class="op">)</span>,</span>
+<span>  seed              <span class="op">=</span> <span class="fl">42L</span>,</span>
 <span>  verbose           <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">mf_rmse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span></span>
 <span>  <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit_mf</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="op">-</span> <span class="va">theta_true</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"multi-fidelity posterior RMSE: %.4f\n"</span>, <span class="va">mf_rmse</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; multi-fidelity posterior RMSE: 0.1119</span></span></code></pre></div>
-<p>When a cheap level is run over the whole ensemble and the expensive
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>single_fidelity_rmse <span class="op">=</span> <span class="va">post_rmse</span>, multi_fidelity_rmse <span class="op">=</span> <span class="va">mf_rmse</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span></span>
+<span><span class="co">#&gt; single_fidelity_rmse  multi_fidelity_rmse </span></span>
+<span><span class="co">#&gt;               0.0231               0.0968</span></span></code></pre></div>
+<p>When the cheap level is run over the whole ensemble and the expensive
 level over only a subset, <code><a href="../reference/mf_control_variate.html">mf_control_variate()</a></code> lifts the
 cheap outputs toward the expensive ones with the variance-minimising
-affine correction – the plug-in primitive for a surrogate cascade:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sub</span>      <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">:</span><span class="fl">20</span></span>
-<span><span class="va">low_all</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_evaluate.html">pesto_evaluate</a></span><span class="op">(</span><span class="va">mf</span>, <span class="va">prior</span>, level <span class="op">=</span> <span class="fl">0L</span><span class="op">)</span></span>
-<span><span class="va">low_sub</span>  <span class="op">&lt;-</span> <span class="va">low_all</span><span class="op">[</span><span class="va">sub</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span>
+affine correction, which is the plug-in primitive for a surrogate
+cascade:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sub</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fl">20L</span><span class="op">)</span></span>
+<span><span class="va">low_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_evaluate.html">pesto_evaluate</a></span><span class="op">(</span><span class="va">mf</span>, <span class="va">prior</span>, level <span class="op">=</span> <span class="fl">0L</span><span class="op">)</span></span>
+<span><span class="va">low_sub</span> <span class="op">&lt;-</span> <span class="va">low_all</span><span class="op">[</span><span class="va">sub</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span>
 <span><span class="va">high_sub</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_evaluate.html">pesto_evaluate</a></span><span class="op">(</span><span class="va">mf</span>, <span class="va">prior</span><span class="op">[</span><span class="va">sub</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span>, level <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">corrected</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/mf_control_variate.html">mf_control_variate</a></span><span class="op">(</span><span class="va">low_all</span>, <span class="va">high_sub</span>, <span class="va">low_sub</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"mean |cheap - corrected| over the ensemble: %.4f\n"</span>,</span>
-<span>            <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">low_all</span> <span class="op">-</span> <span class="va">corrected</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; mean |cheap - corrected| over the ensemble: 0.3000</span></span></code></pre></div>
+<span><span class="va">high_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_evaluate.html">pesto_evaluate</a></span><span class="op">(</span><span class="va">mf</span>, <span class="va">prior</span>, level <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="va">gap_before</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">low_all</span> <span class="op">-</span> <span class="va">high_all</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">gap_after</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">corrected</span> <span class="op">-</span> <span class="va">high_all</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">signif</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>mean_gap_before <span class="op">=</span> <span class="va">gap_before</span>, mean_gap_after <span class="op">=</span> <span class="va">gap_after</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; mean_gap_before  mean_gap_after </span></span>
+<span><span class="co">#&gt;        3.00e-01        3.39e-17</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="ode-compartmental-forward-model-templates">ODE / compartmental forward-model templates<a class="anchor" aria-label="anchor" href="#ode-compartmental-forward-model-templates"></a>
-</h2>
-<p>Not every forward model is a simulator behind an executable. A very
-large class – crop growth, epidemic dynamics, nutrient or solute
-transport, pharmacokinetics – is a small system of ordinary differential
-equations integrated forward in time, with the observation vector read
-off the state trajectory. PESTO ships these as ready-to-use templates
-that return the same typed <code><a href="../reference/pesto_forward_model.html">pesto_forward_model()</a></code> as
-everything above, so they plug straight into the IES driver, the
-multi-fidelity stack, and the manifest emitter. Integration is a
-self-contained fixed-step RK4 by default (no extra dependency); a
-<code>solver = "desolve"</code> path delegates to the
+<div class="section level3">
+<h3 id="simulators-that-are-systems-of-equations">Simulators that are systems of equations<a class="anchor" aria-label="anchor" href="#simulators-that-are-systems-of-equations"></a>
+</h3>
+<p>Not every simulator sits behind an executable. A very large class,
+crop growth, epidemic dynamics, nutrient or solute transport and
+pharmacokinetics among them, is a small system of ordinary differential
+equations integrated forward in time with the observation vector read
+off the state trajectory. PESTO ships these as templates returning the
+same typed contract as everything above, so they plug straight into the
+driver, the multi-fidelity stack and the manifest emitter. Integration
+is a self-contained fixed-step fourth-order Runge-Kutta scheme by
+default, with a <code>solver = "desolve"</code> path delegating to the
 <code>deSolve</code> package for stiff systems.</p>
 <p>The generic builder is <code><a href="../reference/ode_forward_model.html">ode_forward_model()</a></code>: supply the
-derivative function <code>function(t, y, theta) -&gt; dydt</code>, the
-initial state, the time grid, and which <code>theta</code> columns the
-model consumes. Two specialisations come pre-built.
+derivative function, the initial state, the time grid, and which
+parameter columns the model consumes.
 <code><a href="../reference/crop_growth_forward_model.html">crop_growth_forward_model()</a></code> is the logistic dry-matter
-accumulation curve <code>dB/dt = r B (1 - B / b_max)</code> – the
-canonical sigmoid description of seasonal biomass, calibrating
-<code>r</code>, <code>b_max</code>, and <code>b0</code> against an
-observed biomass-over-time series.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+curve <span class="math inline">\mathrm{d}B / \mathrm{d}t = r B (1 - B /
+b_{\max})</span>, the canonical sigmoid description of seasonal biomass,
+calibrating <span class="math inline">r</span>, <span class="math inline">b_{\max}</span> and the starting biomass against an
+observed biomass series.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">times</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">120</span>, by <span class="op">=</span> <span class="fl">15</span><span class="op">)</span></span>
-<span><span class="va">crop</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/crop_growth_forward_model.html">crop_growth_forward_model</a></span><span class="op">(</span>times <span class="op">=</span> <span class="va">times</span><span class="op">)</span></span>
+<span><span class="va">crop</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/crop_growth_forward_model.html">crop_growth_forward_model</a></span><span class="op">(</span>times <span class="op">=</span> <span class="va">times</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Simulate a biomass series at a known parameter, then add field noise.</span></span>
 <span><span class="va">theta_crop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>r <span class="op">=</span> <span class="fl">0.06</span>, b_max <span class="op">=</span> <span class="fl">1400</span>, b0 <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
-<span><span class="va">biomass</span>    <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="../reference/pesto_evaluate.html">pesto_evaluate</a></span><span class="op">(</span></span>
-<span>  <span class="va">crop</span>, <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="va">theta_crop</span>, nrow <span class="op">=</span> <span class="fl">1L</span>, dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">theta_crop</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">biomass</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="../reference/pesto_evaluate.html">pesto_evaluate</a></span><span class="op">(</span></span>
+<span>  <span class="va">crop</span>, <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="va">theta_crop</span>, nrow <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>               dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">theta_crop</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">y_crop</span>        <span class="op">&lt;-</span> <span class="va">biomass</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">biomass</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
+<span><span class="va">y_crop</span> <span class="op">&lt;-</span> <span class="va">biomass</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">biomass</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">y_crop</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"t"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">y_crop</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Invert: a broad prior over the three growth parameters.</span></span>
 <span><span class="va">prior_crop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span>
 <span>  r     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">120L</span>, <span class="fl">0.02</span>, <span class="fl">0.12</span><span class="op">)</span>,</span>
 <span>  b_max <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">120L</span>, <span class="fl">900</span>, <span class="fl">2000</span><span class="op">)</span>,</span>
 <span>  b0    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">120L</span>, <span class="fl">5</span>, <span class="fl">60</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">fit_crop</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span><span class="va">crop</span>, <span class="va">prior_crop</span>, <span class="va">y_crop</span>, obs_sd <span class="op">=</span> <span class="fl">20</span>,</span>
-<span>                               noptmax <span class="op">=</span> <span class="fl">8L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="va">post_crop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit_crop</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">theta_crop</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span>truth <span class="op">=</span> <span class="va">theta_crop</span>, posterior <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">post_crop</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;               r    b_max    b0</span></span>
-<span><span class="co">#&gt; truth     0.060 1400.000 20.00</span></span>
-<span><span class="co">#&gt; posterior 0.062 1382.806 18.11</span></span></code></pre></div>
+<span>                              noptmax <span class="op">=</span> <span class="fl">8L</span>, seed <span class="op">=</span> <span class="fl">42L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">post_crop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit_crop</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">theta_crop</span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
+<table class="table">
+<caption>Recovery of the logistic growth parameters from a noisy biomass
+series.</caption>
+<thead><tr class="header">
+<th align="left">Parameter</th>
+<th align="left">Unit</th>
+<th align="right">Truth</th>
+<th align="right">Posterior mean</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">r</td>
+<td align="left">per day</td>
+<td align="right">0.06</td>
+<td align="right">0.062</td>
+</tr>
+<tr class="even">
+<td align="left">b_max</td>
+<td align="left">g/m2</td>
+<td align="right">1400.00</td>
+<td align="right">1374.369</td>
+</tr>
+<tr class="odd">
+<td align="left">b0</td>
+<td align="left">g/m2</td>
+<td align="right">20.00</td>
+<td align="right">19.906</td>
+</tr>
+</tbody>
+</table>
 <p><code><a href="../reference/seir_forward_model.html">seir_forward_model()</a></code> is the closed-population
-Susceptible-Exposed-Infectious-Recovered epidemic model, calibrating the
-transmission, latency, and recovery rates <code>beta</code>,
-<code>sigma</code>, and <code>gamma</code> against an observed
-infectious-prevalence curve. The reproduction number <span class="math inline">R_0 = \beta / \gamma</span> is the recoverable
-summary an outbreak curve identifies most sharply:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+susceptible-exposed-infectious-recovered epidemic model, calibrating the
+transmission, latency and recovery rates against an observed infectious
+prevalence curve. The reproduction number <span class="math inline">R_0
+= \beta / \gamma</span> is the summary an outbreak curve identifies most
+sharply.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">days</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">60</span>, by <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">seir</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/seir_forward_model.html">seir_forward_model</a></span><span class="op">(</span>times <span class="op">=</span> <span class="va">days</span>, n_pop <span class="op">=</span> <span class="fl">1000</span>, i0 <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">theta_seir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>beta <span class="op">=</span> <span class="fl">0.6</span>, sigma <span class="op">=</span> <span class="fl">0.2</span>, gamma <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span></span>
 <span><span class="va">prevalence</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="../reference/pesto_evaluate.html">pesto_evaluate</a></span><span class="op">(</span></span>
-<span>  <span class="va">seir</span>, <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="va">theta_seir</span>, nrow <span class="op">=</span> <span class="fl">1L</span>, dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">theta_seir</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">seir</span>, <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="va">theta_seir</span>, nrow <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>               dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">theta_seir</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">y_seir</span>        <span class="op">&lt;-</span> <span class="va">prevalence</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">prevalence</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="va">y_seir</span> <span class="op">&lt;-</span> <span class="va">prevalence</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">prevalence</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">y_seir</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"d"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">y_seir</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">prior_seir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span>
@@ -538,35 +802,38 @@ summary an outbreak curve identifies most sharply:</p>
 <span>  sigma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">200L</span>, <span class="fl">0.1</span>, <span class="fl">0.4</span><span class="op">)</span>,</span>
 <span>  gamma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="fl">200L</span>, <span class="fl">0.05</span>, <span class="fl">0.2</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">fit_seir</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span><span class="va">seir</span>, <span class="va">prior_seir</span>, <span class="va">y_seir</span>, obs_sd <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>                                noptmax <span class="op">=</span> <span class="fl">10L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="va">post_seir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit_seir</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">theta_seir</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"R0 truth = %.1f, R0 posterior = %.2f\n"</span>,</span>
-<span>            <span class="va">theta_seir</span><span class="op">[[</span><span class="st">"beta"</span><span class="op">]</span><span class="op">]</span> <span class="op">/</span> <span class="va">theta_seir</span><span class="op">[[</span><span class="st">"gamma"</span><span class="op">]</span><span class="op">]</span>,</span>
-<span>            <span class="va">post_seir</span><span class="op">[[</span><span class="st">"beta"</span><span class="op">]</span><span class="op">]</span> <span class="op">/</span> <span class="va">post_seir</span><span class="op">[[</span><span class="st">"gamma"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; R0 truth = 6.0, R0 posterior = 5.31</span></span></code></pre></div>
+<span><span class="va">fit_seir</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span><span class="va">seir</span>, <span class="va">prior_seir</span>, <span class="va">y_seir</span>, obs_sd <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>                               noptmax <span class="op">=</span> <span class="fl">10L</span>, seed <span class="op">=</span> <span class="fl">42L</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="va">post_seir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit_seir</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">theta_seir</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">r0_truth</span> <span class="op">&lt;-</span> <span class="va">theta_seir</span><span class="op">[[</span><span class="st">"beta"</span><span class="op">]</span><span class="op">]</span> <span class="op">/</span> <span class="va">theta_seir</span><span class="op">[[</span><span class="st">"gamma"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="va">r0_post</span> <span class="op">&lt;-</span> <span class="va">post_seir</span><span class="op">[[</span><span class="st">"beta"</span><span class="op">]</span><span class="op">]</span> <span class="op">/</span> <span class="va">post_seir</span><span class="op">[[</span><span class="st">"gamma"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>R0_truth <span class="op">=</span> <span class="va">r0_truth</span>, R0_posterior <span class="op">=</span> <span class="va">r0_post</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="co">#&gt;     R0_truth R0_posterior </span></span>
+<span><span class="co">#&gt;         6.00         6.02</span></span></code></pre></div>
 <p>Because both templates return a <code><a href="../reference/pesto_forward_model.html">pesto_forward_model()</a></code>,
-the cheap-coarse / fine-grid fidelity trick from the previous section
-applies verbatim: build one template at a coarse <code>n_steps</code>
-and one at a fine <code>n_steps</code>, stack them in a
+the coarse and fine fidelity trick from the previous section applies
+verbatim: build one template at a coarse <code>n_steps</code> and one at
+a fine <code>n_steps</code>, stack them in a
 <code><a href="../reference/pesto_multifidelity_model.html">pesto_multifidelity_model()</a></code>, and ramp the integration
-resolution across IES iterations.</p>
+resolution across iterations.</p>
 </div>
-<div class="section level2">
-<h2 id="sequential-filter-mode-assimilation">Sequential (filter-mode) assimilation<a class="anchor" aria-label="anchor" href="#sequential-filter-mode-assimilation"></a>
-</h2>
+<div class="section level3">
+<h3 id="assimilating-a-season-as-it-happens">Assimilating a season as it happens<a class="anchor" aria-label="anchor" href="#assimilating-a-season-as-it-happens"></a>
+</h3>
 <p><code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> is a <em>smoother</em>: it
-assimilates every observation in one batch. For an in-season setting –
-where a growing season’s observations arrive over time and you want an
-updated parameter posterior <em>as the season progresses</em>, not only
-at harvest – <code><a href="../reference/pesto_ies_filter.html">pesto_ies_filter()</a></code> is the <em>filter</em>. It
-assimilates time-ordered observation <strong>windows</strong> one after
-another against the same static calibration parameters; each window’s
-posterior becomes the next window’s prior, so information accrues and
-the posterior tightens window by window.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Reuse the synthetic problem above; split the nobs observations into</span></span>
-<span><span class="co"># three temporal windows (e.g. early / mid / late season).</span></span>
+assimilates every observation in one batch. For an in-season setting,
+where a season’s observations arrive over time and the parameter
+posterior is wanted as the season progresses rather than only at
+harvest, <code><a href="../reference/pesto_ies_filter.html">pesto_ies_filter()</a></code> is the <em>filter</em>. It
+assimilates time-ordered observation windows one after another against
+the same static calibration parameters, and each window’s posterior
+becomes the next window’s prior, so information accrues and the
+posterior tightens window by window.</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Split the eight observations into three temporal windows, standing in for</span></span>
+<span><span class="co"># early, mid and late season.</span></span>
 <span><span class="va">windows</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="fl">4</span><span class="op">:</span><span class="fl">6</span>, <span class="fl">7</span><span class="op">:</span><span class="fl">8</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fit_seq</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_filter.html">pesto_ies_filter</a></span><span class="op">(</span></span>
@@ -575,51 +842,193 @@ the posterior tightens window by window.</p>
 <span>  obs            <span class="op">=</span> <span class="va">y</span>,</span>
 <span>  obs_sd         <span class="op">=</span> <span class="va">sigma</span>,</span>
 <span>  windows        <span class="op">=</span> <span class="va">windows</span>,</span>
+<span>  seed           <span class="op">=</span> <span class="fl">42L</span>,</span>
 <span>  verbose        <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># The per-window history carries the per-parameter ensemble sd; its mean</span></span>
-<span><span class="co"># should fall window over window as more of the season is assimilated.</span></span>
-<span><span class="va">sd_trace</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">fit_seq</span><span class="op">$</span><span class="va">windows</span>, <span class="kw">function</span><span class="op">(</span><span class="va">w</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">w</span><span class="op">$</span><span class="va">par_sd</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  window      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">sd_trace</span><span class="op">)</span>,</span>
-<span>  obs_assim   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">fit_seq</span><span class="op">$</span><span class="va">windows</span>, <span class="kw">function</span><span class="op">(</span><span class="va">w</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">w</span><span class="op">$</span><span class="va">obs_indices</span><span class="op">)</span>,</span>
-<span>                       <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">integer</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  mean_par_sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">sd_trace</span>, <span class="fl">4</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt;   window obs_assim mean_par_sd</span></span>
-<span><span class="co">#&gt; 1      1         3      0.4132</span></span>
-<span><span class="co">#&gt; 2      2         3      0.0388</span></span>
-<span><span class="co">#&gt; 3      3         2      0.0331</span></span></code></pre></div>
-<p>The posterior at the final window matches what the batch smoother
-would recover, but you also have the intermediate posteriors – the value
-of the filter is the <em>trajectory</em>, not just the endpoint. A
-multi-fidelity stack plugs in through <code>fidelity_schedule</code>
-(one level per window: run cheap early, sharpen late), and the result
-wraps into the same manifest contract via <code><a href="../reference/as_manifest.html">as_manifest()</a></code>
-(tagged <code>method = "ies_filter"</code>).</p>
+<span><span class="va">sd_trace</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">fit_seq</span><span class="op">$</span><span class="va">windows</span>, <span class="kw">function</span><span class="op">(</span><span class="va">w</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">w</span><span class="op">$</span><span class="va">par_sd</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1L</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">tab_filter</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  Window <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">sd_trace</span><span class="op">)</span>,</span>
+<span>  `Observations assimilated` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span></span>
+<span>    <span class="va">fit_seq</span><span class="op">$</span><span class="va">windows</span>, <span class="kw">function</span><span class="op">(</span><span class="va">w</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">w</span><span class="op">$</span><span class="va">obs_indices</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">integer</a></span><span class="op">(</span><span class="fl">1L</span><span class="op">)</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  `Mean parameter SD` <span class="op">=</span> <span class="va">sd_trace</span>,</span>
+<span>  check.names <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<table class="table">
+<caption>The filter’s posterior spread after each window. The value of
+the filter is the trajectory, not only the endpoint.</caption>
+<thead><tr class="header">
+<th align="right">Window</th>
+<th align="right">Observations assimilated</th>
+<th align="right">Mean parameter SD</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="right">3</td>
+<td align="right">0.4119</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="right">3</td>
+<td align="right">0.0399</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="right">2</td>
+<td align="right">0.0340</td>
+</tr>
+</tbody>
+</table>
+<p>A multi-fidelity stack plugs in through
+<code>fidelity_schedule</code>, one level per window, so a run can be
+cheap early and sharpen late, and the result wraps into the same
+manifest contract through <code><a href="../reference/as_manifest.html">as_manifest()</a></code>, tagged
+<code>method = "ies_filter"</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="when-to-prefer-the--pst-path-instead">When to prefer the <code>.pst</code> path instead<a class="anchor" aria-label="anchor" href="#when-to-prefer-the--pst-path-instead"></a>
+</h3>
+<p>Use <code><a href="../reference/pesto_ies.html">pesto_ies()</a></code> and the classic control-file path when
+the forward model lives behind a non-R executable that PEST++ can drive
+directly through its template and instruction files; when bit-for-bit
+compatibility with <code>pestpp-ies</code> behaviour is needed, for
+instance to cross-validate against an existing PEST++ workflow; or when
+a <code>pestpp-ies</code> feature not yet exposed by the R driver is
+required, such as the full lambda line search, regularisation modes or
+Tikhonov priors. Otherwise the callback driver is faster to iterate,
+easier to debug, and avoids per-realisation file exchange entirely.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="when-to-prefer-pesto_ies-instead">When to prefer <code>pesto_ies()</code> instead<a class="anchor" aria-label="anchor" href="#when-to-prefer-pesto_ies-instead"></a>
+<h2 id="read">Read<a class="anchor" aria-label="anchor" href="#read"></a>
 </h2>
-<p>Use the classic <code>.pst</code> path when:</p>
+<p>The driver recovers what it should. Posterior root-mean-square error
+to the truth is 0.0231 against a prior figure of 1.13, a reduction of a
+factor of 49, and the ensemble mean misfit falls from 17,450 to 5.92
+across 6 iterations. Handing the driver a typed contract instead of a
+bare function returns a posterior ensemble identical to the
+bare-function run, which is the property that lets a forward model move
+between calling conventions unchanged.</p>
+<p>The <code>obs_sd</code> sweep is the centre of this vignette. Passing
+the replicate spread gives a mean posterior standard deviation of 0.0341
+and a 90 per cent band that covers 100 per cent of the parameters.
+Passing the standard error of a 40-replicate mean, about 6 times
+smaller, shrinks the posterior standard deviation to 0.00538, roughly 16
+per cent of the well-specified run, and drops coverage to 50 per cent.
+The figure shows that this is not a cliff but a slope with a crossing
+point: the distance from the truth in posterior standard deviations
+rises from 0.46 at one replicate to 6.8 at 160, crossing one standard
+deviation between 2 and 5 replicates. Beyond that crossing the posterior
+can no longer describe its own error, and coverage falls from 100 per
+cent to 25 per cent across the sweep.</p>
+<p>The spread-ESS trace explains why a diagnostic is not automatically a
+safeguard. The two runs’ trajectories sit within 0.005 of each other at
+every iteration even though one ensemble’s spread is a small fraction of
+the other’s, because the statistic is invariant to a global rescaling of
+the anomalies. That is the case for reading it as a directional-collapse
+diagnostic and reading coverage as the calibration check. Because PESTO
+does not gate on the sweep’s statistic itself, the
+<code>gate_over_determination()</code> function above mints the decline
+a caller wants: applied to the well-specified run it returns the run,
+and applied to the collapsed one it returns a
+<code>pesto_abstention</code> with reason <code>over_determined</code>,
+which a downstream tool recognises by class rather than by reading a
+message.</p>
+<p>The remaining machinery does what it claims, with one price worth
+naming. The multi-fidelity stack, running two cheap iterations before
+four expensive ones, reaches a posterior root-mean-square error of
+0.0968 against the single-fidelity run’s 0.0231: still far better than
+the prior, but a factor of 4.2 worse than spending every iteration on
+the expensive level. Two of six iterations spent on a biased model is
+not free, and whether that trade is worth taking depends on the cost
+ratio between the levels, which here was declared as 25 to 1. The
+control-variate correction, by contrast, is close to exact on this
+problem: the mean absolute gap between the cheap and expensive levels
+falls from 0.3 to 3e-17, which is machine precision, because the cheap
+level’s bias is a constant offset and an affine correction removes a
+constant offset exactly. The logistic growth template recovers a ceiling
+of 1374 g/m2 against a truth of 1400 and a growth rate of 0.062 against
+0.06. The epidemic template recovers a reproduction number of 6.02
+against a truth of 6. The filter tightens the posterior window by
+window, from a mean parameter standard deviation of 0.412 after the
+first window to 0.034 after the third, which is the trajectory an
+in-season user wants rather than the endpoint alone.</p>
+</div>
+<div class="section level2">
+<h2 id="limits">Limits<a class="anchor" aria-label="anchor" href="#limits"></a>
+</h2>
+<p>Every problem run here is synthetic, and the central one is linear
+and Gaussian, so the recovery it demonstrates is the easiest case there
+is; nothing in this vignette establishes that a real APSIM calibration
+converges or that its posterior is calibrated, which is what <em>Can
+PESTO recover APSIM’s own parameters?</em> takes up on a
+simulator-backed run and on real measured biomass. The APSIM adapter is
+shown and not executed, so its code path is documented rather than
+exercised here, and the parallel evaluation path is likewise shown
+rather than run. The over-determination boundary is measured against a
+<em>known</em> truth, which a real calibration does not have: on a real
+problem the same diagnosis has to be made from held-out predictive
+coverage rather than from distance to a truth, and the minted gate above
+would have to be rewritten around that substitute. The boundary’s
+crossing point is a property of this problem’s parameter count, ensemble
+size and design matrix, not a universal threshold, so the number to
+carry away is the method rather than the value. Multi-fidelity is
+demonstrated with a cheap level that differs from the expensive one by a
+constant offset, which is the friendliest possible discrepancy; a cheap
+level whose bias varies with the parameters would behave differently and
+is not tested here. The filter is run on observations split into windows
+after the fact rather than arriving over a real season, so it shows the
+mechanism and not the operational case.</p>
+</div>
+<div class="section level2">
+<h2 id="what-to-read-next">What to read next<a class="anchor" aria-label="anchor" href="#what-to-read-next"></a>
+</h2>
+<p><em>Can PESTO recover APSIM’s own parameters?</em> is this vignette’s
+counterpart on a real simulator: a synthetic-truth recovery experiment
+against the bundled APSIM Wheat example, then a calibration to real
+measured biomass cross-checked against an independent optimiser. <em>My
+posterior looks too confident: is the ensemble collapsing?</em> is the
+second line of defence against a narrow posterior, and separates
+finite-ensemble collapse from the mis-specification diagnosed here.
+<em>When can a surrogate stand in for the simulator?</em> is the other
+way to spend fewer expensive model calls. <em>Handing an ensemble to
+somebody else</em> documents the record a finished run emits. <em>Is
+PESTO the same algorithm as the tools it descends from?</em> measures
+what the in-process driver buys against the file-coupled binaries.</p>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
 <ul>
-<li>Your forward model lives behind a non-R executable that PEST++ can
-drive directly via its template/instruction-file mechanism.</li>
-<li>You need full bit-for-bit compatibility with <code>pestpp-ies</code>
-behaviour (e.g. for cross-validating against an existing PEST++
-workflow).</li>
-<li>You depend on <code>pestpp-ies</code>-specific features not yet
-exposed by the R driver (full lambda line-search, regularisation modes,
-Tikhonov priors).</li>
+<li>Chen, Y., &amp; Oliver, D. S. (2013). Levenberg-Marquardt forms of
+the iterative ensemble smoother for efficient history matching and
+uncertainty quantification. <em>Computational Geosciences</em>, 17(4),
+689-703.</li>
+<li>Emerick, A. A., &amp; Reynolds, A. C. (2013). Ensemble smoother with
+multiple data assimilation. <em>Computers &amp; Geosciences</em>, 55,
+3-15.</li>
+<li>Glasserman, P. (2003). <em>Monte Carlo Methods in Financial
+Engineering</em>. Springer, New York.</li>
+<li>Holzworth, D., et al. (2014). APSIM: evolution towards a new
+generation of agricultural systems simulation. <em>Environmental
+Modelling &amp; Software</em>, 62, 327-350.</li>
+<li>Kennedy, M. C., &amp; O’Hagan, A. (2000). Predicting the output from
+a complex computer code when fast approximations are available.
+<em>Biometrika</em>, 87(1), 1-13.</li>
 </ul>
-<p>Otherwise the callback driver is faster to iterate, easier to debug,
-and avoids per-realisation file I/O entirely.</p>
 </div>
 <div class="section level2">
-<h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a>
+<h2 id="reproduce">Reproduce<a class="anchor" aria-label="anchor" href="#reproduce"></a>
 </h2>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<p>Seed <code>20260516</code> sets the design matrix, the truth and the
+observation noise; seed <code>42</code> is passed to every
+<code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> and <code><a href="../reference/pesto_ies_filter.html">pesto_ies_filter()</a></code>
+call, where it fixes the per-realisation observation perturbation, so
+all runs are compared on identical perturbed data. No external simulator
+or binary is used. Package versions follow.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.6.1 (2026-06-24)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
@@ -645,19 +1054,22 @@ and avoids per-realisation file I/O entirely.</p>
 <span><span class="co">#&gt; [1] PESTO_0.10.1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.51         </span></span>
-<span><span class="co">#&gt;  [4] rlang_1.3.0         xfun_0.60           otel_0.2.0         </span></span>
-<span><span class="co">#&gt;  [7] S7_0.2.2            textshaping_1.0.5   jsonlite_2.0.0     </span></span>
-<span><span class="co">#&gt; [10] data.table_1.18.6.1 labeling_0.4.3      glue_1.8.1         </span></span>
-<span><span class="co">#&gt; [13] htmltools_0.5.9     ragg_1.5.2          sass_0.4.10        </span></span>
-<span><span class="co">#&gt; [16] scales_1.4.0        rmarkdown_2.31      grid_4.6.1         </span></span>
-<span><span class="co">#&gt; [19] evaluate_1.0.5      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
-<span><span class="co">#&gt; [22] yaml_2.3.12         lifecycle_1.0.5     compiler_4.6.1     </span></span>
-<span><span class="co">#&gt; [25] RColorBrewer_1.1-3  fs_2.1.0            Rcpp_1.1.2         </span></span>
-<span><span class="co">#&gt; [28] farver_2.1.2        systemfonts_1.3.2   digest_0.6.39      </span></span>
-<span><span class="co">#&gt; [31] R6_2.6.1            bslib_0.12.0        withr_3.0.3        </span></span>
-<span><span class="co">#&gt; [34] gtable_0.3.6        tools_4.6.1         pkgdown_2.2.1      </span></span>
-<span><span class="co">#&gt; [37] ggplot2_4.0.3       cachem_1.1.0        desc_1.4.3</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] bit_4.6.0           gtable_0.3.6        jsonlite_2.0.0     </span></span>
+<span><span class="co">#&gt;  [4] compiler_4.6.1      Rcpp_1.1.2          xml2_1.6.0         </span></span>
+<span><span class="co">#&gt;  [7] blob_1.3.0          jquerylib_0.1.4     systemfonts_1.3.2  </span></span>
+<span><span class="co">#&gt; [10] scales_1.4.0        textshaping_1.0.5   apsimx_2.8.271     </span></span>
+<span><span class="co">#&gt; [13] yaml_2.3.12         fastmap_1.2.0       ggplot2_4.0.3      </span></span>
+<span><span class="co">#&gt; [16] R6_2.6.1            labeling_0.4.3      knitr_1.51         </span></span>
+<span><span class="co">#&gt; [19] desc_1.4.3          DBI_1.3.0           bslib_0.12.0       </span></span>
+<span><span class="co">#&gt; [22] RColorBrewer_1.1-3  rlang_1.3.0         cachem_1.1.0       </span></span>
+<span><span class="co">#&gt; [25] xfun_0.60           fs_2.1.0            sass_0.4.10        </span></span>
+<span><span class="co">#&gt; [28] S7_0.2.2            bit64_4.8.6         otel_0.2.0         </span></span>
+<span><span class="co">#&gt; [31] memoise_2.0.1       viridisLite_0.4.3   RSQLite_3.53.3     </span></span>
+<span><span class="co">#&gt; [34] cli_3.6.6           pkgdown_2.2.1       withr_3.0.3        </span></span>
+<span><span class="co">#&gt; [37] digest_0.6.39       grid_4.6.1          lifecycle_1.0.5    </span></span>
+<span><span class="co">#&gt; [40] vctrs_0.7.3         evaluate_1.0.5      glue_1.8.1         </span></span>
+<span><span class="co">#&gt; [43] data.table_1.18.6.1 farver_2.1.2        ragg_1.5.2         </span></span>
+<span><span class="co">#&gt; [46] rmarkdown_2.32      tools_4.6.1         htmltools_0.5.9</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

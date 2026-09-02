@@ -273,6 +273,5 @@ contributions of the author.
 
 ## License
 
-GPL (\>= 3). See
-[`LICENSE.md`](https://max578.github.io/PESTO/LICENSE.md) for the full
-text.
+MIT. See [`LICENSE.md`](https://max578.github.io/PESTO/LICENSE.md) for
+the full text.

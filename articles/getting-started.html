@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Getting Started with PESTO • PESTO</title>
+<title>Your first inversion: from a season of measurements to a posterior • PESTO</title>
 <!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="Getting Started with PESTO">
+<meta property="og:title" content="Your first inversion: from a season of measurements to a posterior">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -35,7 +35,7 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with PESTO</a></li>
+<li><a class="dropdown-item" href="../articles/getting-started.html">Your first inversion: from a season of measurements to a posterior</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul>
@@ -57,7 +57,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Getting Started with PESTO</h1>
+      <h1>Your first inversion: from a season of measurements to a posterior</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/max578/PESTO/blob/main/vignettes/getting-started.Rmd" class="external-link"><code>vignettes/getting-started.Rmd</code></a></small>
@@ -66,431 +66,624 @@
 
     
     
-<div class="section level2">
-<h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
-</h2>
-<p><strong>PESTO</strong> (<em>Parameter ESTimation Optimised</em> – the
-PEST approach brought to R) is an R package for high-performance
-parameter estimation, uncertainty quantification, and inverse modelling.
-It brings the algorithms of <strong>PEST</strong> (<em>Parameter
-ESTimation</em>; Doherty 2015) and its C++ successor
-<strong>PEST++</strong> (White et al. 2020) natively into the R
-ecosystem, and extends them with a typed forward-model contract, an
-in-process simulator callback, multi-fidelity acceleration, and
-surrogate methods.</p>
-<p>PESTO is model-independent: any R function mapping parameters to
-outputs can be the forward model. Its flagship partner is the
-<strong>APSIM</strong> agricultural-systems simulator, coupled
-in-process through <code><a href="../reference/apsim_callback.html">apsim_callback()</a></code> and the
-<code>apsimx</code> package – see the <em>Calibrating APSIM with
-PESTO</em> vignette – while the same callback couples hydrological
-models, other crop models, and ODE systems equally.</p>
-<div class="section level3">
-<h3 id="key-features">Key features<a class="anchor" aria-label="anchor" href="#key-features"></a>
-</h3>
-<ul>
-<li>
-<strong>Iterative Ensemble Smoother (IES)</strong>: Ensemble-based
-parameter estimation that scales to 100,000+ parameters without
-computing explicit Jacobians</li>
-<li>
-<strong>Gauss-Levenberg-Marquardt (GLM)</strong>: Deterministic
-gradient-based estimation with SVD regularisation</li>
-<li>
-<strong>Global Sensitivity Analysis</strong>: Morris and Sobol
-methods</li>
-<li>
-<strong>Parametric Sweep</strong>: Embarrassingly parallel model
-evaluations</li>
-<li>
-<strong>APSIM coupling</strong>: <code><a href="../reference/apsim_callback.html">apsim_callback()</a></code>
-drives <code>apsimx</code> ensembles in-process – PESTO’s flagship
-simulator partner</li>
-<li>
-<strong>Publication-quality diagnostics</strong>: ggplot2-based
-visualisations</li>
-</ul>
-</div>
-</div>
-<div class="section level2">
-<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
-</h2>
+<!-- Render time: ~4 s under rmarkdown::render(); macOS arm64 (Darwin 26.5),
+     R 4.5.2, one core. The inversion itself is under a second; most of the
+     time is the kernel timing loop and the two large SVD demonstrations. -->
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># From GitHub (development version):</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"max578/PESTO"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># PESTO ships no PEST++ binaries -- every algorithm runs natively in R, so</span></span>
-<span><span class="co"># an external binary is needed only for the optional cross-check and</span></span>
-<span><span class="co"># .pst-file paths. `.find_pestpp_exe()` resolves an installed binary in</span></span>
-<span><span class="co"># this order:</span></span>
-<span><span class="co">#   1. the per-tool environment variable (e.g. PESTPP_IES_EXE_PATH)</span></span>
-<span><span class="co">#   2. PESTPP_BIN_DIR, the directory holding the PEST++ suite</span></span>
-<span><span class="co">#   3. the system PATH</span></span>
-<span><span class="co">#   4. the `exe` argument passed directly to the calling function</span></span>
-<span><span class="co"># `pestpp_available()` probes the same order without erroring, and is the</span></span>
-<span><span class="co"># documented way for examples and tests to skip gracefully when no binary</span></span>
-<span><span class="co"># is installed.</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/max578/PESTO" class="external-link">PESTO</a></span><span class="op">)</span></span></code></pre></div>
+<div class="section level2">
+<h2 id="why">Why<a class="anchor" aria-label="anchor" href="#why"></a>
+</h2>
+<p>I have a season of measured wheat biomass, a growth model with three
+parameters I cannot measure in the field, and a supervisor who wants
+error bars rather than a single fitted curve. The question I actually
+need answered is: <em>given these measurements and this model, what is
+the range of parameter values consistent with what I saw, and which of
+those parameters do the data pin down at all?</em> This vignette answers
+it end to end on a synthetic season, in about a second of compute, with
+no external binary and no simulator installation.</p>
 </div>
 <div class="section level2">
-<h2 id="quick-start-creating-a-model-scenario">Quick start: creating a model scenario<a class="anchor" aria-label="anchor" href="#quick-start-creating-a-model-scenario"></a>
+<h2 id="what">What<a class="anchor" aria-label="anchor" href="#what"></a>
 </h2>
-<p>Rather than requiring a pre-existing PEST control file, PESTO lets
-you define problems programmatically:</p>
+<p>Four verbs carry the whole workflow. <a href="../html/crop_growth_forward_model.html"><code>crop_growth_forward_model()</code></a>
+builds the forward model: the logistic dry-matter curve <span class="math inline">\mathrm{d}B/\mathrm{d}t = r B (1 - B /
+b_{\max})</span> integrated on a time grid and returned as a typed <a href="../html/pesto_forward_model.html"><code>pesto_forward_model()</code></a>,
+which is the contract every PESTO driver reads. Any R function mapping a
+parameter matrix to an output matrix can take its place, which is what
+<em>model-independent</em> means here. <a href="../html/pesto_evaluate.html"><code>pesto_evaluate()</code></a>
+runs that contract over a matrix of parameter realisations and returns
+the matching matrix of model outputs, carrying a per-evaluation failure
+count. <a href="../html/pesto_ies_callback.html"><code>pesto_ies_callback()</code></a>
+is the inversion: an iterative ensemble smoother after Chen and Oliver
+(2013) that starts from a prior ensemble, calls the forward model in
+process, and returns a posterior ensemble rather than a point estimate.
+<a href="../html/as_manifest.html"><code>as_manifest()</code></a> wraps
+the finished run as a hash-verified
+<code>pesto_ensemble_manifest</code>, the object PESTO owns as the
+orchestra’s C2 manifest contract.</p>
+<p>Beneath those sit the pieces you can reach for directly: <a href="../html/ensemble_solution.html"><code>ensemble_solution()</code></a>,
+the C++ kernel that computes one smoother update; <a href="../html/compute_phi.html"><code>compute_phi()</code></a>, the
+weighted objective function; <a href="../html/adaptive_svd.html"><code>adaptive_svd()</code></a> and <a href="../html/rsvd.html"><code>rsvd()</code></a>, the decomposition
+backends the kernel selects between; <a href="../html/adaptive_ensemble_size.html"><code>adaptive_ensemble_size()</code></a>,
+which reads ensemble health and recommends a size; and <a href="../html/create_pest_scenario.html"><code>create_pest_scenario()</code></a>,
+which describes a problem in PEST’s own control-file vocabulary so it
+travels to the wider PEST toolchain.</p>
+<p>PESTO (Parameter ESTimation Optimised) brings the algorithms of PEST
+(Doherty 2015) and its C++ successor PEST++ (White et al. 2020) natively
+into R, and extends them with the typed forward-model contract used
+above, an in-process simulator callback, multi-fidelity acceleration,
+and surrogate methods. Its flagship simulator partner is APSIM, coupled
+through <a href="../html/apsim_callback.html"><code>apsim_callback()</code></a> and
+the <code>apsimx</code> package.</p>
+</div>
+<div class="section level2">
+<h2 id="do">Do<a class="anchor" aria-label="anchor" href="#do"></a>
+</h2>
+<div class="section level3">
+<h3 id="installation-and-what-needs-an-external-binary">Installation, and what needs an external binary<a class="anchor" aria-label="anchor" href="#installation-and-what-needs-an-external-binary"></a>
+</h3>
+<p>PESTO installs from its GitHub repository, <code>max578/PESTO</code>.
+It ships no PEST++ binaries: every algorithm below runs natively in R,
+and an external binary is needed only for the optional cross-check and
+the <code>.pst</code>-file path through <a href="../html/pesto_ies.html"><code>pesto_ies()</code></a>. When one is
+wanted, <code>.find_pestpp_exe()</code> resolves it in four steps: the
+per-tool environment variable (<code>PESTPP_IES_EXE_PATH</code> and its
+siblings), then <code>PESTPP_BIN_DIR</code> holding the PEST++ suite,
+then the system <code>PATH</code>, then the <code>exe</code> argument
+passed to the calling function. <a href="../html/pestpp_available.html"><code>pestpp_available()</code></a>
+probes that same order without erroring, and is the documented way for
+an example or a test to skip gracefully. Nothing in this vignette
+depends on the answer:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/max578/PESTO" class="external-link">PESTO</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://r-datatable.com" class="external-link">data.table</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Attaching package: 'data.table'</span></span>
-<span><span class="co">#&gt; The following object is masked from 'package:base':</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     %notin%</span></span>
-<span></span>
-<span><span class="co"># Define parameters</span></span>
-<span><span class="va">parameters</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
-<span>  parnme    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hk1"</span>, <span class="st">"hk2"</span>, <span class="st">"hk3"</span>, <span class="st">"ss1"</span>, <span class="st">"rch1"</span><span class="op">)</span>,</span>
-<span>  partrans  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"log"</span>, <span class="st">"log"</span>, <span class="st">"log"</span>, <span class="st">"log"</span>, <span class="st">"fixed"</span><span class="op">)</span>,</span>
-<span>  parchglim <span class="op">=</span> <span class="st">"factor"</span>,</span>
-<span>  parval1   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10</span>, <span class="fl">5</span>, <span class="fl">1</span>, <span class="fl">1e-4</span>, <span class="fl">1e-3</span><span class="op">)</span>,</span>
-<span>  parlbnd   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.01</span>, <span class="fl">0.001</span>, <span class="fl">1e-7</span>, <span class="fl">1e-5</span><span class="op">)</span>,</span>
-<span>  parubnd   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1000</span>, <span class="fl">500</span>, <span class="fl">100</span>, <span class="fl">0.01</span>, <span class="fl">0.1</span><span class="op">)</span>,</span>
-<span>  pargp     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hk"</span>, <span class="st">"hk"</span>, <span class="st">"hk"</span>, <span class="st">"ss"</span>, <span class="st">"rch"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Define observations</span></span>
-<span><span class="va">observations</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
-<span>  obsnme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"h"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">10</span><span class="op">)</span>,</span>
-<span>  obsval <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">25.3</span>, <span class="fl">24.1</span>, <span class="fl">22.8</span>, <span class="fl">21.5</span>, <span class="fl">20.2</span>,</span>
-<span>             <span class="fl">19.0</span>, <span class="fl">17.8</span>, <span class="fl">16.5</span>, <span class="fl">15.3</span>, <span class="fl">14.0</span><span class="op">)</span>,</span>
-<span>  weight <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1.0</span>, <span class="fl">10</span><span class="op">)</span>,</span>
-<span>  obgnme <span class="op">=</span> <span class="st">"heads"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Create the scenario</span></span>
-<span><span class="va">pst</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_pest_scenario.html">create_pest_scenario</a></span><span class="op">(</span></span>
-<span>  parameters   <span class="op">=</span> <span class="va">parameters</span>,</span>
-<span>  observations <span class="op">=</span> <span class="va">observations</span>,</span>
-<span>  model_command <span class="op">=</span> <span class="st">"python run_groundwater.py"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">pst</span><span class="op">)</span></span>
-<span><span class="co">#&gt; $control_data</span></span>
-<span><span class="co">#&gt; $control_data$rstfle</span></span>
-<span><span class="co">#&gt; [1] "restart"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $control_data$pestmode</span></span>
-<span><span class="co">#&gt; [1] "estimation"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $control_data$npar</span></span>
-<span><span class="co">#&gt; [1] 5</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $control_data$nobs</span></span>
-<span><span class="co">#&gt; [1] 10</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $control_data$npargp</span></span>
-<span><span class="co">#&gt; [1] 3</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $control_data$nprior</span></span>
-<span><span class="co">#&gt; [1] 0</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $control_data$nobsgp</span></span>
-<span><span class="co">#&gt; [1] 1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $control_data$ntplfle</span></span>
-<span><span class="co">#&gt; [1] 0</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $control_data$ninsfle</span></span>
-<span><span class="co">#&gt; [1] 0</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $parameters</span></span>
-<span><span class="co">#&gt;    parnme partrans parchglim parval1 parlbnd parubnd  pargp scale offset dercom</span></span>
-<span><span class="co">#&gt;    &lt;char&gt;   &lt;char&gt;    &lt;char&gt;   &lt;num&gt;   &lt;num&gt;   &lt;num&gt; &lt;char&gt; &lt;num&gt;  &lt;num&gt;  &lt;int&gt;</span></span>
-<span><span class="co">#&gt; 1:    hk1      log    factor   1e+01   1e-01   1e+03     hk     1      0      1</span></span>
-<span><span class="co">#&gt; 2:    hk2      log    factor   5e+00   1e-02   5e+02     hk     1      0      1</span></span>
-<span><span class="co">#&gt; 3:    hk3      log    factor   1e+00   1e-03   1e+02     hk     1      0      1</span></span>
-<span><span class="co">#&gt; 4:    ss1      log    factor   1e-04   1e-07   1e-02     ss     1      0      1</span></span>
-<span><span class="co">#&gt; 5:   rch1    fixed    factor   1e-03   1e-05   1e-01    rch     1      0      1</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $observations</span></span>
-<span><span class="co">#&gt;     obsnme obsval weight obgnme</span></span>
-<span><span class="co">#&gt;     &lt;char&gt;  &lt;num&gt;  &lt;num&gt; &lt;char&gt;</span></span>
-<span><span class="co">#&gt;  1:     h1   25.3      1  heads</span></span>
-<span><span class="co">#&gt;  2:     h2   24.1      1  heads</span></span>
-<span><span class="co">#&gt;  3:     h3   22.8      1  heads</span></span>
-<span><span class="co">#&gt;  4:     h4   21.5      1  heads</span></span>
-<span><span class="co">#&gt;  5:     h5   20.2      1  heads</span></span>
-<span><span class="co">#&gt;  6:     h6   19.0      1  heads</span></span>
-<span><span class="co">#&gt;  7:     h7   17.8      1  heads</span></span>
-<span><span class="co">#&gt;  8:     h8   16.5      1  heads</span></span>
-<span><span class="co">#&gt;  9:     h9   15.3      1  heads</span></span>
-<span><span class="co">#&gt; 10:    h10   14.0      1  heads</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $model_command</span></span>
-<span><span class="co">#&gt; [1] "python run_groundwater.py"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $io_files</span></span>
-<span><span class="co">#&gt; Null data.table (0 rows and 0 cols)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $pestpp_options</span></span>
-<span><span class="co">#&gt; list()</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; $file</span></span>
-<span><span class="co">#&gt; [1] NA</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; attr(,"class")</span></span>
-<span><span class="co">#&gt; [1] "pesto_pst"</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/pestpp_available.html">pestpp_available</a></span><span class="op">(</span><span class="st">"pestpp-ies"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
+<p>No <code>pestpp-ies</code> binary is installed on this machine, so
+the optional <code>.pst</code> path is unavailable here; every result
+below is computed by PESTO’s own R and C++ code.</p>
 </div>
-<div class="section level2">
-<h2 id="core-computational-kernel">Core computational kernel<a class="anchor" aria-label="anchor" href="#core-computational-kernel"></a>
-</h2>
-<p>PESTO provides the <code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code> function – a
-high-performance C++ implementation of the IES update equation. This is
-the computational heart of the package:</p>
+<div class="section level3">
+<h3 id="a-synthetic-season">A synthetic season<a class="anchor" aria-label="anchor" href="#a-synthetic-season"></a>
+</h3>
+<p>The season below is synthetic: a logistic biomass curve at a known
+growth rate, ceiling and starting biomass, read off every ten days from
+day 10 to day 120 and blurred with Gaussian field noise of 45 g/m2.
+Working from a known truth is what lets the last section ask what the
+posterior recovered. Real measurements enter the same way, as a named
+numeric vector of targets and a standard deviation.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">npar</span>  <span class="op">&lt;-</span> <span class="fl">50</span></span>
-<span><span class="va">nobs</span>  <span class="op">&lt;-</span> <span class="fl">100</span></span>
-<span><span class="va">nreal</span> <span class="op">&lt;-</span> <span class="fl">30</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20260902L</span><span class="op">)</span></span>
+<span><span class="va">vec_times</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">120</span>, by <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">crop</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/crop_growth_forward_model.html">crop_growth_forward_model</a></span><span class="op">(</span>times <span class="op">=</span> <span class="va">vec_times</span><span class="op">)</span></span>
+<span><span class="co"># The template integrates from times[1] and reports the trajectory at every</span></span>
+<span><span class="co"># later time, so the observations sit on days 10 to 120.</span></span>
+<span><span class="va">vec_days</span> <span class="op">&lt;-</span> <span class="va">vec_times</span><span class="op">[</span><span class="op">-</span><span class="fl">1L</span><span class="op">]</span></span>
 <span></span>
-<span><span class="co"># Generate synthetic ensemble differences</span></span>
-<span><span class="va">par_diff</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">npar</span> <span class="op">*</span> <span class="va">nreal</span>, sd <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span>, <span class="va">npar</span>, <span class="va">nreal</span><span class="op">)</span></span>
-<span><span class="va">obs_diff</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nobs</span> <span class="op">*</span> <span class="va">nreal</span>, sd <span class="op">=</span> <span class="fl">1.0</span><span class="op">)</span>, <span class="va">nobs</span>, <span class="va">nreal</span><span class="op">)</span></span>
-<span><span class="va">obs_resid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nobs</span> <span class="op">*</span> <span class="va">nreal</span>, sd <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span>, <span class="va">nobs</span>, <span class="va">nreal</span><span class="op">)</span></span>
-<span><span class="va">par_resid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">npar</span> <span class="op">*</span> <span class="va">nreal</span>, sd <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span>, <span class="va">npar</span>, <span class="va">nreal</span><span class="op">)</span></span>
-<span><span class="va">weights</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1.0</span>, <span class="va">nobs</span><span class="op">)</span></span>
-<span><span class="va">parcov_inv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1.0</span>, <span class="va">npar</span><span class="op">)</span></span>
-<span><span class="va">Am</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">npar</span> <span class="op">*</span> <span class="op">(</span><span class="va">nreal</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span>, <span class="va">npar</span>, <span class="va">nreal</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">theta_true</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>r <span class="op">=</span> <span class="fl">0.065</span>, b_max <span class="op">=</span> <span class="fl">1450</span>, b0 <span class="op">=</span> <span class="fl">18</span><span class="op">)</span></span>
+<span><span class="va">mat_true</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="va">theta_true</span>, nrow <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>                   dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">theta_true</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">vec_biomass</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="../reference/pesto_evaluate.html">pesto_evaluate</a></span><span class="op">(</span><span class="va">crop</span>, <span class="va">mat_true</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Run the ensemble update</span></span>
-<span><span class="va">upgrade</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ensemble_solution.html">ensemble_solution</a></span><span class="op">(</span></span>
-<span>  par_diff    <span class="op">=</span> <span class="va">par_diff</span>,</span>
-<span>  obs_diff    <span class="op">=</span> <span class="va">obs_diff</span>,</span>
-<span>  obs_resid   <span class="op">=</span> <span class="va">obs_resid</span>,</span>
-<span>  par_resid   <span class="op">=</span> <span class="va">par_resid</span>,</span>
-<span>  weights     <span class="op">=</span> <span class="va">weights</span>,</span>
-<span>  parcov_inv  <span class="op">=</span> <span class="va">parcov_inv</span>,</span>
-<span>  Am          <span class="op">=</span> <span class="va">Am</span>,</span>
-<span>  cur_lam     <span class="op">=</span> <span class="fl">1.0</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Upgrade matrix dimensions:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">upgrade</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Upgrade matrix dimensions: 30 50</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Mean absolute upgrade:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">upgrade</span><span class="op">)</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Mean absolute upgrade: 0.01283321</span></span></code></pre></div>
+<span><span class="va">obs_sd</span> <span class="op">&lt;-</span> <span class="fl">45</span></span>
+<span><span class="va">y_obs</span> <span class="op">&lt;-</span> <span class="va">vec_biomass</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">vec_biomass</span><span class="op">)</span>, sd <span class="op">=</span> <span class="va">obs_sd</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">y_obs</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"t"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">y_obs</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">y_obs</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   t1   t2   t3   t4   t5   t6   t7   t8   t9  t10  t11  t12 </span></span>
+<span><span class="co">#&gt;   34  105   92  170  349  555  879 1110 1124 1335 1342 1409</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="performance-benchmarking">Performance benchmarking<a class="anchor" aria-label="anchor" href="#performance-benchmarking"></a>
-</h2>
-<p>The C++ kernel is significantly faster than equivalent R code:</p>
+<div class="section level3">
+<h3 id="a-prior-and-the-inversion">A prior, and the inversion<a class="anchor" aria-label="anchor" href="#a-prior-and-the-inversion"></a>
+</h3>
+<p>The prior is deliberately vague: uniform over a growth rate of 0.02
+to 0.12 per day, a ceiling of 900 to 2000 g/m2, and a starting biomass
+of 5 to 60 g/m2. One hundred and twenty realisations are drawn from it,
+and eight smoother iterations condition them on the twelve
+measurements.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Benchmark the kernel</span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"microbenchmark"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">bench</span> <span class="op">&lt;-</span> <span class="fu">microbenchmark</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/microbenchmark/man/microbenchmark.html" class="external-link">microbenchmark</a></span><span class="op">(</span></span>
-<span>    PESTO_cpp <span class="op">=</span> <span class="fu"><a href="../reference/ensemble_solution.html">ensemble_solution</a></span><span class="op">(</span></span>
-<span>      <span class="va">par_diff</span>, <span class="va">obs_diff</span>, <span class="va">obs_resid</span>, <span class="va">par_resid</span>,</span>
-<span>      <span class="va">weights</span>, <span class="va">parcov_inv</span>, <span class="va">Am</span>, cur_lam <span class="op">=</span> <span class="fl">1.0</span></span>
-<span>    <span class="op">)</span>,</span>
-<span>    times <span class="op">=</span> <span class="fl">100</span></span>
-<span>  <span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">bench</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span><span class="co">#&gt; Unit: microseconds</span></span>
-<span><span class="co">#&gt;       expr     min      lq     mean   median       uq     max neval</span></span>
-<span><span class="co">#&gt;  PESTO_cpp 430.383 434.686 466.6483 445.4715 450.6355 991.781   100</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="computing-phi-the-objective-function">Computing phi (the objective function)<a class="anchor" aria-label="anchor" href="#computing-phi-the-objective-function"></a>
-</h2>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">phi_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_phi.html">compute_phi</a></span><span class="op">(</span><span class="va">obs_resid</span>, <span class="va">weights</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Mean phi:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">phi_values</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Mean phi: 24.87426</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Min phi:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">phi_values</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Min phi: 19.02836</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Max phi:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">phi_values</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Max phi: 32.74929</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="visualisation">Visualisation<a class="anchor" aria-label="anchor" href="#visualisation"></a>
-</h2>
-<p>PESTO provides publication-quality ggplot2-based diagnostics:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Simulate convergence data</span></span>
-<span><span class="va">phi_history</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
-<span>  iteration <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="fl">5</span>, each <span class="op">=</span> <span class="fl">30</span><span class="op">)</span>,</span>
-<span>  phi <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">5</span>, <span class="fl">0.5</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">4</span>, <span class="fl">0.4</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">3.5</span>, <span class="fl">0.3</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">3</span>, <span class="fl">0.25</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">2.8</span>, <span class="fl">0.2</span><span class="op">)</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">30</span>, <span class="fl">2.7</span>, <span class="fl">0.15</span><span class="op">)</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  real <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"r"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">30</span><span class="op">)</span>, <span class="fl">6</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">s1_real</span> <span class="op">&lt;-</span> <span class="fl">120L</span></span>
+<span><span class="va">prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span>
+<span>  r     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">s1_real</span>, <span class="fl">0.02</span>, <span class="fl">0.12</span><span class="op">)</span>,</span>
+<span>  b_max <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">s1_real</span>, <span class="fl">900</span>, <span class="fl">2000</span><span class="op">)</span>,</span>
+<span>  b0    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">s1_real</span>, <span class="fl">5</span>, <span class="fl">60</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Reshape wide for plot_phi</span></span>
-<span><span class="va">phi_wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/dcast.data.table.html" class="external-link">dcast</a></span><span class="op">(</span><span class="va">phi_history</span>, <span class="va">iteration</span> <span class="op">~</span> <span class="va">real</span>, value.var <span class="op">=</span> <span class="st">"phi"</span><span class="op">)</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span></span>
+<span>  forward_model  <span class="op">=</span> <span class="va">crop</span>,</span>
+<span>  prior_ensemble <span class="op">=</span> <span class="va">prior</span>,</span>
+<span>  obs            <span class="op">=</span> <span class="va">y_obs</span>,</span>
+<span>  obs_sd         <span class="op">=</span> <span class="va">obs_sd</span>,</span>
+<span>  noptmax        <span class="op">=</span> <span class="fl">8L</span>,</span>
+<span>  seed           <span class="op">=</span> <span class="fl">20260902L</span>,</span>
+<span>  verbose        <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/plot_phi.html">plot_phi</a></span><span class="op">(</span><span class="va">phi_wide</span>, show_reals <span class="op">=</span> <span class="cn">TRUE</span>, title <span class="op">=</span> <span class="st">"IES Convergence Example"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">tab_post</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">tab_post</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt;        r    b_max       b0 </span></span>
+<span><span class="co">#&gt;    0.071 1423.444   14.949</span></span></code></pre></div>
+<table class="table">
+<caption>Recovery of the three growth parameters from 12 noisy biomass
+measurements, over 120 realisations.</caption>
+<colgroup>
+<col width="12%">
+<col width="10%">
+<col width="11%">
+<col width="18%">
+<col width="16%">
+<col width="30%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Parameter</th>
+<th align="left">Unit</th>
+<th align="right">Truth</th>
+<th align="right">Posterior mean</th>
+<th align="right">Posterior SD</th>
+<th align="right">Posterior SD / prior SD</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">r</td>
+<td align="left">per day</td>
+<td align="right">0.065</td>
+<td align="right">0.071</td>
+<td align="right">0.006</td>
+<td align="right">0.206</td>
+</tr>
+<tr class="even">
+<td align="left">b_max</td>
+<td align="left">g/m2</td>
+<td align="right">1450.000</td>
+<td align="right">1423.444</td>
+<td align="right">46.086</td>
+<td align="right">0.154</td>
+</tr>
+<tr class="odd">
+<td align="left">b0</td>
+<td align="left">g/m2</td>
+<td align="right">18.000</td>
+<td align="right">14.949</td>
+<td align="right">5.406</td>
+<td align="right">0.346</td>
+</tr>
+</tbody>
+</table>
+<p>Not every realisation survives. The smoother is unbounded, so a
+member can be pushed to a parameter value the model cannot integrate;
+PESTO records those as failures rather than dropping them silently, and
+the default <code>on_failure = "na"</code> carries them forward so the
+rest of the ensemble is not thrown away.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit</span><span class="op">$</span><span class="va">failure_rate</span></span>
+<span><span class="co">#&gt; [1] 0.01203704</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">tab_post</span><span class="op">[</span>, <span class="st">"b0"</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] -2.368459 27.322834</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="did-the-misfit-fall">Did the misfit fall?<a class="anchor" aria-label="anchor" href="#did-the-misfit-fall"></a>
+</h3>
+<p>The objective function <span class="math inline">\phi</span> is the
+weighted sum of squared residuals; the smoother should drive its
+ensemble mean down and then flatten. <a href="../html/plot_phi.html"><code>plot_phi()</code></a> draws that
+trajectory. It reads a wide table of one column per realisation, which
+the run’s long-format <code>$phi</code> slot casts to directly.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tab_phi_wide</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/dcast.data.table.html" class="external-link">dcast</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit</span><span class="op">$</span><span class="va">phi</span>, <span class="va">iteration</span> <span class="op">~</span> <span class="va">realisation</span>, value.var <span class="op">=</span> <span class="st">"phi"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="co"># The realisations that failed carry no misfit; they are dropped here so the</span></span>
+<span><span class="co"># trajectory plot shows only the members that completed every iteration.</span></span>
+<span><span class="va">vec_complete</span> <span class="op">&lt;-</span> <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">tab_phi_wide</span>, <span class="va">anyNA</span>, <span class="fu"><a href="https://rdrr.io/r/base/logical.html" class="external-link">logical</a></span><span class="op">(</span><span class="fl">1L</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_phi.html">plot_phi</a></span><span class="op">(</span><span class="va">tab_phi_wide</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">vec_complete</span><span class="op">)</span>, with <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span>,</span>
+<span>         show_reals <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>         title <span class="op">=</span> <span class="st">"Misfit across the ensemble, by iteration"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="getting-started_files/figure-html/plot-phi-1.png" class="r-plt" alt="Objective function convergence across iterations." width="672"><p class="caption">
-Objective function convergence across iterations.
+<img src="getting-started_files/figure-html/phi-figure-1.png" class="r-plt" alt="Objective function by smoother iteration: the ribbon spans the ensemble's minimum to maximum misfit, the line its mean, and each faint line is one realisation. Almost all of the reduction happens in the first four iterations; the tail is the measurement noise the model cannot fit away." width="1050"><p class="caption">
+Objective function by smoother iteration: the ribbon spans the
+ensemble’s minimum to maximum misfit, the line its mean, and each faint
+line is one realisation. Almost all of the reduction happens in the
+first four iterations; the tail is the measurement noise the model
+cannot fit away.
 </p>
 </div>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Simulate prior and posterior ensembles</span></span>
-<span><span class="va">prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
-<span>  hk1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">10</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  hk2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  ss1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1e-4</span><span class="op">)</span>, <span class="fl">0.5</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">posterior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
-<span>  hk1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">12</span><span class="op">)</span>, <span class="fl">0.3</span><span class="op">)</span>,</span>
-<span>  hk2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">4.5</span><span class="op">)</span>, <span class="fl">0.3</span><span class="op">)</span>,</span>
-<span>  ss1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">8e-5</span><span class="op">)</span>, <span class="fl">0.2</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="../reference/plot_ensemble.html">plot_ensemble</a></span><span class="op">(</span><span class="va">posterior</span>, prior_ensemble <span class="op">=</span> <span class="va">prior</span>,</span>
-<span>              title <span class="op">=</span> <span class="st">"Prior vs Posterior Parameter Distributions"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">vec_mean_phi</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">vapply</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">iterations</span>, <span class="va">`[[`</span>, <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">numeric</a></span><span class="op">(</span><span class="fl">1L</span><span class="op">)</span>, <span class="st">"mean_phi"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">vec_mean_phi</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 1287.3  341.0   82.6   32.2   25.2   23.4   18.4   17.0</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="what-the-data-did-to-the-prior">What the data did to the prior<a class="anchor" aria-label="anchor" href="#what-the-data-did-to-the-prior"></a>
+</h3>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_ensemble.html">plot_ensemble</a></span><span class="op">(</span></span>
+<span>  <span class="va">fit</span><span class="op">$</span><span class="va">par_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span>,</span>
+<span>  prior_ensemble <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">prior</span><span class="op">)</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Prior against posterior, by parameter"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="getting-started_files/figure-html/plot-ensemble-1.png" class="r-plt" alt="Prior vs posterior parameter distributions." width="672"><p class="caption">
-Prior vs posterior parameter distributions.
+<img src="getting-started_files/figure-html/ensemble-figure-1.png" class="r-plt" alt="Prior and posterior parameter ensembles as violins, on each parameter's own scale. The ceiling and the growth rate contract sharply; the starting biomass barely moves, because a curve sampled from day zero onward carries little information about where it began." width="1050"><p class="caption">
+Prior and posterior parameter ensembles as violins, on each parameter’s
+own scale. The ceiling and the growth rate contract sharply; the
+starting biomass barely moves, because a curve sampled from day zero
+onward carries little information about where it began.
+</p>
+</div>
+<p>The violins compare parameters one at a time. The figure that answers
+the original question is the one in the space where the measurements
+live: the biomass trajectories the prior ensemble predicted, the
+trajectories the posterior ensemble predicts, and the measurements
+themselves on the same axes.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tab_prior_obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_evaluate.html">pesto_evaluate</a></span><span class="op">(</span><span class="va">crop</span>, <span class="va">prior</span><span class="op">)</span></span>
+<span><span class="va">tab_fan</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/rbindlist.html" class="external-link">rbindlist</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
+<span>    day <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">vec_days</span>, each <span class="op">=</span> <span class="va">s1_real</span><span class="op">)</span>,</span>
+<span>    biomass <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">tab_prior_obs</span><span class="op">)</span>,</span>
+<span>    real <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">s1_real</span><span class="op">)</span>, times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">vec_days</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    ensemble <span class="op">=</span> <span class="st">"prior"</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
+<span>    day <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">vec_days</span>, each <span class="op">=</span> <span class="va">s1_real</span><span class="op">)</span>,</span>
+<span>    biomass <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">obs_ensemble</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    real <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">s1_real</span><span class="op">)</span>, times <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">vec_days</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    ensemble <span class="op">=</span> <span class="st">"posterior"</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">tab_points</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span>day <span class="op">=</span> <span class="va">vec_days</span>, biomass <span class="op">=</span> <span class="va">y_obs</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span></span>
+<span>  <span class="va">tab_fan</span>,</span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">day</span>, y <span class="op">=</span> <span class="va">biomass</span>, group <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/interaction.html" class="external-link">interaction</a></span><span class="op">(</span><span class="va">real</span>, <span class="va">ensemble</span><span class="op">)</span>,</span>
+<span>               colour <span class="op">=</span> <span class="va">ensemble</span><span class="op">)</span></span>
+<span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_path.html" class="external-link">geom_line</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">0.12</span>, linewidth <span class="op">=</span> <span class="fl">0.3</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span></span>
+<span>    data <span class="op">=</span> <span class="va">tab_points</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">day</span>, y <span class="op">=</span> <span class="va">biomass</span><span class="op">)</span>,</span>
+<span>    inherit.aes <span class="op">=</span> <span class="cn">FALSE</span>, colour <span class="op">=</span> <span class="st">"black"</span>, size <span class="op">=</span> <span class="fl">1.8</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_colour_viridis_d</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"ensemble"</span>, end <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/guides.html" class="external-link">guides</a></span><span class="op">(</span></span>
+<span>    colour <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/guide_legend.html" class="external-link">guide_legend</a></span><span class="op">(</span>override.aes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>                                                       linewidth <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    x <span class="op">=</span> <span class="st">"day of season"</span>, y <span class="op">=</span> <span class="st">"above-ground biomass (g/m2)"</span>,</span>
+<span>    title <span class="op">=</span> <span class="st">"Prior and posterior ensembles against the measurements"</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="getting-started_files/figure-html/fan-figure-1.png" class="r-plt" alt="Prior and posterior ensemble fans in observation space. Each faint line is one realisation's biomass trajectory; the points are the synthetic measurements the smoother conditioned on. The prior fan spans the whole plausible envelope; the posterior fan closes onto the measurements and keeps a spread consistent with the 45 g/m2 field noise." width="1050"><p class="caption">
+Prior and posterior ensemble fans in observation space. Each faint line
+is one realisation’s biomass trajectory; the points are the synthetic
+measurements the smoother conditioned on. The prior fan spans the whole
+plausible envelope; the posterior fan closes onto the measurements and
+keeps a spread consistent with the 45 g/m2 field noise.
 </p>
 </div>
 </div>
-<div class="section level2">
-<h2 id="adaptive-svd-backends">Adaptive SVD backends<a class="anchor" aria-label="anchor" href="#adaptive-svd-backends"></a>
-</h2>
-<p>PESTO automatically selects the fastest SVD algorithm for your
-problem. For low-rank decompositions (typical in IES where ensemble size
-&lt;&lt; observations), the randomised SVD provides dramatic
-speedups:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">A</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1000</span> <span class="op">*</span> <span class="fl">500</span><span class="op">)</span>, <span class="fl">1000</span>, <span class="fl">500</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Automatic selection</span></span>
-<span><span class="va">res_auto</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/adaptive_svd.html">adaptive_svd</a></span><span class="op">(</span><span class="va">A</span>, k <span class="op">=</span> <span class="fl">20L</span>, method <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Method:"</span>, <span class="va">res_auto</span><span class="op">$</span><span class="va">method_used</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Method: rsvd (Halko-Martinsson-Tropp)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_auto</span><span class="op">$</span><span class="va">time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Time: 18.23 ms</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Singular values (top 5):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_auto</span><span class="op">$</span><span class="va">d</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Singular values (top 5): 50.643 50.283 49.956 49.689 49.454</span></span>
-<span></span>
-<span><span class="co"># Compare: randomised SVD (fast, rank-k) vs full</span></span>
-<span><span class="va">res_rsvd</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rsvd.html">rsvd</a></span><span class="op">(</span><span class="va">A</span>, k <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"\nrSVD dimensions: U ="</span>, <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">res_rsvd</span><span class="op">$</span><span class="va">u</span><span class="op">)</span>, <span class="st">", V ="</span>, <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">res_rsvd</span><span class="op">$</span><span class="va">v</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; rSVD dimensions: U = 1000 20 , V = 500 20</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="the-run-as-a-portable-record">The run as a portable record<a class="anchor" aria-label="anchor" href="#the-run-as-a-portable-record"></a>
+</h3>
+<p>A finished run wraps into a versioned, hash-verified manifest, which
+is how a posterior leaves PESTO for another tool without that tool
+reaching into PESTO’s internals.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">man</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_manifest.html">as_manifest</a></span><span class="op">(</span><span class="va">fit</span>, seed <span class="op">=</span> <span class="fl">20260902L</span><span class="op">)</span></span>
+<span><span class="va">man</span><span class="op">@</span><span class="va">method</span></span>
+<span><span class="co">#&gt; [1] "ies_callback"</span></span>
+<span><span class="va">man</span><span class="op">@</span><span class="va">schema_version</span></span>
+<span><span class="co">#&gt; [1] "1.1.0"</span></span>
+<span><span class="fu"><a href="../reference/verify_manifest.html">verify_manifest</a></span><span class="op">(</span><span class="va">man</span><span class="op">)</span><span class="op">$</span><span class="va">ok</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="adaptive-backend-ensemble-solution">Adaptive-backend ensemble solution<a class="anchor" aria-label="anchor" href="#adaptive-backend-ensemble-solution"></a>
-</h2>
-<p><code><a href="../reference/ensemble_solution_adaptive.html">ensemble_solution_adaptive()</a></code> wraps the IES kernel with
-automatic SVD backend selection – a randomised SVD for low-rank
-problems, otherwise a dense LAPACK / Accelerate decomposition – and
-returns timing diagnostics. It is the convenient entry point when the
-best backend for a problem size is not known in advance.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">npar</span> <span class="op">&lt;-</span> <span class="fl">100</span>; <span class="va">nobs</span> <span class="op">&lt;-</span> <span class="fl">500</span>; <span class="va">nreal</span> <span class="op">&lt;-</span> <span class="fl">50</span></span>
+<div class="section level3">
+<h3 id="under-the-bonnet">Under the bonnet<a class="anchor" aria-label="anchor" href="#under-the-bonnet"></a>
+</h3>
+<p>The four verbs above are enough to invert a model. The pieces below
+are what they are built from, and each is exported so it can be used on
+its own.</p>
+<p><strong>The update kernel.</strong> One smoother iteration is a
+single call to <code><a href="../reference/ensemble_solution.html">ensemble_solution()</a></code>, a C++ implementation of
+the Chen and Oliver update that takes ensemble anomalies and residuals
+and returns the parameter upgrade. The block below recomputes the very
+first update by hand, from the prior ensemble and the model outputs
+already evaluated for the fan figure.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tab_par_diff</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">prior</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">prior</span><span class="op">)</span></span>
+<span><span class="va">tab_obs_diff</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">tab_prior_obs</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">tab_prior_obs</span><span class="op">)</span></span>
+<span><span class="va">tab_obs_resid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">tab_prior_obs</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="va">y_obs</span>, <span class="va">s1_real</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">y_obs</span><span class="op">)</span>, <span class="va">s1_real</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">vec_weights</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="va">obs_sd</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">y_obs</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">vec_parcov_inv</span> <span class="op">&lt;-</span> <span class="fl">1</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">prior</span>, <span class="fl">2L</span>, <span class="va">var</span><span class="op">)</span></span>
+<span><span class="va">mat_am</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">prior</span><span class="op">)</span> <span class="op">*</span> <span class="op">(</span><span class="va">s1_real</span> <span class="op">-</span> <span class="fl">1L</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>                 <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">prior</span><span class="op">)</span>, <span class="va">s1_real</span> <span class="op">-</span> <span class="fl">1L</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">pd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">npar</span> <span class="op">*</span> <span class="va">nreal</span><span class="op">)</span>, <span class="va">npar</span>, <span class="va">nreal</span><span class="op">)</span></span>
-<span><span class="va">od</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nobs</span> <span class="op">*</span> <span class="va">nreal</span><span class="op">)</span>, <span class="va">nobs</span>, <span class="va">nreal</span><span class="op">)</span></span>
-<span><span class="va">or_</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nobs</span> <span class="op">*</span> <span class="va">nreal</span><span class="op">)</span>, <span class="va">nobs</span>, <span class="va">nreal</span><span class="op">)</span></span>
-<span><span class="va">pr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">npar</span> <span class="op">*</span> <span class="va">nreal</span><span class="op">)</span>, <span class="va">npar</span>, <span class="va">nreal</span><span class="op">)</span></span>
-<span><span class="va">w</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1.0</span>, <span class="va">nobs</span><span class="op">)</span>; <span class="va">pc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1.0</span>, <span class="va">npar</span><span class="op">)</span></span>
-<span><span class="va">Am</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">npar</span> <span class="op">*</span> <span class="op">(</span><span class="va">nreal</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span>, <span class="va">npar</span>, <span class="va">nreal</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ensemble_solution_adaptive.html">ensemble_solution_adaptive</a></span><span class="op">(</span></span>
-<span>  <span class="va">pd</span>, <span class="va">od</span>, <span class="va">or_</span>, <span class="va">pr</span>, <span class="va">w</span>, <span class="va">pc</span>, <span class="va">Am</span>,</span>
+<span><span class="va">tab_upgrade</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ensemble_solution.html">ensemble_solution</a></span><span class="op">(</span></span>
+<span>  par_diff   <span class="op">=</span> <span class="va">tab_par_diff</span>,</span>
+<span>  obs_diff   <span class="op">=</span> <span class="va">tab_obs_diff</span>,</span>
+<span>  obs_resid  <span class="op">=</span> <span class="va">tab_obs_resid</span>,</span>
+<span>  par_resid  <span class="op">=</span> <span class="va">tab_par_diff</span>,</span>
+<span>  weights    <span class="op">=</span> <span class="va">vec_weights</span>,</span>
+<span>  parcov_inv <span class="op">=</span> <span class="va">vec_parcov_inv</span>,</span>
+<span>  Am         <span class="op">=</span> <span class="va">mat_am</span>,</span>
+<span>  cur_lam    <span class="op">=</span> <span class="fl">1.0</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">tab_upgrade</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 120   3</span></span></code></pre></div>
+<p><strong>The objective.</strong> <code><a href="../reference/compute_phi.html">compute_phi()</a></code> reduces
+the residual matrix to one weighted misfit per realisation, which is
+what the ribbon in the first figure summarises:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vec_phi_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compute_phi.html">compute_phi</a></span><span class="op">(</span><span class="va">tab_obs_resid</span>, <span class="va">vec_weights</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>mean <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">vec_phi_prior</span><span class="op">)</span>, min <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">vec_phi_prior</span><span class="op">)</span>,</span>
+<span>        max <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">vec_phi_prior</span><span class="op">)</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   mean    min    max </span></span>
+<span><span class="co">#&gt; 1287.3   31.5 4839.3</span></span></code></pre></div>
+<p>The kernel is in C++ because it runs once per iteration on matrices
+that grow with the ensemble. The chunk below reports its average cost on
+this problem, in milliseconds over one hundred repetitions.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">s1_rep</span> <span class="op">&lt;-</span> <span class="fl">100L</span></span>
+<span><span class="va">elapsed_ms</span> <span class="op">&lt;-</span> <span class="fl">1000</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/system.time.html" class="external-link">system.time</a></span><span class="op">(</span></span>
+<span>  <span class="kw">for</span> <span class="op">(</span><span class="va">i1</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">s1_rep</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="fu"><a href="../reference/ensemble_solution.html">ensemble_solution</a></span><span class="op">(</span></span>
+<span>      <span class="va">tab_par_diff</span>, <span class="va">tab_obs_diff</span>, <span class="va">tab_obs_resid</span>, <span class="va">tab_par_diff</span>,</span>
+<span>      <span class="va">vec_weights</span>, <span class="va">vec_parcov_inv</span>, <span class="va">mat_am</span>, cur_lam <span class="op">=</span> <span class="fl">1.0</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">}</span> <span class="co"># ends i1, over the timing repetitions</span></span>
+<span><span class="op">)</span><span class="op">[[</span><span class="st">"elapsed"</span><span class="op">]</span><span class="op">]</span> <span class="op">/</span> <span class="va">s1_rep</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">elapsed_ms</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.11</span></span></code></pre></div>
+<p><strong>The decomposition backend.</strong> The update needs a
+singular value decomposition, and the fastest algorithm depends on the
+shape of the problem. <code><a href="../reference/adaptive_svd.html">adaptive_svd()</a></code> picks one;
+<code><a href="../reference/rsvd.html">rsvd()</a></code> is the randomised rank-<span class="math inline">k</span> route it prefers when the ensemble is much
+smaller than the observation count, which is the usual smoother regime.
+The synthetic matrix below is deliberately larger than this vignette’s
+problem, because the choice only starts to matter at that size.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20260902L</span><span class="op">)</span></span>
+<span><span class="va">mat_a</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">1000L</span> <span class="op">*</span> <span class="fl">500L</span><span class="op">)</span>, <span class="fl">1000L</span>, <span class="fl">500L</span><span class="op">)</span></span>
+<span><span class="va">res_svd</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/adaptive_svd.html">adaptive_svd</a></span><span class="op">(</span><span class="va">mat_a</span>, k <span class="op">=</span> <span class="fl">20L</span>, method <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
+<span><span class="va">res_svd</span><span class="op">$</span><span class="va">method_used</span></span>
+<span><span class="co">#&gt; [1] "rsvd (Halko-Martinsson-Tropp)"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_svd</span><span class="op">$</span><span class="va">time_ms</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 16.4</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">res_svd</span><span class="op">$</span><span class="va">d</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fl">5L</span><span class="op">)</span><span class="op">]</span>, <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 51.93 50.87 50.19 49.83 49.68</span></span></code></pre></div>
+<p><code><a href="../reference/ensemble_solution_adaptive.html">ensemble_solution_adaptive()</a></code> is the same kernel with
+that selection made for you, returning the timing breakdown alongside
+the upgrade:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">res_adaptive</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/ensemble_solution_adaptive.html">ensemble_solution_adaptive</a></span><span class="op">(</span></span>
+<span>  <span class="va">tab_par_diff</span>, <span class="va">tab_obs_diff</span>, <span class="va">tab_obs_resid</span>, <span class="va">tab_par_diff</span>,</span>
+<span>  <span class="va">vec_weights</span>, <span class="va">vec_parcov_inv</span>, <span class="va">mat_am</span>,</span>
 <span>  cur_lam <span class="op">=</span> <span class="fl">1.0</span>, svd_method <span class="op">=</span> <span class="st">"auto"</span></span>
 <span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"SVD method:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">svd_method</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; SVD method: LAPACK (platform-optimised)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"SVD time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">svd_time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; SVD time: 2.26 ms</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Total time:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">result</span><span class="op">$</span><span class="va">total_time_ms</span>, <span class="fl">2</span><span class="op">)</span>, <span class="st">"ms\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Total time: 2.67 ms</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Singular values used:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">singular_values_used</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Singular values used: 50</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="surrogate-accelerated-ies">Surrogate-accelerated IES<a class="anchor" aria-label="anchor" href="#surrogate-accelerated-ies"></a>
-</h2>
-<p>PESTO includes a Gaussian Process surrogate that can replace
-expensive model evaluations during IES iterations. See
-<code><a href="../articles/surrogate-ies.html">vignette("surrogate-ies")</a></code> for full details.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">par_ens</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">50</span> <span class="op">*</span> <span class="fl">10</span><span class="op">)</span>, <span class="fl">50</span>, <span class="fl">10</span><span class="op">)</span></span>
-<span><span class="va">obs_ens</span> <span class="op">&lt;-</span> <span class="va">par_ens</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">10</span> <span class="op">*</span> <span class="fl">20</span><span class="op">)</span>, <span class="fl">10</span>, <span class="fl">20</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">50</span> <span class="op">*</span> <span class="fl">20</span>, sd <span class="op">=</span> <span class="fl">0.1</span><span class="op">)</span>, <span class="fl">50</span>, <span class="fl">20</span><span class="op">)</span></span>
-<span><span class="va">obs_target</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">20</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update</a></span><span class="op">(</span></span>
-<span>  <span class="va">par_ens</span>, <span class="va">obs_ens</span>, <span class="va">obs_target</span>,</span>
-<span>  weights <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">20</span><span class="op">)</span>, parcov_inv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">10</span><span class="op">)</span>,</span>
+<span><span class="va">res_adaptive</span><span class="op">$</span><span class="va">svd_method</span></span>
+<span><span class="co">#&gt; [1] "LAPACK (platform-optimised)"</span></span>
+<span><span class="va">res_adaptive</span><span class="op">$</span><span class="va">singular_values_used</span></span>
+<span><span class="co">#&gt; [1] 12</span></span></code></pre></div>
+<p><strong>Is the ensemble big enough?</strong>
+<code><a href="../reference/adaptive_ensemble_size.html">adaptive_ensemble_size()</a></code> reads the spread of
+final-iteration misfits and recommends a size. A high coefficient of
+variation across realisations means a few members carry the fit and the
+rest are along for the ride:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">vec_phi_final</span> <span class="op">&lt;-</span> <span class="va">fit</span><span class="op">$</span><span class="va">phi</span><span class="op">$</span><span class="va">phi</span><span class="op">[</span><span class="va">fit</span><span class="op">$</span><span class="va">phi</span><span class="op">$</span><span class="va">iteration</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">fit</span><span class="op">$</span><span class="va">phi</span><span class="op">$</span><span class="va">iteration</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">sizing</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/adaptive_ensemble_size.html">adaptive_ensemble_size</a></span><span class="op">(</span></span>
+<span>  <span class="va">vec_phi_final</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">vec_phi_final</span><span class="op">)</span><span class="op">]</span>, current_size <span class="op">=</span> <span class="va">s1_real</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">sizing</span><span class="op">$</span><span class="va">recommended_size</span></span>
+<span><span class="co">#&gt; [1] 180</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">sizing</span><span class="op">$</span><span class="va">cv_phi</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0.78</span></span>
+<span><span class="va">sizing</span><span class="op">$</span><span class="va">reasoning</span></span>
+<span><span class="co">#&gt; [1] "High CV (0.779566 &gt; 0.450000): increasing ensemble size"</span></span></code></pre></div>
+<p><strong>A first look at the surrogate.</strong> When the forward
+model is expensive, a Gaussian process trained on the ensemble can stand
+in for some of its evaluations. <code><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update()</a></code>
+classifies which realisations the surrogate could cover and returns the
+update; the <em>Surrogate-accelerated iterative ensemble smoother</em>
+vignette is the full treatment, including what the reported saving does
+and does not mean.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">res_surrogate</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/surrogate_ensemble_update.html">surrogate_ensemble_update</a></span><span class="op">(</span></span>
+<span>  par_ensemble <span class="op">=</span> <span class="va">prior</span>,</span>
+<span>  obs_ensemble <span class="op">=</span> <span class="va">tab_prior_obs</span>,</span>
+<span>  obs_target <span class="op">=</span> <span class="va">y_obs</span>,</span>
+<span>  weights <span class="op">=</span> <span class="va">vec_weights</span>,</span>
+<span>  parcov_inv <span class="op">=</span> <span class="va">vec_parcov_inv</span>,</span>
 <span>  uncertainty_threshold <span class="op">=</span> <span class="fl">0.1</span></span>
 <span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Model evaluations needed:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">n_model_runs</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Model evaluations needed: 0</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Surrogate evaluations:"</span>, <span class="va">result</span><span class="op">$</span><span class="va">n_surrogate_runs</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Surrogate evaluations: 50</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Savings:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%.0f%%"</span>, <span class="va">result</span><span class="op">$</span><span class="va">savings_pct</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Savings: 100%</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">res_surrogate</span><span class="op">$</span><span class="va">n_model_runs</span>,</span>
+<span>  surrogate <span class="op">=</span> <span class="va">res_surrogate</span><span class="op">$</span><span class="va">n_surrogate_runs</span><span class="op">)</span></span>
+<span><span class="co">#&gt;     model surrogate </span></span>
+<span><span class="co">#&gt;         0       120</span></span></code></pre></div>
+<p><strong>Describing a problem in PEST’s vocabulary.</strong> Nothing
+above needed a PEST control file. When one is wanted, because the
+forward model lives behind a non-R executable or because the problem has
+to travel to another PEST tool, <code><a href="../reference/create_pest_scenario.html">create_pest_scenario()</a></code>
+builds it programmatically from a parameter table and an observation
+table:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tab_parameters</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
+<span>  parnme    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"r"</span>, <span class="st">"b_max"</span>, <span class="st">"b0"</span><span class="op">)</span>,</span>
+<span>  partrans  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"log"</span>, <span class="st">"log"</span>, <span class="st">"log"</span><span class="op">)</span>,</span>
+<span>  parchglim <span class="op">=</span> <span class="st">"factor"</span>,</span>
+<span>  parval1   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.065</span>, <span class="fl">1450</span>, <span class="fl">18</span><span class="op">)</span>,</span>
+<span>  parlbnd   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.02</span>, <span class="fl">900</span>, <span class="fl">5</span><span class="op">)</span>,</span>
+<span>  parubnd   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.12</span>, <span class="fl">2000</span>, <span class="fl">60</span><span class="op">)</span>,</span>
+<span>  pargp     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"growth"</span>, <span class="st">"growth"</span>, <span class="st">"initial"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">tab_observations</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
+<span>  obsnme <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">y_obs</span><span class="op">)</span>,</span>
+<span>  obsval <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">y_obs</span><span class="op">)</span>,</span>
+<span>  weight <span class="op">=</span> <span class="va">vec_weights</span>,</span>
+<span>  obgnme <span class="op">=</span> <span class="st">"biomass"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">pst</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/create_pest_scenario.html">create_pest_scenario</a></span><span class="op">(</span></span>
+<span>  parameters    <span class="op">=</span> <span class="va">tab_parameters</span>,</span>
+<span>  observations  <span class="op">=</span> <span class="va">tab_observations</span>,</span>
+<span>  model_command <span class="op">=</span> <span class="st">"Rscript run_crop.R"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">pst</span><span class="op">$</span><span class="va">control_data</span><span class="op">$</span><span class="va">npar</span></span>
+<span><span class="co">#&gt; [1] 3</span></span>
+<span><span class="va">pst</span><span class="op">$</span><span class="va">control_data</span><span class="op">$</span><span class="va">nobs</span></span>
+<span><span class="co">#&gt; [1] 12</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
-<h2 id="adaptive-ensemble-sizing">Adaptive ensemble sizing<a class="anchor" aria-label="anchor" href="#adaptive-ensemble-sizing"></a>
+<h2 id="read">Read<a class="anchor" aria-label="anchor" href="#read"></a>
 </h2>
-<p>Monitor ensemble health and get sizing recommendations:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">phi_values</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Lognormal.html" class="external-link">rlnorm</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">3</span>, <span class="fl">0.5</span><span class="op">)</span></span>
-<span><span class="va">sizing</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/adaptive_ensemble_size.html">adaptive_ensemble_size</a></span><span class="op">(</span><span class="va">phi_values</span>, current_size <span class="op">=</span> <span class="fl">50L</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Recommended size:"</span>, <span class="va">sizing</span><span class="op">$</span><span class="va">recommended_size</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Recommended size: 75</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"CV(phi):"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">sizing</span><span class="op">$</span><span class="va">cv_phi</span>, <span class="fl">3</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; CV(phi): 0.574</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"ESS:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">sizing</span><span class="op">$</span><span class="va">ess</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"/"</span>, <span class="va">sizing</span><span class="op">$</span><span class="va">current_size</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ESS: 5.1 / 50</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Reason:"</span>, <span class="va">sizing</span><span class="op">$</span><span class="va">reasoning</span>, <span class="st">"\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Reason: High CV (0.573522 &gt; 0.450000): increasing ensemble size</span></span></code></pre></div>
+<p>The inversion recovers the season it was given. The growth rate comes
+back at 0.071 per day against a truth of 0.065, the ceiling at 1423 g/m2
+against 1450, and the starting biomass at 14.9 g/m2 against 18. The mean
+misfit falls from 1287 at the first iteration to 17 at the eighth, with
+99 per cent of that whole reduction achieved by the fourth iteration;
+the rest is the tail visible in the first figure.</p>
+<p>The second half of the question was which parameters the data pin
+down, and the answer is in the ratio column of the recovery table.
+Conditioning cuts the ceiling’s spread to 15 per cent of its prior
+spread and the growth rate’s to 21 per cent, while the starting biomass
+keeps 35 per cent of its prior spread. That ordering is mechanistically
+what a season of biomass measurements should teach: the ceiling is read
+almost directly off the plateau, the growth rate off the slope through
+the middle of the season, and the starting biomass only weakly off a
+first measurement taken on day 10, by which point the crop already
+carries 34 g/m2. The posterior fan makes the same point without
+reference to any parameter: it closes onto the points and keeps a spread
+of 29 g/m2 averaged across the twelve measurement days. That is the
+spread of modelled trajectories alone, so it should and does sit below
+the 45 g/m2 of measurement noise: the ensemble has narrowed to the band
+the data support without narrowing onto a single curve.</p>
+<p>The run is not perfectly clean, and the diagnostics say so. 1.2 per
+cent of forward evaluations returned nothing: a small number of
+realisations were pushed to a starting biomass below zero, where the
+growth model has no trajectory to return, and the lowest posterior value
+of <code>b0</code> is -2.4 g/m2. Those realisations appear as gaps in
+the posterior fan rather than as a silently shortened ensemble, which is
+the behaviour to want: a failure that is counted can be reasoned about,
+and <code>on_failure = "stop"</code> is available when it should abort
+the run instead.</p>
+<p><code><a href="../reference/adaptive_ensemble_size.html">adaptive_ensemble_size()</a></code> recommends 180 realisations
+against the 120 used here, because the coefficient of variation of the
+final misfit is 0.78: a few realisations still fit markedly better than
+the rest, and more of them would even that out. One update of the C++
+kernel costs 0.11 milliseconds on this problem, with the decomposition
+backend chosen automatically as rsvd (Halko-Martinsson-Tropp); both sit
+far below the cost of a real forward model, which is the regime the
+whole design assumes.</p>
 </div>
 <div class="section level2">
-<h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+<h2 id="limits">Limits<a class="anchor" aria-label="anchor" href="#limits"></a>
 </h2>
-<ul>
-<li>See <code><a href="../articles/surrogate-ies.html">vignette("surrogate-ies")</a></code> for the full
-surrogate-accelerated workflow</li>
-<li>See <code><a href="../reference/pesto_ies.html">?pesto_ies</a></code> for the high-level IES interface (wraps
-pestpp-ies)</li>
-<li>See <code><a href="../reference/pesto_glm.html">?pesto_glm</a></code> for deterministic
-Gauss-Levenberg-Marquardt estimation</li>
-</ul>
+<p>This season is synthetic, and that is what makes the recovery check
+possible: the truth used to generate the measurements is the truth the
+table compares against, so nothing here establishes that the logistic
+curve is the right model for a real crop. A real inversion is only as
+good as the forward model behind it, and a structurally wrong model will
+produce a tight posterior around the wrong answer without complaint. The
+noise model is equally clean: Gaussian, independent, and known, whereas
+field measurements carry correlated error across dates and a discrepancy
+between the model and the system that this vignette does not represent.
+The single most consequential number is <code>obs_sd</code>, and passing
+one that is too small collapses the posterior into false confidence;
+that failure and its diagnosis are worked through in <em>Wiring your own
+simulator into PESTO</em>. Coverage is not tested here either, only the
+ratio of posterior to prior spread, and a spread that looks reasonable
+is not the same as an interval that contains the truth at its nominal
+rate. Nothing in this vignette exercises an external simulator or an
+external binary, so it says nothing about how PESTO behaves when a
+single forward evaluation takes a minute rather than a microsecond.</p>
+</div>
+<div class="section level2">
+<h2 id="what-to-read-next">What to read next<a class="anchor" aria-label="anchor" href="#what-to-read-next"></a>
+</h2>
+<p><em>Wiring your own simulator into PESTO</em> is the next step for
+anyone with a real simulator: the in-process callback, the typed
+forward-model contract, the parallel and fault-tolerant evaluation path,
+and the guard on <code>obs_sd</code> that decides whether the posterior
+above is credible. <em>My posterior looks too confident: is the ensemble
+collapsing?</em> takes up what to do when the posterior spread comes
+back too narrow for the right reason rather than the wrong one. <em>When
+can a surrogate stand in for the simulator?</em> is where to go when the
+forward model is too expensive to run once per realisation per
+iteration. <em>Handing an ensemble to somebody else</em> documents the
+record <code><a href="../reference/as_manifest.html">as_manifest()</a></code> produced above and what a downstream
+tool is entitled to assume about it. <em>Can PESTO recover APSIM’s own
+parameters?</em> runs the whole workflow against a real simulator and
+real measured biomass, and <em>Is PESTO the same algorithm as the tools
+it descends from?</em> places the smoother beside the tools it came out
+of.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <ul>
+<li>Chen, Y., &amp; Oliver, D. S. (2013). Levenberg-Marquardt forms of
+the iterative ensemble smoother for efficient history matching and
+uncertainty quantification. <em>Computational Geosciences</em>, 17(4),
+689-703.</li>
 <li>Doherty, J. (2015). <em>Calibration and Uncertainty Analysis for
 Complex Environmental Models</em>. Watermark Numerical Computing,
 Brisbane.</li>
-<li>White, J.T., Hunt, R.J., Fienen, M.N., &amp; Doherty, J.E. (2020).
-Approaches to Highly Parameterized Inversion: PEST++ Version 5. USGS
-Techniques and Methods 7-C26.</li>
-<li>Chen, Y., &amp; Oliver, D.S. (2013). Levenberg-Marquardt forms of
-the iterative ensemble smoother for efficient history matching and
-uncertainty quantification. <em>Computational Geosciences</em>,
-17(4).</li>
 <li>Evensen, G. (2018). Analysis of iterative ensemble smoothers for
-solving inverse problems. <em>Computational Geosciences</em>,
-22(3).</li>
+solving inverse problems. <em>Computational Geosciences</em>, 22(3),
+885-908.</li>
+<li>White, J. T., Hunt, R. J., Fienen, M. N., &amp; Doherty, J. E.
+(2020). <em>Approaches to Highly Parameterized Inversion: PEST++ Version
+5</em>. U.S. Geological Survey Techniques and Methods 7-C26.</li>
 </ul>
+</div>
+<div class="section level2">
+<h2 id="reproduce">Reproduce<a class="anchor" aria-label="anchor" href="#reproduce"></a>
+</h2>
+<p>Seed <code>20260902</code> sets the synthetic season, the prior draw,
+and the decomposition demonstration; the same seed is passed to
+<code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code>, which uses it for the per-realisation
+observation perturbation, and is recorded on the manifest. Package
+versions follow.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt; R version 4.6.1 (2026-06-24)</span></span>
+<span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
+<span><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Matrix products: default</span></span>
+<span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
+<span><span class="co">#&gt; LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; locale:</span></span>
+<span><span class="co">#&gt;  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       </span></span>
+<span><span class="co">#&gt;  [4] LC_COLLATE=C.UTF-8     LC_MONETARY=C.UTF-8    LC_MESSAGES=C.UTF-8   </span></span>
+<span><span class="co">#&gt;  [7] LC_PAPER=C.UTF-8       LC_NAME=C              LC_ADDRESS=C          </span></span>
+<span><span class="co">#&gt; [10] LC_TELEPHONE=C         LC_MEASUREMENT=C.UTF-8 LC_IDENTIFICATION=C   </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; time zone: UTC</span></span>
+<span><span class="co">#&gt; tzcode source: system (glibc)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; attached base packages:</span></span>
+<span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; other attached packages:</span></span>
+<span><span class="co">#&gt; [1] PESTO_0.10.1</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
+<span><span class="co">#&gt;  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.51         </span></span>
+<span><span class="co">#&gt;  [4] rlang_1.3.0         xfun_0.60           otel_0.2.0         </span></span>
+<span><span class="co">#&gt;  [7] S7_0.2.2            textshaping_1.0.5   jsonlite_2.0.0     </span></span>
+<span><span class="co">#&gt; [10] data.table_1.18.6.1 labeling_0.4.3      glue_1.8.1         </span></span>
+<span><span class="co">#&gt; [13] htmltools_0.5.9     ragg_1.5.2          sass_0.4.10        </span></span>
+<span><span class="co">#&gt; [16] scales_1.4.0        rmarkdown_2.32      grid_4.6.1         </span></span>
+<span><span class="co">#&gt; [19] evaluate_1.0.5      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
+<span><span class="co">#&gt; [22] yaml_2.3.12         lifecycle_1.0.5     compiler_4.6.1     </span></span>
+<span><span class="co">#&gt; [25] RColorBrewer_1.1-3  fs_2.1.0            Rcpp_1.1.2         </span></span>
+<span><span class="co">#&gt; [28] farver_2.1.2        systemfonts_1.3.2   digest_0.6.39      </span></span>
+<span><span class="co">#&gt; [31] viridisLite_0.4.3   R6_2.6.1            bslib_0.12.0       </span></span>
+<span><span class="co">#&gt; [34] withr_3.0.3         gtable_0.3.6        tools_4.6.1        </span></span>
+<span><span class="co">#&gt; [37] pkgdown_2.2.1       ggplot2_4.0.3       cachem_1.1.0       </span></span>
+<span><span class="co">#&gt; [40] desc_1.4.3</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

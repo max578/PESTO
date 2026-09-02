@@ -102,6 +102,19 @@ reproducible and independently verifiable (via
   Numeric in `[0, 1]`. Fraction of forward evaluations that returned
   `NA`.
 
+- summary:
+
+  A `list(abstained, reason, detail)` typed verdict, or `NULL`
+  (default). Set by
+  [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
+  when applied to a
+  [`pesto_abstention()`](https://max578.github.io/PESTO/reference/pesto_abstention.md):
+  `abstained` is `TRUE` and `reason` / `detail` carry the abstention's
+  reason code and human-readable detail, so a downstream consumer of the
+  manifest can see that a PESTO reliability gate declined the run
+  without inspecting PESTO-internal objects. `NULL` for a manifest built
+  from a completed run.
+
 ## Details
 
 Construct directly via the class constructor, or – preferred – via

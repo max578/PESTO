@@ -20,7 +20,7 @@ to reduce the number of expensive full-model evaluations."></head><body>
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with PESTO</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Your first inversion: from a season of measurements to a posterior</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul></li>
@@ -115,7 +115,11 @@ Fraction of signal variance (default 0.1 = 10%).</p></dd>
 <dd><p>GP training diagnostics</p></dd>
 
 
-</dl></div>
+</dl><p>or, when the training-point-to-parameter ratio falls below
+<code><a href="check_surrogate_regime.html">check_surrogate_regime()</a></code>'s favourable floor, a
+<code><a href="pesto_abstention.html">pesto_abstention()</a></code> with <code>reason = "surrogate_off_design"</code> – the
+surrogate is not trained and no upgrade is computed.</p>
+    </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><strong>How it works:</strong></p><ol><li><p>A GP surrogate is trained on existing parameter-observation pairs</p></li>
@@ -137,7 +141,7 @@ emulation. <em>Statistics and Computing</em>, 27(3), 785-802.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">7L</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">n_real</span> <span class="op">&lt;-</span> <span class="fl">15L</span>; <span class="va">n_par</span> <span class="op">&lt;-</span> <span class="fl">5L</span>; <span class="va">n_obs</span> <span class="op">&lt;-</span> <span class="fl">8L</span></span></span>
+<span class="r-in"><span><span class="va">n_real</span> <span class="op">&lt;-</span> <span class="fl">30L</span>; <span class="va">n_par</span> <span class="op">&lt;-</span> <span class="fl">5L</span>; <span class="va">n_obs</span> <span class="op">&lt;-</span> <span class="fl">8L</span>   <span class="co"># n_real/n_par = 6, a favourable ratio</span></span></span>
 <span class="r-in"><span><span class="va">par_ens</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_real</span> <span class="op">*</span> <span class="va">n_par</span><span class="op">)</span>, <span class="va">n_real</span>, <span class="va">n_par</span>,</span></span>
 <span class="r-in"><span>                  dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"k"</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n_par</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">obs_ens</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n_real</span> <span class="op">*</span> <span class="va">n_obs</span><span class="op">)</span>, <span class="va">n_real</span>, <span class="va">n_obs</span>,</span></span>

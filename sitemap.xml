@@ -3,6 +3,7 @@
 <url><loc>https://max578.github.io/PESTO/API_STABILITY.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/CODE_OF_CONDUCT.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/CONTRIBUTING.html</loc></url>
+<url><loc>https://max578.github.io/PESTO/LICENSE-text.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/LICENSE.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/SECURITY.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/articles/apsim-callback.html</loc></url>
@@ -37,8 +38,10 @@
 <url><loc>https://max578.github.io/PESTO/reference/ensemble_spread_ess.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/gaspari_cohn.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/index.html</loc></url>
+<url><loc>https://max578.github.io/PESTO/reference/is_pesto_abstention.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/mf_control_variate.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/ode_forward_model.html</loc></url>
+<url><loc>https://max578.github.io/PESTO/reference/pesto_abstention.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_ensemble_manifest.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_evaluate.html</loc></url>
 <url><loc>https://max578.github.io/PESTO/reference/pesto_forward_model.html</loc></url>

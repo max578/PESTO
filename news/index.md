@@ -2,6 +2,24 @@
 
 ## PESTO (development version)
 
+- Relicensed from GPL (\>= 3) to MIT (orchestra-wide licence
+  unification, 2026-09-02). No code change.
+
+- All seven vignettes rewritten to the orchestra vignette quality bar:
+  each now opens with the question a modeller inverting a crop model
+  would ask, carries a human-readable title, follows the Why / What / Do
+  / Read / Limits / What to read next / Reproduce shape, computes every
+  number in prose inline or cites it to a named artefact, and renders
+  with zero warnings. Three claims that the shipped results did not
+  support were corrected in the process: the surrogate vignette said the
+  twenty-parameter problem produced modest savings when the
+  classification is in fact total and uninformative in sample, the APSIM
+  case study described sowing depth as barely identifiable when the
+  frozen result contracts its spread most of the three, and the PEST++
+  comparison read a rank-one worked example as though it identified
+  eight parameters. Each now reports what the artefact shows, with a
+  held-out or closed-form check beside it.
+
 ### Bug fixes
 
 - **The native IES now returns a posterior sample.** Every realisation
@@ -45,6 +63,30 @@
   accepts a per-realisation `obs_target` matrix as well as a single
   target vector, so the textbook reference can reproduce the
   posterior-sampling update rather than only the unperturbed one.
+- New
+  [`pesto_abstention()`](https://max578.github.io/PESTO/reference/pesto_abstention.md)
+  /
+  [`is_pesto_abstention()`](https://max578.github.io/PESTO/reference/is_pesto_abstention.md):
+  a classed decline (`class = "pesto_abstention"`, `$abstained = TRUE`,
+  `$reason`, `$detail`, `$diagnostics`) recognised by the orchestra’s
+  cross-package refusal contract by its `_abstention` class suffix.
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+  and
+  [`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md)
+  now return one with `reason = "degenerate_ensemble"` when fewer than
+  two realisations survive a step, in place of the previous bare
+  [`stop()`](https://rdrr.io/r/base/stop.html).
+  [`pesto_surrogate_ies()`](https://max578.github.io/PESTO/reference/pesto_surrogate_ies.md)
+  now checks
+  [`check_surrogate_regime()`](https://max578.github.io/PESTO/reference/check_surrogate_regime.md)
+  before training and returns one with `reason = "surrogate_off_design"`
+  below the favourable training-point-to-parameter floor, rather than
+  proceeding into a low-value run.
+  [`as_manifest()`](https://max578.github.io/PESTO/reference/as_manifest.md)
+  gains a method for `pesto_abstention`: it emits an empty-payload
+  `pesto_ensemble_manifest` whose new `summary` slot carries
+  `list(abstained = TRUE, reason, detail)`, so an abstained run still
+  produces a typed C2 record rather than none at all.
 
 ### Breaking changes
 
@@ -59,6 +101,15 @@
 - `phi_tol` stopping early truncates the ES-MDA schedule, so less than
   one likelihood is assimilated and the posterior comes back too wide.
   The driver now warns when this happens.
+- A degenerate ensemble (fewer than two realisations surviving a step)
+  is no longer a raised error from
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+  /
+  [`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md);
+  callers that caught the previous
+  `stop("... fewer than 2 successful realisations ...")` should check
+  [`is_pesto_abstention()`](https://max578.github.io/PESTO/reference/is_pesto_abstention.md)
+  on the return value instead.
 
 ### Testing
 

@@ -26,7 +26,7 @@ reproducible and independently verifiable (via verify_manifest())."></head><body
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with PESTO</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Your first inversion: from a season of measurements to a posterior</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul></li>
@@ -150,6 +150,16 @@ iteration.</p></dd>
 <dt id="arg-failure-rate">failure_rate<a class="anchor" aria-label="anchor" href="#arg-failure-rate"></a></dt>
 <dd><p>Numeric in <code>[0, 1]</code>. Fraction of forward
 evaluations that returned <code>NA</code>.</p></dd>
+
+
+<dt id="arg-summary">summary<a class="anchor" aria-label="anchor" href="#arg-summary"></a></dt>
+<dd><p>A <code>list(abstained, reason, detail)</code> typed verdict, or
+<code>NULL</code> (default). Set by <code><a href="as_manifest.html">as_manifest()</a></code> when applied to a
+<code><a href="pesto_abstention.html">pesto_abstention()</a></code>: <code>abstained</code> is <code>TRUE</code> and <code>reason</code> / <code>detail</code>
+carry the abstention's reason code and human-readable detail, so a
+downstream consumer of the manifest can see that a PESTO reliability
+gate declined the run without inspecting PESTO-internal objects.
+<code>NULL</code> for a manifest built from a completed run.</p></dd>
 
 </dl></div>
     <div class="section level2">

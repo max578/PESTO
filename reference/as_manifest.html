@@ -24,7 +24,7 @@ into PESTO-specific list internals."></head><body>
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with PESTO</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Your first inversion: from a season of measurements to a posterior</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul></li>
@@ -60,8 +60,9 @@ into PESTO-specific list internals.</p>
 
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
-<dd><p>A <code>pesto_ies_callback_result</code> (or any object with a method
-registered against this generic).</p></dd>
+<dd><p>A <code>pesto_ies_callback_result</code>, a <code>pesto_ies_filter_result</code>, a
+<code><a href="pesto_abstention.html">pesto_abstention()</a></code> (any object with a method registered against
+this generic).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -73,12 +74,23 @@ record captured by <code><a href="pesto_ies_callback.html">pesto_ies_callback()<
 <code>apsim_version</code> (character, defaults to <code>NA_character_</code>; pass
 <code>attr(fm, "apsim_version")</code> from an <code><a href="apsim_callback.html">apsim_callback()</a></code> forward model
 to ground the run to its simulator), and <code>obs_schema</code> (a grounded
-semantic descriptor from <code><a href="pesto_obs_schema.html">pesto_obs_schema()</a></code> or <code>NULL</code>).</p></dd>
+semantic descriptor from <code><a href="pesto_obs_schema.html">pesto_obs_schema()</a></code> or <code>NULL</code>). For a
+<code>pesto_abstention</code>: the same <code>run_id</code> / <code>seed</code> / <code>apsim_version</code> /
+<code>obs_schema</code> arguments plus <code>method</code> (character, one of
+<code>"ies_callback"</code>, <code>"ies_filter"</code>, <code>"ies_pst"</code>, <code>"mda"</code>, <code>"surrogate"</code>;
+default <code>"ies_callback"</code> – there is no ensemble to infer it from).</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>pesto_ensemble_manifest</code> S7 object.</p>
+    <p>A <code>pesto_ensemble_manifest</code> S7 object. When <code>x</code> is a
+<code><a href="pesto_abstention.html">pesto_abstention()</a></code>, <code>params</code> / <code>outputs</code> are empty (zero-row)
+data frames, <code>weights</code> / <code>obs_target</code> are empty numeric vectors,
+<code>failure_rate</code> is <code>1</code>, and <code>summary</code> carries
+<code>list(abstained = TRUE, reason = x$reason, detail = x$detail)</code> – the
+abstention's reason travels into the manifest's typed verdict home
+so a downstream consumer sees the decline without inspecting
+PESTO-internal objects.</p>
     </div>
 
     <div class="section level2">

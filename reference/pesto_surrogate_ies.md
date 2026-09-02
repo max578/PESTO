@@ -79,6 +79,13 @@ A list containing:
 
   GP training diagnostics
 
+or, when the training-point-to-parameter ratio falls below
+[`check_surrogate_regime()`](https://max578.github.io/PESTO/reference/check_surrogate_regime.md)'s
+favourable floor, a
+[`pesto_abstention()`](https://max578.github.io/PESTO/reference/pesto_abstention.md)
+with `reason = "surrogate_off_design"` – the surrogate is not trained
+and no upgrade is computed.
+
 ## Details
 
 **How it works:**
@@ -109,7 +116,7 @@ emulation. *Statistics and Computing*, 27(3), 785-802.
 ``` r
 # \donttest{
 set.seed(7L)
-n_real <- 15L; n_par <- 5L; n_obs <- 8L
+n_real <- 30L; n_par <- 5L; n_obs <- 8L   # n_real/n_par = 6, a favourable ratio
 par_ens <- matrix(rnorm(n_real * n_par), n_real, n_par,
                   dimnames = list(NULL, paste0("k", 1:n_par)))
 obs_ens <- matrix(rnorm(n_real * n_obs), n_real, n_obs,

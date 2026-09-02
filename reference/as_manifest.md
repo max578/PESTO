@@ -17,8 +17,9 @@ as_manifest(x, ...)
 
 - x:
 
-  A `pesto_ies_callback_result` (or any object with a method registered
-  against this generic).
+  A `pesto_ies_callback_result`, a `pesto_ies_filter_result`, a
+  [`pesto_abstention()`](https://max578.github.io/PESTO/reference/pesto_abstention.md)
+  (any object with a method registered against this generic).
 
 - ...:
 
@@ -33,11 +34,23 @@ as_manifest(x, ...)
   forward model to ground the run to its simulator), and `obs_schema` (a
   grounded semantic descriptor from
   [`pesto_obs_schema()`](https://max578.github.io/PESTO/reference/pesto_obs_schema.md)
-  or `NULL`).
+  or `NULL`). For a `pesto_abstention`: the same `run_id` / `seed` /
+  `apsim_version` / `obs_schema` arguments plus `method` (character, one
+  of `"ies_callback"`, `"ies_filter"`, `"ies_pst"`, `"mda"`,
+  `"surrogate"`; default `"ies_callback"` – there is no ensemble to
+  infer it from).
 
 ## Value
 
-A `pesto_ensemble_manifest` S7 object.
+A `pesto_ensemble_manifest` S7 object. When `x` is a
+[`pesto_abstention()`](https://max578.github.io/PESTO/reference/pesto_abstention.md),
+`params` / `outputs` are empty (zero-row) data frames, `weights` /
+`obs_target` are empty numeric vectors, `failure_rate` is `1`, and
+`summary` carries
+`list(abstained = TRUE, reason = x$reason, detail = x$detail)` – the
+abstention's reason travels into the manifest's typed verdict home so a
+downstream consumer sees the decline without inspecting PESTO-internal
+objects.
 
 ## Examples
 

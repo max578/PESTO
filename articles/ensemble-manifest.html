@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>The Ensemble-Run Manifest: a Portable, Verifiable Record • PESTO</title>
+<title>Handing an ensemble to somebody else • PESTO</title>
 <!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><link href="../extra.css" rel="stylesheet">
-<meta property="og:title" content="The Ensemble-Run Manifest: a Portable, Verifiable Record">
+<meta property="og:title" content="Handing an ensemble to somebody else">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -35,7 +35,7 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with PESTO</a></li>
+<li><a class="dropdown-item" href="../articles/getting-started.html">Your first inversion: from a season of measurements to a posterior</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul>
@@ -57,7 +57,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>The Ensemble-Run Manifest: a Portable, Verifiable Record</h1>
+      <h1>Handing an ensemble to somebody else</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/max578/PESTO/blob/main/vignettes/ensemble-manifest.Rmd" class="external-link"><code>vignettes/ensemble-manifest.Rmd</code></a></small>
@@ -66,110 +66,222 @@
 
     
     
+<!-- Render time: ~2 s under rmarkdown::render(); macOS arm64 (Darwin 26.5),
+     R 4.5.2, one core. The inversion is under a second; the rest is
+     serialisation, hashing and one figure. -->
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/max578/PESTO" class="external-link">PESTO</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
-<h2 id="why-a-manifest">Why a manifest?<a class="anchor" aria-label="anchor" href="#why-a-manifest"></a>
+<h2 id="why">Why<a class="anchor" aria-label="anchor" href="#why"></a>
 </h2>
-<p>A PESTO ensemble run produces a moderately large pile of state:
-parameter ensemble, simulated outputs, target observations, IES weights,
-the RNG seed, the lambda schedule, runtime context. The manifest
-captures all of it as a versioned S7 object –
-<code>pesto_ensemble_manifest</code> – with YAML + sidecar persistence
-and SHA-256 integrity checking, so a run is:</p>
-<ul>
-<li>
-<strong>reproducible and auditable</strong> – a complete,
-hash-verified record you can re-open and check later; and</li>
-<li>
-<strong>portable</strong> – a documented, versioned <em>data
-contract</em> that any downstream tool can read <strong>without reaching
-into PESTO-specific list internals</strong>.</li>
-</ul>
-<p>It is deliberately infrastructure rather than methodology: the value
-is that every consumer reads the same object, with the same provenance
-guarantees, on every run.</p>
+<p>I have calibrated my crop model and the posterior ensemble now has to
+go to somebody else: an agronomist who will price a decision on it, a
+colleague who will re-run it next season, a reviewer who will ask
+whether the numbers in my figure are the numbers the code produced. The
+question is: <em>what exactly do I hand over, so that the person
+receiving it can read the ensemble without knowing anything about
+PESTO’s internals, and can check that what they are holding is the run I
+actually made?</em> This vignette answers it with the object PESTO emits
+for the purpose, and shows what happens when a single number in the
+handed-over ensemble is altered.</p>
 </div>
 <div class="section level2">
-<h2 id="constructing-a-manifest-from-an-ies-run">Constructing a manifest from an IES run<a class="anchor" aria-label="anchor" href="#constructing-a-manifest-from-an-ies-run"></a>
+<h2 id="what">What<a class="anchor" aria-label="anchor" href="#what"></a>
 </h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/max578/PESTO" class="external-link">PESTO</a></span><span class="op">)</span></span>
+<p>A finished run wraps into a <code>pesto_ensemble_manifest</code>, an
+S7 class carrying the parameter ensemble, the simulated outputs, the
+assimilation context (weights and target observations), the seed, the
+method, the lambda schedule, the failure rate, provenance strings, and a
+SHA-256 hash over the data. It is a versioned <em>data contract</em>,
+not a convenience wrapper: PESTO owns it as the orchestra’s C2 contract,
+and consuming members read it through the four verbs below rather than
+through PESTO’s list internals.</p>
+<p><a href="../html/as_manifest.html"><code>as_manifest()</code></a>
+builds one from a run. <a href="../html/write_manifest.html"><code>write_manifest()</code></a>
+serialises it as a YAML entry plus sidecar files, in one of three
+formats whose integrity contract differs. <a href="../html/read_manifest.html"><code>read_manifest()</code></a> reads
+it back. <a href="../html/verify_manifest.html"><code>verify_manifest()</code></a>
+recomputes the hash from what is on disk and reports whether it matches
+the hash the YAML records. A consumer’s obligation is to call
+<code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> before trusting anything else, and the
+full producer and consumer obligations are written out as a standalone
+format specification in <code>inst/manifest_contract.md</code>.</p>
+<p><code><a href="../reference/as_manifest.html">as_manifest()</a></code> also has a method for <a href="../html/pesto_abstention.html"><code>pesto_abstention()</code></a>,
+PESTO’s typed decline, so a run that a reliability gate refused still
+produces a record rather than nothing at all.</p>
+</div>
+<div class="section level2">
+<h2 id="do">Do<a class="anchor" aria-label="anchor" href="#do"></a>
+</h2>
+<div class="section level3">
+<h3 id="a-run-worth-handing-over">A run worth handing over<a class="anchor" aria-label="anchor" href="#a-run-worth-handing-over"></a>
+</h3>
+<p>The run below is the synthetic crop-growth inversion from <em>Your
+first inversion: from a season of measurements to a posterior</em>:
+three growth parameters, twelve noisy biomass measurements, one hundred
+and twenty realisations, eight smoother iterations. It is reproduced
+here so the handover has something real to carry.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20260902L</span><span class="op">)</span></span>
+<span><span class="va">vec_times</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">120</span>, by <span class="op">=</span> <span class="fl">10</span><span class="op">)</span></span>
+<span><span class="va">vec_days</span> <span class="op">&lt;-</span> <span class="va">vec_times</span><span class="op">[</span><span class="op">-</span><span class="fl">1L</span><span class="op">]</span></span>
+<span><span class="va">crop</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/crop_growth_forward_model.html">crop_growth_forward_model</a></span><span class="op">(</span>times <span class="op">=</span> <span class="va">vec_times</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">20260516</span><span class="op">)</span></span>
-<span><span class="va">npar</span> <span class="op">&lt;-</span> <span class="fl">3L</span>; <span class="va">nobs</span> <span class="op">&lt;-</span> <span class="fl">6L</span>; <span class="va">nreal</span> <span class="op">&lt;-</span> <span class="fl">60L</span></span>
+<span><span class="va">theta_true</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>r <span class="op">=</span> <span class="fl">0.065</span>, b_max <span class="op">=</span> <span class="fl">1450</span>, b0 <span class="op">=</span> <span class="fl">18</span><span class="op">)</span></span>
+<span><span class="va">mat_true</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="va">theta_true</span>, nrow <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>                   dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">theta_true</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">vec_biomass</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="../reference/pesto_evaluate.html">pesto_evaluate</a></span><span class="op">(</span><span class="va">crop</span>, <span class="va">mat_true</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">G</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nobs</span> <span class="op">*</span> <span class="va">npar</span><span class="op">)</span>, <span class="va">nobs</span>, <span class="va">npar</span><span class="op">)</span></span>
-<span><span class="va">theta_true</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.0</span>, <span class="op">-</span><span class="fl">0.5</span>, <span class="fl">2.0</span><span class="op">)</span></span>
-<span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">G</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">theta_true</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nobs</span>, sd <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"o"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">nobs</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">obs_sd</span> <span class="op">&lt;-</span> <span class="fl">45</span></span>
+<span><span class="va">y_obs</span> <span class="op">&lt;-</span> <span class="va">vec_biomass</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">vec_biomass</span><span class="op">)</span>, sd <span class="op">=</span> <span class="va">obs_sd</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">y_obs</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"t"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">y_obs</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">nreal</span> <span class="op">*</span> <span class="va">npar</span><span class="op">)</span>, <span class="va">nreal</span>, <span class="va">npar</span>,</span>
-<span>                dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"p"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">npar</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">s1_real</span> <span class="op">&lt;-</span> <span class="fl">120L</span></span>
+<span><span class="va">prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span>
+<span>  r     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">s1_real</span>, <span class="fl">0.02</span>, <span class="fl">0.12</span><span class="op">)</span>,</span>
+<span>  b_max <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">s1_real</span>, <span class="fl">900</span>, <span class="fl">2000</span><span class="op">)</span>,</span>
+<span>  b0    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">s1_real</span>, <span class="fl">5</span>, <span class="fl">60</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span></span>
-<span>  forward_model  <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">theta</span><span class="op">)</span> <span class="va">theta</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">G</span><span class="op">)</span>,</span>
+<span>  forward_model  <span class="op">=</span> <span class="va">crop</span>,</span>
 <span>  prior_ensemble <span class="op">=</span> <span class="va">prior</span>,</span>
-<span>  obs            <span class="op">=</span> <span class="va">y</span>,</span>
-<span>  obs_sd         <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  noptmax        <span class="op">=</span> <span class="fl">4L</span>,</span>
+<span>  obs            <span class="op">=</span> <span class="va">y_obs</span>,</span>
+<span>  obs_sd         <span class="op">=</span> <span class="va">obs_sd</span>,</span>
+<span>  noptmax        <span class="op">=</span> <span class="fl">8L</span>,</span>
+<span>  seed           <span class="op">=</span> <span class="fl">20260902L</span>,</span>
 <span>  verbose        <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>Wrap the result:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_manifest.html">as_manifest</a></span><span class="op">(</span><span class="va">fit</span>, seed <span class="op">=</span> <span class="fl">20260516L</span>,</span>
-<span>                 apsim_version <span class="op">=</span> <span class="cn">NA_character_</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
-<span><span class="co">#&gt; &lt;pesto_ensemble_manifest&gt; schema 1.1.0</span></span>
-<span><span class="co">#&gt;   run_id        : ies_callback_20260825_102427_591509ce</span></span>
-<span><span class="co">#&gt;   method        : ies_callback  (noptmax=4)</span></span>
-<span><span class="co">#&gt;   ensemble      : 60 realisations x 3 parameters | 6 observations</span></span>
-<span><span class="co">#&gt;   failure rate  : 0.00%</span></span>
-<span><span class="co">#&gt;   pesto version : 0.10.1  apsim: NA</span></span>
-<span><span class="co">#&gt;   timestamp     : 2026-08-25T10:24:27+0000</span></span>
-<span><span class="co">#&gt;   data hash     : sha256:846795b4af38a597bcac6db7ee44a7c11e1c4cbf761223c1d8054549ed6d6677</span></span></code></pre></div>
-<p>Slots are reachable via the standard S7 <code>@</code> accessor:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m</span><span class="op">@</span><span class="va">run_id</span></span>
-<span><span class="co">#&gt; [1] "ies_callback_20260825_102427_591509ce"</span></span>
-<span><span class="va">m</span><span class="op">@</span><span class="va">data_hash</span></span>
-<span><span class="co">#&gt; [1] "sha256:846795b4af38a597bcac6db7ee44a7c11e1c4cbf761223c1d8054549ed6d6677"</span></span>
-<span><span class="va">m</span><span class="op">@</span><span class="va">noptmax</span></span>
-<span><span class="co">#&gt; [1] 4</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">m</span><span class="op">@</span><span class="va">params</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   real_name       p1         p2       p3</span></span>
-<span><span class="co">#&gt; 1    real_1 1.008854 -0.4904845 2.019736</span></span>
-<span><span class="co">#&gt; 2    real_2 1.030996 -0.4665497 1.989613</span></span>
-<span><span class="co">#&gt; 3    real_3 1.016110 -0.4604560 2.022441</span></span>
-<span><span class="co">#&gt; 4    real_4 1.022782 -0.4681156 2.034433</span></span>
-<span><span class="co">#&gt; 5    real_5 1.025115 -0.4672582 1.977069</span></span>
-<span><span class="co">#&gt; 6    real_6 1.076050 -0.4467034 1.999730</span></span></code></pre></div>
 </div>
-<div class="section level2">
-<h2 id="writing-reading-and-verifying">Writing, reading, and verifying<a class="anchor" aria-label="anchor" href="#writing-reading-and-verifying"></a>
-</h2>
-<p><code><a href="../reference/write_manifest.html">write_manifest()</a></code> emits the YAML plus three RDS sidecars
-(<code>*_params.rds</code>, <code>*_outputs.rds</code>,
-<code>*_assim.rds</code>). RDS is used in preference to CSV so IEEE 754
-doubles round-trip bit-exactly – the SHA-256 integrity check would
-otherwise trip on formatter precision loss:</p>
+<div class="section level3">
+<h3 id="wrapping-it">Wrapping it<a class="anchor" aria-label="anchor" href="#wrapping-it"></a>
+</h3>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">man</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_manifest.html">as_manifest</a></span><span class="op">(</span><span class="va">fit</span>, seed <span class="op">=</span> <span class="fl">20260902L</span>, apsim_version <span class="op">=</span> <span class="cn">NA_character_</span><span class="op">)</span></span>
+<span><span class="va">man</span></span>
+<span><span class="co">#&gt; &lt;pesto_ensemble_manifest&gt; schema 1.1.0</span></span>
+<span><span class="co">#&gt;   run_id        : ies_callback_20260902_081141_63d08ddc</span></span>
+<span><span class="co">#&gt;   method        : ies_callback  (noptmax=8)</span></span>
+<span><span class="co">#&gt;   ensemble      : 120 realisations x 3 parameters | 12 observations</span></span>
+<span><span class="co">#&gt;   failure rate  : 1.20%</span></span>
+<span><span class="co">#&gt;   pesto version : 0.10.1  apsim: NA</span></span>
+<span><span class="co">#&gt;   timestamp     : 2026-09-02T08:11:41+0000</span></span>
+<span><span class="co">#&gt;   data hash     : sha256:86b1bf4cdfb541f322a3b2acb7dd01af92f7b7a6a0b3f31c5fab6fe2ae122658</span></span></code></pre></div>
+<p>Every slot is reachable through the standard S7 accessor, which is
+what a consumer uses instead of reaching into a list:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"pesto_manifest_"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">dir</span><span class="op">)</span></span>
-<span><span class="va">paths</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/write_manifest.html">write_manifest</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">paths</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">man</span><span class="op">@</span><span class="va">run_id</span></span>
+<span><span class="co">#&gt; [1] "ies_callback_20260902_081141_63d08ddc"</span></span>
+<span><span class="va">man</span><span class="op">@</span><span class="va">schema_version</span></span>
+<span><span class="co">#&gt; [1] "1.1.0"</span></span>
+<span><span class="va">man</span><span class="op">@</span><span class="va">data_hash</span></span>
+<span><span class="co">#&gt; [1] "sha256:86b1bf4cdfb541f322a3b2acb7dd01af92f7b7a6a0b3f31c5fab6fe2ae122658"</span></span>
+<span><span class="va">man</span><span class="op">@</span><span class="va">failure_rate</span></span>
+<span><span class="co">#&gt; [1] 0.01203704</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">man</span><span class="op">@</span><span class="va">params</span>, <span class="fl">3L</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   real_name          r    b_max       b0</span></span>
+<span><span class="co">#&gt; 1    real_1 0.07241749 1406.145 13.27327</span></span>
+<span><span class="co">#&gt; 2    real_2 0.06876668 1392.795 19.16421</span></span>
+<span><span class="co">#&gt; 3    real_3 0.06859347 1424.358 17.24296</span></span></code></pre></div>
+<table class="table">
+<caption>The manifest slots a downstream consumer reads, and what this
+run put in them.</caption>
+<colgroup>
+<col width="15%">
+<col width="58%">
+<col width="26%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Slot</th>
+<th align="left">What a consumer reads it for</th>
+<th align="left">Value</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">schema_version</td>
+<td align="left">which version of the contract this record obeys</td>
+<td align="left">1.1.0</td>
+</tr>
+<tr class="even">
+<td align="left">method</td>
+<td align="left">which algorithm produced the ensemble</td>
+<td align="left">ies_callback</td>
+</tr>
+<tr class="odd">
+<td align="left">noptmax</td>
+<td align="left">how many assimilation steps were taken</td>
+<td align="left">8</td>
+</tr>
+<tr class="even">
+<td align="left">seed</td>
+<td align="left">the seed that reproduces the run</td>
+<td align="left">20260902</td>
+</tr>
+<tr class="odd">
+<td align="left">failure_rate</td>
+<td align="left">the fraction of forward evaluations that returned
+nothing</td>
+<td align="left">0.0120</td>
+</tr>
+<tr class="even">
+<td align="left">params</td>
+<td align="left">the posterior parameter ensemble</td>
+<td align="left">120 x 3</td>
+</tr>
+<tr class="odd">
+<td align="left">outputs</td>
+<td align="left">the simulated outputs matching those parameters</td>
+<td align="left">120 x 12</td>
+</tr>
+<tr class="even">
+<td align="left">obs_target</td>
+<td align="left">the observations the ensemble was conditioned on</td>
+<td align="left">12 values</td>
+</tr>
+<tr class="odd">
+<td align="left">weights</td>
+<td align="left">the observation weights, one over the observation
+SD</td>
+<td align="left">12 values</td>
+</tr>
+<tr class="even">
+<td align="left">data_hash</td>
+<td align="left">the integrity check over all of the above</td>
+<td align="left">sha256:86b1bf4cdfb541f…</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="writing-reading-verifying">Writing, reading, verifying<a class="anchor" aria-label="anchor" href="#writing-reading-verifying"></a>
+</h3>
+<p><code><a href="../reference/write_manifest.html">write_manifest()</a></code> emits the YAML entry plus three RDS
+sidecars, one for the parameter ensemble, one for the outputs, and one
+for the assimilation context. RDS rather than CSV, because IEEE 754
+doubles round-trip bit-exactly through it and the SHA-256 check would
+otherwise trip on formatter precision loss alone.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dir_run</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"pesto_manifest_"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">dir_run</span><span class="op">)</span></span>
+<span><span class="va">vec_paths</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/write_manifest.html">write_manifest</a></span><span class="op">(</span><span class="va">man</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_run</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">vec_paths</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "wagga_2026_run01.yaml"        "wagga_2026_run01_params.rds" </span></span>
 <span><span class="co">#&gt; [3] "wagga_2026_run01_outputs.rds" "wagga_2026_run01_assim.rds"</span></span></code></pre></div>
-<p>Read it back and confirm the integrity hash matches:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_manifest.html">read_manifest</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/verify_manifest.html">verify_manifest</a></span><span class="op">(</span><span class="va">m2</span><span class="op">)</span><span class="op">$</span><span class="va">ok</span></span>
-<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
-<p>A peek at what the YAML actually looks like (truncated):</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">14</span><span class="op">]</span>,</span>
-<span>          collapse <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">man_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_manifest.html">read_manifest</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_run</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/verify_manifest.html">verify_manifest</a></span><span class="op">(</span><span class="va">man_read</span><span class="op">)</span><span class="op">$</span><span class="va">ok</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>The YAML entry is the human-readable front door; the first lines
+carry the identity and provenance a reader wants before opening anything
+else:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_run</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fl">14L</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>  collapse <span class="op">=</span> <span class="st">"\n"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; schema_version: 1.1.0</span></span>
-<span><span class="co">#&gt; run_id: ies_callback_20260825_102427_591509ce</span></span>
-<span><span class="co">#&gt; data_hash: sha256:846795b4af38a597bcac6db7ee44a7c11e1c4cbf761223c1d8054549ed6d6677</span></span>
+<span><span class="co">#&gt; run_id: ies_callback_20260902_081141_63d08ddc</span></span>
+<span><span class="co">#&gt; data_hash: sha256:86b1bf4cdfb541f322a3b2acb7dd01af92f7b7a6a0b3f31c5fab6fe2ae122658</span></span>
 <span><span class="co">#&gt; format: rds</span></span>
 <span><span class="co">#&gt; integrity: verifiable</span></span>
 <span><span class="co">#&gt; obs_schema: ~</span></span>
@@ -177,26 +289,26 @@ otherwise trip on formatter precision loss:</p>
 <span><span class="co">#&gt;   params: wagga_2026_run01_params.rds</span></span>
 <span><span class="co">#&gt;   outputs: wagga_2026_run01_outputs.rds</span></span>
 <span><span class="co">#&gt;   assim: wagga_2026_run01_assim.rds</span></span>
-<span><span class="co">#&gt; seed: 20260516</span></span>
+<span><span class="co">#&gt; seed: 20260902</span></span>
 <span><span class="co">#&gt; fidelity: ~</span></span>
 <span><span class="co">#&gt; apsim_version: ~</span></span>
 <span><span class="co">#&gt; pesto_version: 0.10.1</span></span></code></pre></div>
+</div>
 <div class="section level3">
-<h3 id="inspection-csvs-optional">Inspection CSVs (optional)<a class="anchor" aria-label="anchor" href="#inspection-csvs-optional"></a>
+<h3 id="three-formats-three-integrity-contracts">Three formats, three integrity contracts<a class="anchor" aria-label="anchor" href="#three-formats-three-integrity-contracts"></a>
 </h3>
-<p>For workflows that need a human-readable view of the ensemble – quick
-scans in Excel, ad-hoc exports for a domain collaborator, copy-paste
-into a Quarto narrative – <code><a href="../reference/write_manifest.html">write_manifest()</a></code> accepts a
-<code>format = "both"</code> argument that emits CSV sidecars
-<strong>alongside</strong> the RDS. The hash stays bound to the RDS
-(bit-exact integrity preserved), and the YAML records the inspection
-paths under a separate <code>inspection_csv:</code> block so consumers
-can ignore them:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dir2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"pesto_manifest_csv_"</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">dir2</span><span class="op">)</span></span>
-<span><span class="va">paths2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/write_manifest.html">write_manifest</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir2</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span>,</span>
-<span>                         format <span class="op">=</span> <span class="st">"both"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">paths2</span><span class="op">)</span></span>
+<p>Some handovers need a file a collaborator can open in a spreadsheet.
+<code>format = "both"</code> writes the CSV alongside the RDS: the hash
+stays bound to the RDS, so integrity is preserved, and the YAML records
+the CSV paths under a separate <code>inspection_csv:</code> block that a
+consumer can ignore.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dir_both</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"pesto_manifest_csv_"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">dir_both</span><span class="op">)</span></span>
+<span><span class="va">vec_paths_both</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/write_manifest.html">write_manifest</a></span><span class="op">(</span></span>
+<span>  <span class="va">man</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_both</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span>, format <span class="op">=</span> <span class="st">"both"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename</a></span><span class="op">(</span><span class="va">vec_paths_both</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "wagga_2026_run01.yaml"                  </span></span>
 <span><span class="co">#&gt; [2] "wagga_2026_run01_params.rds"            </span></span>
 <span><span class="co">#&gt; [3] "wagga_2026_run01_outputs.rds"           </span></span>
@@ -204,68 +316,313 @@ can ignore them:</p>
 <span><span class="co">#&gt; [5] "wagga_2026_run01_params_inspection.csv" </span></span>
 <span><span class="co">#&gt; [6] "wagga_2026_run01_outputs_inspection.csv"</span></span>
 <span><span class="co">#&gt; [7] "wagga_2026_run01_assim_inspection.csv"</span></span></code></pre></div>
-<p>A <code>format = "csv_unverified"</code> mode (renamed from
-<code>"csv"</code> in PESTO 0.3.2) is available for one-way exports to
-non-R analysts where round-trip integrity is not required. The YAML
-carries <code>integrity: not_verifiable</code> so downstream tools can
-branch on the weaker contract. The <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code>
-function returns <code>ok = NA</code> rather than a spurious
-<code>FALSE</code> because CSV formatter precision loss (~1 ULP at IEEE
-754 epsilon) is enough to flip the hash:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dir3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"pesto_manifest_unverified_"</span><span class="op">)</span>; <span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">dir3</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/write_manifest.html">write_manifest</a></span><span class="op">(</span><span class="va">m</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir3</span>, <span class="st">"snapshot.yaml"</span><span class="op">)</span>,</span>
-<span>               format <span class="op">=</span> <span class="st">"csv_unverified"</span><span class="op">)</span></span>
-<span><span class="va">m_csv</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_manifest.html">read_manifest</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir3</span>, <span class="st">"snapshot.yaml"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/verify_manifest.html">verify_manifest</a></span><span class="op">(</span><span class="va">m_csv</span><span class="op">)</span><span class="op">$</span><span class="va">ok</span>      <span class="co"># NA -- see $message for why</span></span>
-<span><span class="co">#&gt; [1] NA</span></span></code></pre></div>
-<p>If you need both human inspection AND verifiable integrity, use
-<code>format = "both"</code>. The <code>csv_unverified</code> mode is
-deliberately named to flag the weaker contract at every call-site. It is
-for export, not for storage you intend to re-load and trust.</p>
-</div>
-</div>
-<div class="section level2">
-<h2 id="tamper-detection">Tamper-detection<a class="anchor" aria-label="anchor" href="#tamper-detection"></a>
-</h2>
-<p>If a downstream tool silently re-saves the outputs sidecar
-(accidental edit, partial overwrite) the hash will not match:</p>
+<p><code>format = "csv_unverified"</code> is the one-way export for an
+analyst who will never load it back into R. It writes CSV sidecars only,
+records <code>integrity: not_verifiable</code> in the YAML, and
+<code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> then returns <code>NA</code> rather than
+a spurious <code>FALSE</code>, because CSV formatter precision loss of
+about one unit in the last place is enough on its own to move the hash.
+The mode is named the way it is so the weaker contract is visible at
+every call site.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">out_rds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir</span>, <span class="st">"wagga_2026_run01_outputs.rds"</span><span class="op">)</span></span>
-<span><span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="va">out_rds</span><span class="op">)</span></span>
-<span><span class="va">df</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">df</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">]</span> <span class="op">+</span> <span class="fl">1e-3</span>       <span class="co"># perturb one cell</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">out_rds</span>, version <span class="op">=</span> <span class="fl">3L</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">m3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_manifest.html">read_manifest</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">v</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/verify_manifest.html">verify_manifest</a></span><span class="op">(</span><span class="va">m3</span><span class="op">)</span></span>
-<span><span class="va">v</span><span class="op">$</span><span class="va">ok</span></span>
-<span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
-<p><code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> returns the stored vs recomputed
-hashes so a downstream consumer can fail fast and report the divergence
-cleanly.</p>
+<code class="sourceCode R"><span><span class="va">dir_export</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"pesto_manifest_unverified_"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">dir_export</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/write_manifest.html">write_manifest</a></span><span class="op">(</span><span class="va">man</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_export</span>, <span class="st">"snapshot.yaml"</span><span class="op">)</span>,</span>
+<span>               format <span class="op">=</span> <span class="st">"csv_unverified"</span><span class="op">)</span></span>
+<span><span class="va">man_export</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_manifest.html">read_manifest</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_export</span>, <span class="st">"snapshot.yaml"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/verify_manifest.html">verify_manifest</a></span><span class="op">(</span><span class="va">man_export</span><span class="op">)</span><span class="op">$</span><span class="va">ok</span></span>
+<span><span class="co">#&gt; [1] NA</span></span>
+<span><span class="fu"><a href="../reference/verify_manifest.html">verify_manifest</a></span><span class="op">(</span><span class="va">man_export</span><span class="op">)</span><span class="op">$</span><span class="va">message</span></span>
+<span><span class="co">#&gt; [1] "manifest format is 'csv_unverified' (integrity: not_verifiable); bit-exact hash verification is not possible from CSV sidecars (formatter precision loss). Re-write with format = 'rds' or 'both' for verifiable integrity."</span></span></code></pre></div>
+<table class="table">
+<caption>The three sidecar formats and the integrity contract each
+offers.</caption>
+<colgroup>
+<col width="18%">
+<col width="29%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th align="left">Format</th>
+<th align="left">Sidecars</th>
+<th align="left">YAML integrity field</th>
+<th align="left">verify_manifest()$ok</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td align="left">rds (default)</td>
+<td align="left">RDS only</td>
+<td align="left">verifiable</td>
+<td align="left">TRUE</td>
+</tr>
+<tr class="even">
+<td align="left">both</td>
+<td align="left">RDS plus inspection CSV</td>
+<td align="left">verifiable</td>
+<td align="left">TRUE</td>
+</tr>
+<tr class="odd">
+<td align="left">csv_unverified</td>
+<td align="left">CSV only</td>
+<td align="left">not_verifiable</td>
+<td align="left">NA</td>
+</tr>
+</tbody>
+</table>
 </div>
-<div class="section level2">
-<h2 id="consuming-a-manifest">Consuming a manifest<a class="anchor" aria-label="anchor" href="#consuming-a-manifest"></a>
-</h2>
-<p>Any downstream tool can consume a manifest through the same stable
-surface, without ever seeing PESTO-internal list shapes. A conformant
-consumer reads it back with <code><a href="../reference/read_manifest.html">read_manifest()</a></code>, calls
-<code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> before trusting it, and then works with
-the typed slots – <code>m@params</code>, <code>m@outputs</code>,
-<code>m@weights</code>, <code>m@obs_target</code> – branching on
-<code>m@schema_version</code> for forward compatibility. For example, a
-downstream analysis of an APSIM crop-model ensemble would read the
-manifest, refuse on <code>integrity: "not_verifiable"</code> or a high
-<code>failure_rate</code>, and thread <code>m@data_hash</code> /
-<code>m@run_id</code> into its own provenance so the lineage closes.</p>
-<p>The full producer / consumer obligations are documented as a
-standalone format specification in
-<code>inst/manifest_contract.md</code>.</p>
-</div>
-<div class="section level2">
-<h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a>
-</h2>
+<div class="section level3">
+<h3 id="what-tampering-looks-like">What tampering looks like<a class="anchor" aria-label="anchor" href="#what-tampering-looks-like"></a>
+</h3>
+<p>The point of the hash is the case nobody notices: a downstream tool
+re-saves the outputs sidecar after an accidental edit or a partial
+overwrite. Below, one cell of the outputs ensemble is moved by 0.001
+g/m2, far below the measurement noise the run was conditioned on, and
+the file is written back.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">path_outputs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_run</span>, <span class="st">"wagga_2026_run01_outputs.rds"</span><span class="op">)</span></span>
+<span><span class="va">tab_outputs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="va">path_outputs</span><span class="op">)</span></span>
+<span><span class="va">val_before</span> <span class="op">&lt;-</span> <span class="va">tab_outputs</span><span class="op">[</span><span class="fl">1L</span>, <span class="fl">2L</span><span class="op">]</span></span>
+<span><span class="va">tab_outputs</span><span class="op">[</span><span class="fl">1L</span>, <span class="fl">2L</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">tab_outputs</span><span class="op">[</span><span class="fl">1L</span>, <span class="fl">2L</span><span class="op">]</span> <span class="op">+</span> <span class="fl">1e-3</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">tab_outputs</span>, <span class="va">path_outputs</span>, version <span class="op">=</span> <span class="fl">3L</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">man_tampered</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_manifest.html">read_manifest</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_run</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">res_verify</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/verify_manifest.html">verify_manifest</a></span><span class="op">(</span><span class="va">man_tampered</span><span class="op">)</span></span>
+<span><span class="va">res_verify</span><span class="op">$</span><span class="va">ok</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tab_orig</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">man</span><span class="op">@</span><span class="va">outputs</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">tab_seen</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">man_tampered</span><span class="op">@</span><span class="va">outputs</span><span class="op">[</span>, <span class="op">-</span><span class="fl">1L</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="va">mean_shift</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">tab_seen</span><span class="op">[</span>, <span class="fl">1L</span><span class="op">]</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">-</span></span>
+<span>                    <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">tab_orig</span><span class="op">[</span>, <span class="fl">1L</span><span class="op">]</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">signif</a></span><span class="op">(</span><span class="va">mean_shift</span>, <span class="fl">3L</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 8.47e-06</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tab_diff</span> <span class="op">&lt;-</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/data.table.html" class="external-link">data.table</a></span><span class="op">(</span></span>
+<span>  cell <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">tab_orig</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  delta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">tab_seen</span> <span class="op">-</span> <span class="va">tab_orig</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">tab_diff</span> <span class="op">&lt;-</span> <span class="va">tab_diff</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">delta</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">tab_diff</span><span class="op">[</span>, <span class="va">altered</span> <span class="op">:=</span> <span class="va">delta</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">]</span></span>
+<span></span>
+<span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span></span>
+<span>  <span class="va">tab_diff</span>, <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">cell</span>, y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="va">delta</span>, <span class="fl">1e-18</span><span class="op">)</span>, colour <span class="op">=</span> <span class="va">altered</span><span class="op">)</span></span>
+<span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">1.1</span>, alpha <span class="op">=</span> <span class="fl">0.8</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_abline.html" class="external-link">geom_hline</a></span><span class="op">(</span>yintercept <span class="op">=</span> <span class="va">obs_sd</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span>,</span>
+<span>                      colour <span class="op">=</span> <span class="st">"grey40"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_y_log10</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_viridis.html" class="external-link">scale_colour_viridis_d</a></span><span class="op">(</span></span>
+<span>    name <span class="op">=</span> <span class="st">"cell altered"</span>, end <span class="op">=</span> <span class="fl">0.8</span>, labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"no"</span>, <span class="st">"yes"</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span></span>
+<span>    x <span class="op">=</span> <span class="st">"cell of the outputs ensemble (realisation by observation)"</span>,</span>
+<span>    y <span class="op">=</span> <span class="st">"absolute difference on re-read (g/m2, log scale)"</span>,</span>
+<span>    title <span class="op">=</span> <span class="st">"What the hash sees and the eye does not"</span></span>
+<span>  <span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_minimal</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">12</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="ensemble-manifest_files/figure-html/tamper-figure-1.png" class="r-plt" alt="Cell-by-cell absolute difference between the ensemble written to disk and the ensemble read back after one value was altered. Every cell but one is identical to the last bit; the single altered cell sits at 0.001 g/m2, far below anything an ensemble summary would move. The dashed line marks the measurement noise the run was conditioned on." width="1050"><p class="caption">
+Cell-by-cell absolute difference between the ensemble written to disk
+and the ensemble read back after one value was altered. Every cell but
+one is identical to the last bit; the single altered cell sits at 0.001
+g/m2, far below anything an ensemble summary would move. The dashed line
+marks the measurement noise the run was conditioned on.
+</p>
+</div>
+<p><code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> returns the stored and the recomputed
+hash side by side, so a consumer can fail fast and say exactly what
+diverged rather than reporting a vague mismatch:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/substr.html" class="external-link">substr</a></span><span class="op">(</span><span class="va">res_verify</span><span class="op">$</span><span class="va">stored</span>, <span class="fl">1L</span>, <span class="fl">22L</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "sha256:86b1bf4cdfb541f"</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/substr.html" class="external-link">substr</a></span><span class="op">(</span><span class="va">res_verify</span><span class="op">$</span><span class="va">recomputed</span>, <span class="fl">1L</span>, <span class="fl">22L</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "sha256:ff560238ad07057"</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="a-run-that-declined-to-happen">A run that declined to happen<a class="anchor" aria-label="anchor" href="#a-run-that-declined-to-happen"></a>
+</h3>
+<p>Not every call returns an ensemble. PESTO’s reliability gates return
+a typed <code><a href="../reference/pesto_abstention.html">pesto_abstention()</a></code> instead of an error or a
+half-populated result, and the manifest has a method for it: an
+empty-payload record whose <code>summary</code> slot carries the
+decline. A consumer therefore sees a typed refusal in the same place it
+would have seen a posterior, rather than a missing file.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">mat_par_off</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">30L</span> <span class="op">*</span> <span class="fl">12L</span><span class="op">)</span>, <span class="fl">30L</span>, <span class="fl">12L</span><span class="op">)</span></span>
+<span><span class="va">mat_obs_off</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">30L</span> <span class="op">*</span> <span class="fl">8L</span><span class="op">)</span>, <span class="fl">30L</span>, <span class="fl">8L</span><span class="op">)</span></span>
+<span><span class="va">res_off</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pesto_surrogate_ies.html">pesto_surrogate_ies</a></span><span class="op">(</span></span>
+<span>  par_ensemble <span class="op">=</span> <span class="va">mat_par_off</span>,</span>
+<span>  obs_ensemble <span class="op">=</span> <span class="va">mat_obs_off</span>,</span>
+<span>  obs_target   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fl">8L</span><span class="op">)</span>,</span>
+<span>  weights      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">8L</span><span class="op">)</span>,</span>
+<span>  parcov_inv   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">12L</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/is_pesto_abstention.html">is_pesto_abstention</a></span><span class="op">(</span><span class="va">res_off</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="va">res_off</span></span>
+<span><span class="co">#&gt; $reason</span></span>
+<span><span class="co">#&gt; [1] "surrogate_off_design"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $detail</span></span>
+<span><span class="co">#&gt; [1] "surrogate training regime is unfavourable: n_train = 30 for n_params = 12 (ratio 2.50 &lt; the check_surrogate_regime() default floor of 5)."</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $diagnostics</span></span>
+<span><span class="co">#&gt; $diagnostics$n_train</span></span>
+<span><span class="co">#&gt; [1] 30</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $diagnostics$n_params</span></span>
+<span><span class="co">#&gt; [1] 12</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $scope</span></span>
+<span><span class="co">#&gt; [1] "call"</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $abstained</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; attr(,"class")</span></span>
+<span><span class="co">#&gt; [1] "pesto_abstention"</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">man_declined</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_manifest.html">as_manifest</a></span><span class="op">(</span><span class="va">res_off</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">man_declined</span><span class="op">@</span><span class="va">params</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] 0 1</span></span>
+<span><span class="va">man_declined</span><span class="op">@</span><span class="va">summary</span><span class="op">$</span><span class="va">abstained</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="va">man_declined</span><span class="op">@</span><span class="va">summary</span><span class="op">$</span><span class="va">reason</span></span>
+<span><span class="co">#&gt; [1] "surrogate_off_design"</span></span>
+<span></span>
+<span><span class="va">dir_declined</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"pesto_manifest_declined_"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/files2.html" class="external-link">dir.create</a></span><span class="op">(</span><span class="va">dir_declined</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/write_manifest.html">write_manifest</a></span><span class="op">(</span><span class="va">man_declined</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_declined</span>, <span class="st">"declined.yaml"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">man_declined_read</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_manifest.html">read_manifest</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_declined</span>, <span class="st">"declined.yaml"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">man_declined_read</span><span class="op">@</span><span class="va">summary</span><span class="op">$</span><span class="va">reason</span></span>
+<span><span class="co">#&gt; [1] "surrogate_off_design"</span></span>
+<span><span class="fu"><a href="../reference/verify_manifest.html">verify_manifest</a></span><span class="op">(</span><span class="va">man_declined_read</span><span class="op">)</span><span class="op">$</span><span class="va">ok</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="what-a-conformant-consumer-does">What a conformant consumer does<a class="anchor" aria-label="anchor" href="#what-a-conformant-consumer-does"></a>
+</h3>
+<p>A consumer reads the YAML with <code><a href="../reference/read_manifest.html">read_manifest()</a></code>, calls
+<code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> before touching anything, refuses on
+<code>integrity: not_verifiable</code>, on a <code>summary</code> that
+reports an abstention, or on a <code>failure_rate</code> above whatever
+it is willing to tolerate, branches on <code>schema_version</code> for
+forward compatibility, and then works with the typed slots. It threads
+<code>man@data_hash</code> and <code>man@run_id</code> into its own
+provenance so the lineage closes. The short function below is that whole
+obligation:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">consume</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">path</span>, <span class="va">max_failure</span> <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/read_manifest.html">read_manifest</a></span><span class="op">(</span><span class="va">path</span><span class="op">)</span></span>
+<span>  <span class="va">v</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/verify_manifest.html">verify_manifest</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">v</span><span class="op">$</span><span class="va">ok</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="st">"declined: integrity not verifiable"</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE</a></span><span class="op">(</span><span class="va">v</span><span class="op">$</span><span class="va">ok</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="st">"declined: hash mismatch"</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Logic.html" class="external-link">isTRUE</a></span><span class="op">(</span><span class="va">m</span><span class="op">@</span><span class="va">summary</span><span class="op">$</span><span class="va">abstained</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"declined: producer abstained ("</span>, <span class="va">m</span><span class="op">@</span><span class="va">summary</span><span class="op">$</span><span class="va">reason</span>, <span class="st">")"</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="kw">if</span> <span class="op">(</span><span class="va">m</span><span class="op">@</span><span class="va">failure_rate</span> <span class="op">&gt;</span> <span class="va">max_failure</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="st">"declined: failure rate above tolerance"</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"accepted: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">m</span><span class="op">@</span><span class="va">params</span><span class="op">)</span>, <span class="st">" realisations, run "</span>, <span class="va">m</span><span class="op">@</span><span class="va">run_id</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="fu">consume</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_both</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "accepted: 120 realisations, run ies_callback_20260902_081141_63d08ddc"</span></span>
+<span><span class="fu">consume</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_export</span>, <span class="st">"snapshot.yaml"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "declined: integrity not verifiable"</span></span>
+<span><span class="fu">consume</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_declined</span>, <span class="st">"declined.yaml"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "declined: producer abstained (surrogate_off_design)"</span></span>
+<span><span class="fu">consume</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">dir_run</span>, <span class="st">"wagga_2026_run01.yaml"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "declined: hash mismatch"</span></span></code></pre></div>
+</div>
+</div>
+<div class="section level2">
+<h2 id="read">Read<a class="anchor" aria-label="anchor" href="#read"></a>
+</h2>
+<p>The handover works, and it works in both directions. Writing the run
+produced 4 files: one YAML entry and three sidecars. Reading them back
+and recomputing the hash returned TRUE, so the ensemble a colleague
+opens is bit-for-bit the ensemble that came out of the smoother. The
+record carries 120 realisations of 3 parameters against 12 target
+observations, and a failure rate of 0.012, which is the fraction of
+forward evaluations that returned nothing during the run and is exactly
+the kind of thing a consumer should be allowed to refuse on.</p>
+<p>The tamper case is the one that matters. Moving one value by 0.001
+g/m2 shifts the ensemble mean of that observation column by 0.0000085
+g/m2, which is nothing at all beside the 45 g/m2 of measurement noise,
+and the figure shows why no summary statistic would ever raise it: every
+other cell is identical to the last bit, and the altered one sits 4.7
+orders of magnitude below the noise floor. The hash sees it regardless,
+and <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> returns FALSE with both hashes
+attached so the consumer can name what diverged. That asymmetry is the
+whole argument for hashing the payload rather than checking it by
+eye.</p>
+<p>The three formats are three different promises, and the table above
+states them plainly: the default RDS mode and the <code>both</code> mode
+are verifiable, and <code>csv_unverified</code> is not, returning NA
+from <code><a href="../reference/verify_manifest.html">verify_manifest()</a></code> rather than a false negative. The
+refusal path closes the set. The off-design surrogate call returned a
+typed abstention with reason ‘surrogate_off_design’, the manifest built
+from it carries a zero-row parameter payload and that same reason in its
+<code>summary</code> slot, and the reason survives the write and the
+read. The four <code>consume()</code> calls at the end walk exactly
+those four outcomes: accepted, declined for unverifiable integrity,
+declined because the producer abstained, and declined because the file
+on disk no longer matches its hash.</p>
+</div>
+<div class="section level2">
+<h2 id="limits">Limits<a class="anchor" aria-label="anchor" href="#limits"></a>
+</h2>
+<p>This vignette shows the record and the check, not the science: the
+manifest guarantees that an ensemble is the one that was produced, and
+says nothing whatever about whether the ensemble is any good. A
+hash-verified posterior from a badly specified likelihood is a
+hash-verified wrong answer, and the calibration questions belong to
+<em>Wiring your own simulator into PESTO</em> and <em>My posterior looks
+too confident: is the ensemble collapsing?</em>. The integrity check
+covers the payload the hash is computed over, which is the parameter
+ensemble, the outputs, the weights, the targets and the seed; it does
+not cover the optional <code>obs_schema</code> descriptor, whose
+correspondence between column names and physical quantities is
+established by a second, independent record that agrees on units rather
+than by a self-hash. Nor does the hash make a run reproducible on its
+own: it records the seed, the method, the iteration count and the lambda
+schedule, but re-running a calibration also needs the forward model, and
+for a simulator-backed run that means the same simulator version on the
+far end. The tamper demonstration alters one cell deliberately, so it
+shows detection, not the frequency of accidental corruption in practice,
+which this vignette makes no claim about.</p>
+</div>
+<div class="section level2">
+<h2 id="what-to-read-next">What to read next<a class="anchor" aria-label="anchor" href="#what-to-read-next"></a>
+</h2>
+<p><em>Your first inversion: from a season of measurements to a
+posterior</em> is where the run wrapped above comes from, and is the
+shortest route into the smoother itself. <em>Wiring your own simulator
+into PESTO</em> covers the forward-model contract on the producing side,
+including the failure handling that sets the <code>failure_rate</code>
+slot read here. <em>Can PESTO recover APSIM’s own parameters?</em> emits
+a manifest at the end of a full simulator-backed calibration, which is
+the realistic version of this handover. <em>When can a surrogate stand
+in for the simulator?</em> is where the typed abstention used above
+comes from, and states the regime that triggers it.</p>
+</div>
+<div class="section level2">
+<h2 id="reproduce">Reproduce<a class="anchor" aria-label="anchor" href="#reproduce"></a>
+</h2>
+<p>Seed <code>20260902</code> sets the synthetic season, the prior draw
+and the off-design surrogate demonstration, and is passed to
+<code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code>, which records it on the run and
+carries it into the manifest’s <code>seed</code> slot. All files are
+written under <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile()</a></code> and removed at the end of the
+vignette. Package versions follow.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.6.1 (2026-06-24)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
@@ -294,16 +651,17 @@ standalone format specification in
 <span><span class="co">#&gt;  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.51         </span></span>
 <span><span class="co">#&gt;  [4] rlang_1.3.0         xfun_0.60           otel_0.2.0         </span></span>
 <span><span class="co">#&gt;  [7] S7_0.2.2            textshaping_1.0.5   jsonlite_2.0.0     </span></span>
-<span><span class="co">#&gt; [10] data.table_1.18.6.1 glue_1.8.1          htmltools_0.5.9    </span></span>
-<span><span class="co">#&gt; [13] ragg_1.5.2          sass_0.4.10         scales_1.4.0       </span></span>
-<span><span class="co">#&gt; [16] rmarkdown_2.31      grid_4.6.1          evaluate_1.0.5     </span></span>
-<span><span class="co">#&gt; [19] jquerylib_0.1.4     fastmap_1.2.0       yaml_2.3.12        </span></span>
-<span><span class="co">#&gt; [22] lifecycle_1.0.5     compiler_4.6.1      RColorBrewer_1.1-3 </span></span>
-<span><span class="co">#&gt; [25] fs_2.1.0            Rcpp_1.1.2          farver_2.1.2       </span></span>
-<span><span class="co">#&gt; [28] systemfonts_1.3.2   digest_0.6.39       R6_2.6.1           </span></span>
-<span><span class="co">#&gt; [31] bslib_0.12.0        gtable_0.3.6        tools_4.6.1        </span></span>
-<span><span class="co">#&gt; [34] pkgdown_2.2.1       ggplot2_4.0.3       cachem_1.1.0       </span></span>
-<span><span class="co">#&gt; [37] desc_1.4.3</span></span></code></pre></div>
+<span><span class="co">#&gt; [10] data.table_1.18.6.1 labeling_0.4.3      glue_1.8.1         </span></span>
+<span><span class="co">#&gt; [13] htmltools_0.5.9     ragg_1.5.2          sass_0.4.10        </span></span>
+<span><span class="co">#&gt; [16] scales_1.4.0        rmarkdown_2.32      grid_4.6.1         </span></span>
+<span><span class="co">#&gt; [19] evaluate_1.0.5      jquerylib_0.1.4     fastmap_1.2.0      </span></span>
+<span><span class="co">#&gt; [22] yaml_2.3.12         lifecycle_1.0.5     compiler_4.6.1     </span></span>
+<span><span class="co">#&gt; [25] RColorBrewer_1.1-3  fs_2.1.0            Rcpp_1.1.2         </span></span>
+<span><span class="co">#&gt; [28] farver_2.1.2        systemfonts_1.3.2   digest_0.6.39      </span></span>
+<span><span class="co">#&gt; [31] viridisLite_0.4.3   R6_2.6.1            bslib_0.12.0       </span></span>
+<span><span class="co">#&gt; [34] withr_3.0.3         gtable_0.3.6        tools_4.6.1        </span></span>
+<span><span class="co">#&gt; [37] pkgdown_2.2.1       ggplot2_4.0.3       cachem_1.1.0       </span></span>
+<span><span class="co">#&gt; [40] desc_1.4.3</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

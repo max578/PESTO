@@ -273,9 +273,8 @@ contributions of the author.
 
 ## License
 
-GPL (\>= 3). See
-[`LICENSE.md`](https://max578.github.io/PESTO/LICENSE.md) for the full
-text.
+MIT. See [`LICENSE.md`](https://max578.github.io/PESTO/LICENSE.md) for
+the full text.
 
 # Package index
 
@@ -494,30 +493,40 @@ release.
 - [`ensemble_solution_gpu()`](https://max578.github.io/PESTO/reference/ensemble_solution_gpu.md)
   : Deprecated: ensemble solution with adaptive SVD backend
 
+## Typed declines
+
+The classed abstention PESTO returns instead of a number when a request
+is off design.
+
+- [`pesto_abstention()`](https://max578.github.io/PESTO/reference/pesto_abstention.md)
+  : Construct a typed PESTO abstention
+- [`is_pesto_abstention()`](https://max578.github.io/PESTO/reference/is_pesto_abstention.md)
+  : Is an object a PESTO abstention?
+
 # Articles
 
 ### Get started
 
-- [Getting Started with
-  PESTO](https://max578.github.io/PESTO/articles/getting-started.md):
+- [Your first inversion: from a season of measurements to a
+  posterior](https://max578.github.io/PESTO/articles/getting-started.md):
 
 ### Algorithms and comparison
 
-- [Benchmarking PESTO against PEST and
-  PEST++](https://max578.github.io/PESTO/articles/pestpp-comparison-and-simulation.md):
-- [Surrogate-accelerated iterative ensemble
-  smoother](https://max578.github.io/PESTO/articles/surrogate-ies.md):
-- [Countering Ensemble Collapse: Inflation and
-  Localisation](https://max578.github.io/PESTO/articles/inflation-localisation.md):
+- [Is PESTO the same algorithm as the tools it descends
+  from?](https://max578.github.io/PESTO/articles/pestpp-comparison-and-simulation.md):
+- [When can a surrogate stand in for the
+  simulator?](https://max578.github.io/PESTO/articles/surrogate-ies.md):
+- [My posterior looks too confident: is the ensemble
+  collapsing?](https://max578.github.io/PESTO/articles/inflation-localisation.md):
 
 ### APSIM coupling and case study
 
-- [Calibrating APSIM with PESTO (in-process
-  callback)](https://max578.github.io/PESTO/articles/apsim-callback.md):
-- [Calibrating APSIM Wheat with PESTO: a case
-  study](https://max578.github.io/PESTO/articles/apsim-case-study.md):
+- [Wiring your own simulator into
+  PESTO](https://max578.github.io/PESTO/articles/apsim-callback.md):
+- [Can PESTO recover APSIM's own
+  parameters?](https://max578.github.io/PESTO/articles/apsim-case-study.md):
 
 ### Ensemble manifest
 
-- [The Ensemble-Run Manifest: a Portable, Verifiable
-  Record](https://max578.github.io/PESTO/articles/ensemble-manifest.md):
+- [Handing an ensemble to somebody
+  else](https://max578.github.io/PESTO/articles/ensemble-manifest.md):
