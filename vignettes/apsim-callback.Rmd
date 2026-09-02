@@ -1,125 +1,162 @@
 ---
-title: "Calibrating APSIM with PESTO (in-process callback)"
+title: "Wiring your own simulator into PESTO"
 output:
   rmarkdown::html_vignette:
     mathjax: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
     pandoc_args: ["--include-in-header=mathjax-config.html"]
 vignette: >
-  %\VignetteIndexEntry{Calibrating APSIM with PESTO (in-process callback)}
+  %\VignetteIndexEntry{Wiring your own simulator into PESTO}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+<!-- Render time: ~5 s under rmarkdown::render(); macOS arm64 (Darwin 26.5),
+     R 4.5.2, one core. No external simulator runs: the APSIM adapter is
+     shown but not executed, and every timed block is a synthetic or ODE
+     forward model. -->
+
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment  = "#>",
-  fig.width = 6, fig.height = 4
+  fig.width = 7,
+  fig.height = 4.5,
+  dpi = 150
 )
-set.seed(20260516)
 ```
 
-PESTO was built to calibrate process-based simulators from R, and its
-flagship partner is **APSIM** -- the agricultural-systems model -- coupled
-through the `apsimx` package by `apsim_callback()`. This vignette shows that
-coupling, the in-process callback driver behind it, and how the same pattern
-serves any other simulator.
-
-## Why a callback driver?
-
-`pesto_ies()` shells out to the `pestpp-ies` binary, which writes and
-reads `.pst` / ensemble / observation files between every realisation.
-For an in-process R forward model -- an `apsimx` wrapper for APSIM, a Python
-bridge, or a fast synthetic test problem -- that file round-trip is
-pure overhead. `pesto_ies_callback()` keeps the same C++ ensemble
-kernel (`ensemble_solution()`, Chen & Oliver 2013) but drives the
-outer loop in R, calling the forward model in-process. For APSIM this is
-the difference between re-reading an `.apsimx` file every realisation and
-holding the model in memory across the whole ensemble.
-
-This document shows:
-
-1. The driver on a synthetic linear-Gaussian problem (recovers truth).
-2. The typed forward-model contract (`pesto_forward_model()`) shared by
-   both adapter modes, including parallel, fault-tolerant evaluation.
-3. The shape of the `apsim_callback()` adapter for `apsimx` (run
-   block is disabled -- needs APSIM installed).
-4. Multi-fidelity calibration: a cheap surrogate ramped to an expensive
-   model through a `fidelity_schedule`.
-
-## A synthetic recovery example
-
-```{r}
+```{r library}
 library(PESTO)
+```
 
-npar  <- 4L
-nobs  <- 8L
+## Why
+
+My simulator is APSIM, one run takes about a minute, and I want to calibrate
+it from R against a handful of seasons of measured yield. The question is:
+*how do I wire a simulator like that into PESTO without paying a file
+round-trip on every realisation, and what do I have to get right for the
+posterior that comes back to be worth anything?* This vignette answers both.
+The wiring is a typed forward-model contract that any R function can satisfy,
+demonstrated end to end on problems that run in seconds; the thing to get
+right is the observation standard deviation, and the middle of this vignette
+measures exactly how wrong an answer becomes when it is set the way most
+people first set it.
+
+## What
+
+[`pesto_ies_callback()`](../html/pesto_ies_callback.html) is the in-process
+driver. [`pesto_ies()`](../html/pesto_ies.html) shells out to the
+`pestpp-ies` binary, which writes and reads control, ensemble and
+observation files between every realisation; for an R forward model, whether
+that is an `apsimx` wrapper for APSIM, a bridge to another language, or a
+fast synthetic test problem, the file round-trip is pure overhead. The
+callback driver keeps the same C++ ensemble kernel
+([`ensemble_solution()`](../html/ensemble_solution.html), after Chen and
+Oliver 2013) and drives the outer loop in R, calling the forward model in
+process. For APSIM this is the difference between re-reading an `.apsimx`
+file for every realisation and holding the model in memory across the whole
+ensemble.
+
+[`pesto_forward_model()`](../html/pesto_forward_model.html) is the typed
+contract a forward model travels in. A bare `function(theta) -> obs` is the
+quickest way in and carries no metadata: the driver cannot know the output
+dimension in advance, cannot run realisations in parallel, and cannot
+express a failure budget. The contract object declares all three, and
+[`pesto_evaluate()`](../html/pesto_evaluate.html) runs it.
+[`apsim_callback()`](../html/apsim_callback.html) builds one for APSIM
+through the `apsimx` package: a working copy of a template per realisation,
+parameter edits by a `param_map`, a run, and an extraction step.
+
+[`pesto_multifidelity_model()`](../html/pesto_multifidelity_model.html)
+stacks an ordered set of fidelity levels, cheapest first, so early
+iterations can explore on a coarse model and late ones sharpen against the
+expensive one; [`mf_control_variate()`](../html/mf_control_variate.html) is
+the variance-minimising affine correction that lifts cheap outputs toward
+expensive ones. [`ode_forward_model()`](../html/ode_forward_model.html) and
+its two specialisations,
+[`crop_growth_forward_model()`](../html/crop_growth_forward_model.html) and
+[`seir_forward_model()`](../html/seir_forward_model.html), are ready-made
+contracts for the large class of simulators that are a small system of
+ordinary differential equations rather than an executable.
+[`pesto_ies_filter()`](../html/pesto_ies_filter.html) assimilates
+time-ordered observation windows one after another rather than in one batch,
+which is what an in-season update needs.
+
+Two diagnostics run throughout.
+[`ensemble_spread_ess()`](../html/ensemble_spread_ess.html) is recorded on
+every iteration, and [`pesto_abstention()`](../html/pesto_abstention.html) is
+the typed decline a reliability gate returns in place of a result.
+
+## Do
+
+### A synthetic recovery example
+
+The problem below is synthetic: a linear forward model at a known truth with
+Gaussian noise, which is the cheapest way to check that a driver recovers
+what it should before a real simulator is attached.
+
+```{r problem}
+set.seed(20260516L)
+
+npar <- 4L
+nobs <- 8L
 nreal <- 120L
 sigma <- 0.05
 
-G          <- matrix(rnorm(nobs * npar), nobs, npar)
+G <- matrix(rnorm(nobs * npar), nobs, npar)
 theta_true <- c(1.0, -0.5, 2.0, 0.25)
-y          <- as.numeric(G %*% theta_true) + rnorm(nobs, sd = sigma)
-names(y)   <- paste0("o", seq_len(nobs))
+y <- as.numeric(G %*% theta_true) + rnorm(nobs, sd = sigma)
+names(y) <- paste0("o", seq_len(nobs))
 
-# Forward model: any function that takes an (nreal x npar) matrix and
-# returns an (nreal x nobs) matrix.
+# Forward model: any function taking an (nreal x npar) matrix and returning
+# an (nreal x nobs) matrix.
 forward <- function(theta) theta %*% t(G)
 
 prior <- matrix(rnorm(nreal * npar), nreal, npar,
                 dimnames = list(NULL, paste0("p", seq_len(npar))))
 ```
 
-Run six IES iterations. `lambda` is left at its default: under the default
-ES-MDA scheme the Marquardt damping *is* the inflation factor
+Six iterations. `lambda` is left at its default: under the default ES-MDA
+scheme the Marquardt damping *is* the inflation factor
 (`alpha = lambda + 1`) and is set by the schedule, so it is chosen for you
-rather than fixed by hand (see `?pesto_ies_callback`).
+rather than fixed by hand (see
+[`?pesto_ies_callback`](../html/pesto_ies_callback.html)).
 
-```{r}
+```{r fit}
 fit <- pesto_ies_callback(
   forward_model  = forward,
   prior_ensemble = prior,
   obs            = y,
   obs_sd         = sigma,
   noptmax        = 6L,
+  seed           = 42L,
   verbose        = FALSE
 )
-```
 
-Diagnostics:
-
-```{r}
 prior_rmse <- sqrt(mean((colMeans(prior) - theta_true)^2))
-post_mean  <- colMeans(as.matrix(fit$par_ensemble[, -1L]))
-post_rmse  <- sqrt(mean((post_mean - theta_true)^2))
-
-cat(sprintf("prior RMSE: %.4f\n", prior_rmse))
-cat(sprintf("posterior RMSE: %.4f\n", post_rmse))
-
-mean_phi <- vapply(fit$iterations, `[[`, numeric(1L), "mean_phi")
-print(mean_phi)
+post_mean <- colMeans(as.matrix(fit$par_ensemble[, -1L]))
+post_rmse <- sqrt(mean((post_mean - theta_true)^2))
+round(c(prior_rmse = prior_rmse, posterior_rmse = post_rmse), 4)
+vec_mean_phi <- vapply(fit$iterations, `[[`, numeric(1L), "mean_phi")
+round(vec_mean_phi, 3)
 ```
 
-Posterior RMSE should be a small fraction of prior RMSE, and mean phi
-should decrease across iterations.
-
-The full per-realisation phi trajectory:
-
-```{r, fig.alt = "Per-realisation phi decreasing across IES iterations"}
-plot_phi(fit)
+```{r phi-figure, fig.height = 4.2, fig.cap = "Objective function by iteration on the synthetic recovery problem. The ribbon spans the ensemble's minimum to maximum misfit and each faint line is one realisation; the mean falls by nearly three orders of magnitude between the first and second iterations and then declines slowly."}
+tab_phi_wide <- data.table::dcast(
+  fit$phi, iteration ~ realisation, value.var = "phi"
+)
+plot_phi(tab_phi_wide, show_reals = TRUE,
+         title = "Misfit by iteration, synthetic recovery problem")
 ```
 
-## The forward-model contract
+### The forward-model contract
 
-A bare `function(theta) -> obs` is the quickest way in, but it carries
-no metadata: the driver cannot know the output dimension ahead of time,
-cannot run realisations in parallel, and cannot express a failure
-budget. `pesto_forward_model()` wraps the same callable in a typed
-contract that does. It is the single object both the native-callback
-driver here and the classic `.pst` path (`pesto_ies()`) are built to
+`pesto_forward_model()` wraps the same callable in a typed contract that
+carries the metadata a bare function cannot. It is the single object both
+the native callback driver here and the classic `.pst` path are built to
 honour, so a forward model travels between modes unchanged.
 
-```{r}
+```{r contract}
 fm <- pesto_forward_model(
   fn          = forward,
   n_obs       = nobs,
@@ -130,13 +167,13 @@ fm <- pesto_forward_model(
 # A contract object is evaluated directly with pesto_evaluate(); the
 # returned matrix carries the per-realisation failure count.
 sim <- pesto_evaluate(fm, prior)
-cat(sprintf("evaluated %d x %d; failures: %d\n",
-            nrow(sim), ncol(sim), attr(sim, "n_failures")))
+c(realisations = nrow(sim), outputs = ncol(sim),
+  failures = attr(sim, "n_failures"))
 
-# Passing the contract object to the driver is equivalent to passing the
-# bare function -- the bare form is auto-wrapped internally.
-fit_typed <- pesto_ies_callback(fm, prior, y, sigma,
-                                noptmax = 6L, verbose = FALSE)
+# Passing the contract to the driver is equivalent to passing the bare
+# function: the bare form is auto-wrapped internally.
+fit_typed <- pesto_ies_callback(fm, prior, y, sigma, noptmax = 6L,
+                                seed = 42L, verbose = FALSE)
 identical(
   as.matrix(fit_typed$par_ensemble[, -1L]),
   as.matrix(fit$par_ensemble[, -1L])
@@ -145,14 +182,14 @@ identical(
 
 ### Parallel, fault-tolerant ensembles
 
-For an expensive forward model -- an APSIM ensemble especially -- the
+For an expensive forward model, an APSIM ensemble especially, the
 realisations within one iteration are embarrassingly parallel. Build the
-contract with `parallel = "multicore"` and the evaluation engine
-dispatches rows across forked workers via `parallel::mclapply()`. For
-reproducible draws, set an `"L'Ecuyer-CMRG"` RNG first; each realisation
-then receives an independent stream.
+contract with `parallel = "multicore"` and the evaluation engine dispatches
+rows across forked workers through `parallel::mclapply()`. For reproducible
+draws, set an `"L'Ecuyer-CMRG"` generator first, so each realisation
+receives an independent stream.
 
-```{r,eval=FALSE}
+```{r parallel, eval = FALSE}
 RNGkind("L'Ecuyer-CMRG")
 set.seed(42L)
 
@@ -165,63 +202,55 @@ fm_par <- pesto_forward_model(
 fit_par <- pesto_ies_callback(fm_par, prior, y, sigma, noptmax = 6L)
 ```
 
-A custom `map_fn` (any `lapply`-shaped function) is the escape hatch for
-cross-platform or cluster backends, for example
-`future.apply::future_lapply` or a `mirai` map. Failures are governed by
-`on_failure` (`"na"` tolerates, `"stop"` aborts) and by `max_fail_frac`,
-which aborts once the fraction of failed realisations in any single
-evaluation exceeds the budget -- a guardrail against a silently
-collapsing ensemble.
+The chunk above is shown rather than run, because forking inside a vignette
+build is not portable. A custom `map_fn`, any function shaped like `lapply`,
+is the escape hatch for a cross-platform or cluster backend. Failures are
+governed by `on_failure`, where `"na"` tolerates and `"stop"` aborts, and by
+`max_fail_frac`, which aborts once the fraction of failed realisations in a
+single evaluation exceeds the budget: a guardrail against an ensemble
+collapsing silently.
 
-## Guard: calibrate to field-realistic uncertainty, not the mean's standard error
+### The number that decides whether to believe the answer
 
-The single most consequential number you hand `pesto_ies_callback()` is
-`obs_sd` -- the observation standard deviation, which sets the IES
-weights $w = 1/\sigma_{\mathrm{obs}}$. It is also the easiest to get
-wrong, in a way that fails silently. The failure mode is
-*over-determination*: conditioning the ensemble on a likelihood that is
-far tighter than the data deserve. The smoother then drives every
-realisation onto the same point, the posterior spread collapses, and the
-run reports an answer with a credible interval far too narrow to be
-credible -- confident and wrong.
+The single most consequential argument is `obs_sd`, the observation standard
+deviation, which sets the weights $w = 1 / \sigma_{\mathrm{obs}}$. It is also
+the easiest to get wrong in a way that fails silently. The failure mode is
+*over-determination*: conditioning the ensemble on a likelihood far tighter
+than the data deserve. The smoother then drives every realisation onto the
+same point, the posterior spread collapses, and the run reports an answer
+whose credible interval is far too narrow to be credible.
 
-The usual route into this trap is statistical, not a typo. Suppose each
-target observation is itself the mean of $m$ field replicates. The
-*replicate* spread -- the genuine measurement-plus-process noise a single
-modelled value must match -- is $\sigma$. The *standard error of that
-mean* is $\sigma/\sqrt{m}$, which is smaller by a factor of $\sqrt{m}$
-and shrinks further as you average more plots. Passing the standard
-error as `obs_sd` tells the smoother the data pin the model roughly
-$\sqrt{m}$ times more sharply than they really do. The forward model
-cannot be that right, so the ensemble has nowhere to go but onto a single
-collapsed point.
-
-The contrast below runs the same synthetic problem twice. The first call
-passes the field-realistic replicate spread `sigma`; the second passes
-the standard error of a mean over `m = 40` replicates, about eight times
-too small.
+The usual route into the trap is statistical rather than a typo. Suppose
+each target observation is itself the mean of $m$ field replicates. The
+*replicate* spread, the genuine measurement-plus-process noise a single
+modelled value must match, is $\sigma$. The *standard error of that mean* is
+$\sigma / \sqrt{m}$, smaller by a factor of $\sqrt{m}$ and shrinking further
+as more plots are averaged. Passing the standard error as `obs_sd` tells the
+smoother the data pin the model roughly $\sqrt{m}$ times more sharply than
+they do. The forward model cannot be that right, so the ensemble has nowhere
+to go but onto a single collapsed point.
 
 ```{r over-determination}
-m      <- 40L
+m <- 40L
 obs_se <- sigma / sqrt(m)   # the standard error of a 40-replicate mean
 
 fit_ok <- pesto_ies_callback(
   forward, prior, y,
   obs_sd  = sigma,          # field-realistic replicate spread
-  noptmax = 6L, verbose = FALSE
+  noptmax = 6L, seed = 42L, verbose = FALSE
 )
 
 fit_collapsed <- pesto_ies_callback(
   forward, prior, y,
-  obs_sd  = obs_se,         # the over-precise likelihood -- the trap
-  noptmax = 6L, verbose = FALSE
+  obs_sd  = obs_se,         # the over-precise likelihood, the trap
+  noptmax = 6L, seed = 42L, verbose = FALSE
 )
 ```
 
 The collapse does not announce itself in the posterior *mean*. On this
-linear-Gaussian toy both runs recover the truth to three figures. It
-announces itself in the posterior *spread* and in whether the credible
-interval still covers the truth:
+linear-Gaussian problem both runs recover the truth to three figures. It
+announces itself in the posterior *spread*, and in whether the credible
+interval still covers the truth.
 
 ```{r over-determination-diagnose}
 spread <- function(fit) {
@@ -235,77 +264,193 @@ coverage_90 <- function(fit, truth) {
   mean(truth >= lo & truth <= hi)   # fraction of params inside the band
 }
 
-data.frame(
-  obs_sd          = c(sigma, obs_se),
-  case            = c("field-realistic", "over-precise (SE of mean)"),
-  mean_post_sd    = c(spread(fit_ok), spread(fit_collapsed)),
-  coverage_90_pct = 100 * c(coverage_90(fit_ok, theta_true),
-                            coverage_90(fit_collapsed, theta_true))
+tab_two <- data.frame(
+  Case = c("field-realistic", "over-precise (SE of a 40-replicate mean)"),
+  `obs_sd` = c(sigma, obs_se),
+  `Mean posterior SD` = c(spread(fit_ok), spread(fit_collapsed)),
+  `Coverage of the 90% band (%)` = 100 * c(
+    coverage_90(fit_ok, theta_true), coverage_90(fit_collapsed, theta_true)
+  ),
+  check.names = FALSE
 )
 ```
 
-The over-precise run's posterior spread is a small fraction of the
-well-specified run's, and its 90 per-cent credible band has stopped covering
-the truth entirely. The ensemble is confident and wrong.
+```{r over-determination-table, echo = FALSE}
+knitr::kable(
+  tab_two, digits = 4,
+  caption = paste0(
+    "The same problem and the same data under a field-realistic and an ",
+    "over-precise observation standard deviation."
+  )
+)
+```
 
-`ensemble_spread_ess()` is logged on every iteration as `spread_ess` and
-as the ratio `spread_ess_ratio`, and it is worth being precise about what
-it can and cannot see. It is the spectral participation ratio of the
-parameter anomaly covariance -- the effective number of variance-carrying
-directions -- so it detects the *shape* of a collapse: variance draining
-into a few directions. It is a ratio of eigenvalue sums, hence invariant
-to a global rescaling of the anomalies, so a spread that is uniformly too
-small in every direction is invisible to it. Here the two runs differ in
-exactly that way:
+### Where the boundary is
 
-```{r over-determination-ess}
+Two cases show that the failure exists. A sweep shows where it starts. The
+block below repeats the run at replicate counts from 1 to 160, each time
+passing the standard error of an $m$-replicate mean as `obs_sd`, and records
+two things: the mean posterior standard deviation, and how far the posterior
+mean sits from the truth measured in its own posterior standard deviations.
+A calibrated posterior puts the truth within about one of its own standard
+deviations; a collapsed one puts it many.
+
+```{r boundary-sweep}
+vec_m <- c(1L, 2L, 5L, 10L, 20L, 40L, 80L, 160L)
+tab_boundary <- data.table::rbindlist(lapply(vec_m, function(mm) {
+  fit_m <- pesto_ies_callback(
+    forward, prior, y, obs_sd = sigma / sqrt(mm),
+    noptmax = 6L, seed = 42L, verbose = FALSE
+  )
+  pe <- as.matrix(fit_m$par_ensemble[, -1L])
+  par_sd <- apply(pe, 2L, sd)
+  data.table::data.table(
+    m = mm,
+    obs_sd = sigma / sqrt(mm),
+    post_sd = mean(par_sd),
+    z = mean(abs(colMeans(pe) - theta_true) / par_sd),
+    coverage = coverage_90(fit_m, theta_true)
+  )
+})) # ends the sweep over replicate counts
+```
+
+```{r boundary-figure, fig.height = 4.5, fig.cap = "The over-determination boundary. The horizontal axis is the number of replicates whose standard error was passed as obs_sd; the vertical axis is how far the posterior mean sits from the known truth, measured in posterior standard deviations. Point colour is the fraction of parameters whose 90 per cent credible band still covers the truth. The dashed line at one standard deviation is where a posterior stops being able to describe its own error, and everything to the right of the crossing is a run that reports false confidence."}
+ggplot2::ggplot(
+  tab_boundary, ggplot2::aes(x = m, y = z, colour = coverage)
+) +
+  ggplot2::geom_hline(yintercept = 1, linetype = "dashed",
+                      colour = "grey40") +
+  ggplot2::geom_line(colour = "grey60", linewidth = 0.8) +
+  ggplot2::geom_point(size = 3.4) +
+  ggplot2::scale_x_log10() +
+  ggplot2::scale_y_log10() +
+  ggplot2::scale_colour_viridis_c(
+    name = "90% coverage", limits = c(0, 1), end = 0.9
+  ) +
+  ggplot2::labs(
+    x = "replicates averaged into each observation (log scale)",
+    y = "distance from truth, in posterior SDs (log scale)",
+    title = "How over-precise an obs_sd can be before the answer misleads"
+  ) +
+  ggplot2::theme_minimal(base_size = 12)
+```
+
+```{r boundary-table, echo = FALSE}
+knitr::kable(
+  tab_boundary, digits = 4,
+  col.names = c("Replicates m", "obs_sd passed", "Mean posterior SD",
+                "Distance from truth (posterior SDs)",
+                "90% coverage (fraction)"),
+  caption = paste0(
+    "The same inversion at eight settings of obs_sd, each the standard ",
+    "error of a mean over m replicates of a spread of ", sigma, "."
+  )
+)
+```
+
+PESTO does not gate this automatically: `pesto_abstention()`'s reason codes
+are not a closed set, and a caller who can measure the boundary can mint the
+gate. The function below is that gate, written against the sweep's own
+statistic, and it returns a typed decline that a downstream tool recognises
+by class rather than by parsing a message.
+
+```{r minted-abstention}
+gate_over_determination <- function(fit, truth, z_max = 1.5) {
+  pe <- as.matrix(fit$par_ensemble[, -1L])
+  par_sd <- apply(pe, 2L, sd)
+  z <- mean(abs(colMeans(pe) - truth) / par_sd)
+  if (z > z_max) {
+    return(pesto_abstention(
+      "over_determined",
+      detail = sprintf(
+        paste0("posterior mean sits %.1f posterior SDs from the reference, ",
+               "above the tolerance of %.1f; obs_sd is too small"),
+        z, z_max
+      ),
+      diagnostics = list(z = round(z, 2), mean_post_sd = mean(par_sd))
+    ))
+  }
+  fit
+}
+
+is_pesto_abstention(gate_over_determination(fit_ok, theta_true))
+gate_over_determination(fit_collapsed, theta_true)
+```
+
+### What the spread-ESS diagnostic can and cannot see
+
+`ensemble_spread_ess()` is logged on every iteration as `spread_ess` and as
+the ratio `spread_ess_ratio`, and it is worth being precise about its reach.
+It is the spectral participation ratio of the parameter anomaly covariance,
+the effective number of variance-carrying directions, so it detects the
+*shape* of a collapse: variance draining into a few directions. It is a
+ratio of eigenvalue sums, hence invariant to a global rescaling of the
+anomalies, so a spread that is uniformly too small in every direction is
+invisible to it. The two runs above differ in exactly that way.
+
+```{r ess-blind}
 ess_ratio <- function(fit) {
   vapply(fit$iterations, `[[`, numeric(1L), "spread_ess_ratio")
 }
-
-rbind(
+tab_ess <- rbind(
   `field-realistic` = round(ess_ratio(fit_ok), 3),
   `over-precise`    = round(ess_ratio(fit_collapsed), 3)
 )
+tab_ess
 ```
 
-The two traces sit almost on top of each other even though one ensemble's
-spread is a fraction of the other's. Read `spread_ess_ratio` as the
-directional-collapse diagnostic it is, and read the coverage table above
-as the calibration check -- they answer different questions, and only the
-second catches a mis-specified `obs_sd`.
+Read `spread_ess_ratio` as the directional-collapse diagnostic it is, and
+read the coverage column of the boundary table as the calibration check.
+They answer different questions and only the second catches a mis-specified
+`obs_sd`.
 
 The fix is to set `obs_sd` to the uncertainty the modelled value must
-actually reproduce -- the replicate-level measurement-plus-process
-spread, never the standard error of an average:
+actually reproduce, the replicate-level measurement-plus-process spread,
+never the standard error of an average:
 
-- Use the replicate standard deviation $\sigma$, not $\sigma/\sqrt{m}$,
+- Use the replicate standard deviation $\sigma$, not $\sigma / \sqrt{m}$,
   when the target is a mean over $m$ measurements.
-- Fold structural model-discrepancy into `obs_sd` -- the forward model
-  is an approximation, and the likelihood should not pretend it matches
-  reality more tightly than the model can.
+- Fold structural model discrepancy into `obs_sd`. The forward model is an
+  approximation, and the likelihood should not pretend it matches reality
+  more tightly than the model can.
 - When in genuine doubt, err wide. An over-wide `obs_sd` leaves spread on
-  the table and merely under-uses the data; an over-narrow one destroys
-  the ensemble and reports false confidence.
+  the table and under-uses the data; an over-narrow one destroys the
+  ensemble and reports false confidence.
 
-When over-determination is unavoidable -- many observations, few
-realisations -- the covariance inflation and localisation countermeasures
-(`vignette("inflation-localisation")`) actively replenish the collapsing
-spread rather than only diagnosing it. A correctly specified `obs_sd` is the
-first line of defence, those countermeasures the second.
+When over-determination is unavoidable, with many observations and few
+realisations, the covariance inflation and localisation countermeasures in
+*My posterior looks too confident: is the ensemble collapsing?* replenish
+the collapsing spread rather than only diagnosing it. A correctly specified
+`obs_sd` is the first line of defence and those countermeasures the second.
 
-## Driving APSIM through `apsim_callback()`
+### Driving APSIM through `apsim_callback()`
 
-The adapter wraps `apsimx` so each realisation gets its own working
-copy of an APSIM template, parameter edits per `param_map`, a run, and
-an extraction step. The signature returned matches what
-`pesto_ies_callback()` expects.
+The adapter wraps `apsimx` so each realisation gets its own working copy of
+an APSIM template, parameter edits per `param_map`, a run, and an extraction
+step. What it returns matches what `pesto_ies_callback()` expects.
 
-```{r,eval=FALSE}
-library(apsimx)   # >= 2.7.0 from CRAN
-# Requires a working APSIM Next Gen installation.
+```{r apsim-probe, echo = FALSE, results = "asis"}
+has_apsimx <- requireNamespace("apsimx", quietly = TRUE)
+has_apsim_exe <- nzchar(Sys.getenv("PESTO_APSIM_EXE"))
+if (has_apsimx && has_apsim_exe) {
+  cat("The `apsimx` package and an APSIM installation are both visible on",
+      "this machine, so the block below would run; it is shown rather than",
+      "executed so that this vignette builds identically everywhere.\n")
+} else if (has_apsimx) {
+  cat("The `apsimx` package is installed here but no APSIM executable is",
+      "advertised through `PESTO_APSIM_EXE`, so the block below is shown",
+      "rather than run.\n")
+} else {
+  cat("Neither the `apsimx` package nor an APSIM installation is present on",
+      "this machine, so the block below is shown rather than run. Every",
+      "other result in this vignette is computed without them.\n")
+}
+```
 
-forward <- apsim_callback(
+```{r apsim-adapter, eval = FALSE}
+library(apsimx)   # >= 2.7.0 from CRAN; needs a working APSIM Next Gen
+
+forward_apsim <- apsim_callback(
   template  = "wheat_wagga.apsimx",
   param_map = list(
     RUE = "Wheat.Leaf.Photosynthesis.RUE.FixedValue",
@@ -317,58 +462,49 @@ forward <- apsim_callback(
   }
 )
 
-prior <- cbind(
-  RUE = runif(40, 1.0, 2.0),
-  CN2 = runif(40, 60,  90)
+prior_apsim <- cbind(
+  RUE = runif(40L, 1.0, 2.0),
+  CN2 = runif(40L, 60, 90)
 )
 
-fit <- pesto_ies_callback(
-  forward_model  = forward,
-  prior_ensemble = prior,
+fit_apsim <- pesto_ies_callback(
+  forward_model  = forward_apsim,
+  prior_ensemble = prior_apsim,
   obs            = c(y_2018 = 4500, y_2019 = 5200, y_2020 = 4900),
   obs_sd         = 250,
   noptmax        = 4L
 )
-
-summary(fit$par_ensemble)
 ```
 
-### Failure handling
+Per-realisation APSIM crashes, whether a corrupt configuration, a solver
+divergence or a missing report variable, are caught by the adapter and
+emerge as `NA` rows. The driver's default `on_failure = "na"` carries those
+realisations forward unchanged so the ensemble survives partial failure;
+`on_failure = "stop"` aborts as soon as one row is missing.
 
-Per-realisation APSIM crashes (corrupt config, solver divergence,
-missing report variable) are caught by the adapter and emerge as `NA`
-rows. `pesto_ies_callback()`'s `on_failure = "na"` (default) carries
-those realisations forward unchanged so the ensemble survives partial
-failures. Setting `on_failure = "stop"` aborts as soon as one row is
-missing.
+The closure writes each realisation to its own uniquely named working file,
+so it is safe to evaluate in parallel: wrap it in a
+`pesto_forward_model(parallel = "multicore")` exactly as above and the
+ensemble runs across forked workers, each invoking APSIM on its own input.
+Start with a modest `n_cores`, because the thread safety of `apsimx` itself
+under heavy ensemble load has not been independently characterised. For
+pure-R synthetic models the serial loop is already fast enough that the
+overhead is dominated by `ensemble_solution()`.
 
-### Concurrency
+### Multi-fidelity calibration
 
-The `apsim_callback()` closure writes each realisation to its own
-uniquely-named working file, so it is safe to evaluate in parallel:
-wrap it in a `pesto_forward_model(parallel = "multicore")` exactly as
-above and the ensemble runs across forked workers, each invoking APSIM
-on its own input. Start with a modest `n_cores` -- `apsimx`'s own
-thread-safety under heavy ensemble load has not been independently
-characterised. For pure-R synthetic models the serial loop is already
-fast enough that the overhead is dominated by `ensemble_solution()`
-itself.
+Process-based crop models expose a cost-accuracy dial: a daily time step
+with a lite soil profile is cheap, a sub-daily step with the full profile is
+expensive. `pesto_multifidelity_model()` makes that dial first class. It
+bundles an ordered stack of fidelity levels, cheapest first, and the driver
+picks a level per iteration through a `fidelity_schedule`, so early
+iterations explore cheaply and late ones sharpen against the expensive
+truth. The final ensemble is always refreshed at the highest fidelity.
 
-## Multi-fidelity calibration
-
-Process-based crop models expose a cost/accuracy dial: a daily time-step
-with a lite soil profile is cheap; a sub-daily step with the full
-profile is expensive. `pesto_multifidelity_model()` makes that dial
-first-class. It bundles an ordered stack of fidelity levels -- cheapest
-first -- and the IES driver picks a level per iteration through a
-`fidelity_schedule`, so early iterations explore cheaply and late
-iterations sharpen against the expensive truth. The final ensemble is
-always refreshed at the highest fidelity.
-
-```{r}
+```{r multifidelity}
 # Cheap level: the linear model with a small systematic bias.
 # Expensive level: the unbiased truth.
-cheap_fn     <- function(theta) theta %*% t(G) + 0.30
+cheap_fn <- function(theta) theta %*% t(G) + 0.30
 expensive_fn <- forward
 
 mf <- pesto_multifidelity_model(
@@ -376,7 +512,7 @@ mf <- pesto_multifidelity_model(
     pesto_forward_model(fn = cheap_fn,     n_obs = nobs, fidelity = 0L),
     pesto_forward_model(fn = expensive_fn, n_obs = nobs, fidelity = 1L)
   ),
-  costs = c(1, 25)   # the expensive level is ~25x dearer per run
+  costs = c(1, 25)   # the expensive level is about 25 times dearer per run
 )
 
 # Ramp: two cheap iterations, then four expensive ones.
@@ -387,82 +523,100 @@ fit_mf <- pesto_ies_callback(
   obs_sd            = sigma,
   noptmax           = 6L,
   fidelity_schedule = c(0L, 0L, 1L, 1L, 1L, 1L),
+  seed              = 42L,
   verbose           = FALSE
 )
 
 mf_rmse <- sqrt(mean(
   (colMeans(as.matrix(fit_mf$par_ensemble[, -1L])) - theta_true)^2
 ))
-cat(sprintf("multi-fidelity posterior RMSE: %.4f\n", mf_rmse))
+round(c(single_fidelity_rmse = post_rmse, multi_fidelity_rmse = mf_rmse), 4)
 ```
 
-When a cheap level is run over the whole ensemble and the expensive
-level over only a subset, `mf_control_variate()` lifts the cheap outputs
-toward the expensive ones with the variance-minimising affine
-correction -- the plug-in primitive for a surrogate cascade:
+When the cheap level is run over the whole ensemble and the expensive level
+over only a subset, `mf_control_variate()` lifts the cheap outputs toward
+the expensive ones with the variance-minimising affine correction, which is
+the plug-in primitive for a surrogate cascade:
 
-```{r}
-sub      <- 1:20
-low_all  <- pesto_evaluate(mf, prior, level = 0L)
-low_sub  <- low_all[sub, , drop = FALSE]
+```{r control-variate}
+sub <- seq_len(20L)
+low_all <- pesto_evaluate(mf, prior, level = 0L)
+low_sub <- low_all[sub, , drop = FALSE]
 high_sub <- pesto_evaluate(mf, prior[sub, , drop = FALSE], level = 1L)
 
 corrected <- mf_control_variate(low_all, high_sub, low_sub)
-cat(sprintf("mean |cheap - corrected| over the ensemble: %.4f\n",
-            mean(abs(low_all - corrected))))
+high_all <- pesto_evaluate(mf, prior, level = 1L)
+gap_before <- mean(abs(low_all - high_all))
+gap_after <- mean(abs(corrected - high_all))
+signif(c(mean_gap_before = gap_before, mean_gap_after = gap_after), 3)
 ```
 
-## ODE / compartmental forward-model templates
+### Simulators that are systems of equations
 
-Not every forward model is a simulator behind an executable. A very large
-class -- crop growth, epidemic dynamics, nutrient or solute transport,
-pharmacokinetics -- is a small system of ordinary differential equations
-integrated forward in time, with the observation vector read off the
-state trajectory. PESTO ships these as ready-to-use templates that return
-the same typed `pesto_forward_model()` as everything above, so they plug
-straight into the IES driver, the multi-fidelity stack, and the manifest
-emitter. Integration is a self-contained fixed-step RK4 by default (no
-extra dependency); a `solver = "desolve"` path delegates to the `deSolve`
-package for stiff systems.
+Not every simulator sits behind an executable. A very large class, crop
+growth, epidemic dynamics, nutrient or solute transport and
+pharmacokinetics among them, is a small system of ordinary differential
+equations integrated forward in time with the observation vector read off
+the state trajectory. PESTO ships these as templates returning the same
+typed contract as everything above, so they plug straight into the driver,
+the multi-fidelity stack and the manifest emitter. Integration is a
+self-contained fixed-step fourth-order Runge-Kutta scheme by default, with a
+`solver = "desolve"` path delegating to the `deSolve` package for stiff
+systems.
 
 The generic builder is `ode_forward_model()`: supply the derivative
-function `function(t, y, theta) -> dydt`, the initial state, the time
-grid, and which `theta` columns the model consumes. Two specialisations
-come pre-built. `crop_growth_forward_model()` is the logistic dry-matter
-accumulation curve `dB/dt = r B (1 - B / b_max)` -- the canonical sigmoid
-description of seasonal biomass, calibrating `r`, `b_max`, and `b0`
-against an observed biomass-over-time series.
+function, the initial state, the time grid, and which parameter columns the
+model consumes. `crop_growth_forward_model()` is the logistic dry-matter
+curve $\mathrm{d}B / \mathrm{d}t = r B (1 - B / b_{\max})$, the canonical
+sigmoid description of seasonal biomass, calibrating $r$, $b_{\max}$ and the
+starting biomass against an observed biomass series.
 
 ```{r ode-crop}
 times <- seq(0, 120, by = 15)
-crop  <- crop_growth_forward_model(times = times)
+crop <- crop_growth_forward_model(times = times)
 
 # Simulate a biomass series at a known parameter, then add field noise.
 theta_crop <- c(r = 0.06, b_max = 1400, b0 = 20)
-biomass    <- as.numeric(pesto_evaluate(
-  crop, matrix(theta_crop, nrow = 1L, dimnames = list(NULL, names(theta_crop)))
+biomass <- as.numeric(pesto_evaluate(
+  crop, matrix(theta_crop, nrow = 1L,
+               dimnames = list(NULL, names(theta_crop)))
 ))
-y_crop        <- biomass + rnorm(length(biomass), sd = 20)
+y_crop <- biomass + rnorm(length(biomass), sd = 20)
 names(y_crop) <- paste0("t", seq_along(y_crop))
 
-# Invert: a broad prior over the three growth parameters.
 prior_crop <- cbind(
   r     = runif(120L, 0.02, 0.12),
   b_max = runif(120L, 900, 2000),
   b0    = runif(120L, 5, 60)
 )
 fit_crop <- pesto_ies_callback(crop, prior_crop, y_crop, obs_sd = 20,
-                               noptmax = 8L, verbose = FALSE)
-post_crop <- colMeans(as.matrix(fit_crop$par_ensemble[, -1L]))[names(theta_crop)]
-rbind(truth = theta_crop, posterior = round(post_crop, 3))
+                              noptmax = 8L, seed = 42L, verbose = FALSE)
+post_crop <- colMeans(
+  as.matrix(fit_crop$par_ensemble[, -1L])
+)[names(theta_crop)]
+```
+
+```{r ode-crop-table, echo = FALSE}
+knitr::kable(
+  data.frame(
+    Parameter = names(theta_crop),
+    Unit = c("per day", "g/m2", "g/m2"),
+    Truth = as.numeric(theta_crop),
+    `Posterior mean` = as.numeric(post_crop),
+    check.names = FALSE
+  ),
+  digits = 3,
+  caption = paste0(
+    "Recovery of the logistic growth parameters from a noisy biomass series."
+  )
+)
 ```
 
 `seir_forward_model()` is the closed-population
-Susceptible-Exposed-Infectious-Recovered epidemic model, calibrating the
-transmission, latency, and recovery rates `beta`, `sigma`, and `gamma`
-against an observed infectious-prevalence curve. The reproduction number
-$R_0 = \beta / \gamma$ is the recoverable summary an outbreak curve
-identifies most sharply:
+susceptible-exposed-infectious-recovered epidemic model, calibrating the
+transmission, latency and recovery rates against an observed infectious
+prevalence curve. The reproduction number $R_0 = \beta / \gamma$ is the
+summary an outbreak curve identifies most sharply.
 
 ```{r ode-seir}
 days <- seq(0, 60, by = 5)
@@ -470,9 +624,10 @@ seir <- seir_forward_model(times = days, n_pop = 1000, i0 = 1)
 
 theta_seir <- c(beta = 0.6, sigma = 0.2, gamma = 0.1)
 prevalence <- as.numeric(pesto_evaluate(
-  seir, matrix(theta_seir, nrow = 1L, dimnames = list(NULL, names(theta_seir)))
+  seir, matrix(theta_seir, nrow = 1L,
+               dimnames = list(NULL, names(theta_seir)))
 ))
-y_seir        <- prevalence + rnorm(length(prevalence), sd = 3)
+y_seir <- prevalence + rnorm(length(prevalence), sd = 3)
 names(y_seir) <- paste0("d", seq_along(y_seir))
 
 prior_seir <- cbind(
@@ -480,34 +635,36 @@ prior_seir <- cbind(
   sigma = runif(200L, 0.1, 0.4),
   gamma = runif(200L, 0.05, 0.2)
 )
-fit_seir  <- pesto_ies_callback(seir, prior_seir, y_seir, obs_sd = 3,
-                                noptmax = 10L, verbose = FALSE)
-post_seir <- colMeans(as.matrix(fit_seir$par_ensemble[, -1L]))[names(theta_seir)]
-cat(sprintf("R0 truth = %.1f, R0 posterior = %.2f\n",
-            theta_seir[["beta"]] / theta_seir[["gamma"]],
-            post_seir[["beta"]] / post_seir[["gamma"]]))
+fit_seir <- pesto_ies_callback(seir, prior_seir, y_seir, obs_sd = 3,
+                               noptmax = 10L, seed = 42L, verbose = FALSE)
+post_seir <- colMeans(
+  as.matrix(fit_seir$par_ensemble[, -1L])
+)[names(theta_seir)]
+r0_truth <- theta_seir[["beta"]] / theta_seir[["gamma"]]
+r0_post <- post_seir[["beta"]] / post_seir[["gamma"]]
+round(c(R0_truth = r0_truth, R0_posterior = r0_post), 2)
 ```
 
-Because both templates return a `pesto_forward_model()`, the cheap-coarse
-/ fine-grid fidelity trick from the previous section applies verbatim:
-build one template at a coarse `n_steps` and one at a fine `n_steps`,
-stack them in a `pesto_multifidelity_model()`, and ramp the integration
-resolution across IES iterations.
+Because both templates return a `pesto_forward_model()`, the coarse and fine
+fidelity trick from the previous section applies verbatim: build one
+template at a coarse `n_steps` and one at a fine `n_steps`, stack them in a
+`pesto_multifidelity_model()`, and ramp the integration resolution across
+iterations.
 
-## Sequential (filter-mode) assimilation
+### Assimilating a season as it happens
 
 `pesto_ies_callback()` is a *smoother*: it assimilates every observation in
-one batch. For an in-season setting -- where a growing season's
-observations arrive over time and you want an updated parameter posterior
-*as the season progresses*, not only at harvest -- `pesto_ies_filter()` is
-the *filter*. It assimilates time-ordered observation **windows** one after
-another against the same static calibration parameters; each window's
-posterior becomes the next window's prior, so information accrues and the
-posterior tightens window by window.
+one batch. For an in-season setting, where a season's observations arrive
+over time and the parameter posterior is wanted as the season progresses
+rather than only at harvest, `pesto_ies_filter()` is the *filter*. It
+assimilates time-ordered observation windows one after another against the
+same static calibration parameters, and each window's posterior becomes the
+next window's prior, so information accrues and the posterior tightens
+window by window.
 
-```{r}
-# Reuse the synthetic problem above; split the nobs observations into
-# three temporal windows (e.g. early / mid / late season).
+```{r filter}
+# Split the eight observations into three temporal windows, standing in for
+# early, mid and late season.
 windows <- list(1:3, 4:6, 7:8)
 
 fit_seq <- pesto_ies_filter(
@@ -516,44 +673,189 @@ fit_seq <- pesto_ies_filter(
   obs            = y,
   obs_sd         = sigma,
   windows        = windows,
+  seed           = 42L,
   verbose        = FALSE
 )
 
-# The per-window history carries the per-parameter ensemble sd; its mean
-# should fall window over window as more of the season is assimilated.
-sd_trace <- vapply(fit_seq$windows, function(w) mean(w$par_sd), numeric(1))
-data.frame(
-  window      = seq_along(sd_trace),
-  obs_assim   = vapply(fit_seq$windows, function(w) length(w$obs_indices),
-                       integer(1)),
-  mean_par_sd = round(sd_trace, 4)
+sd_trace <- vapply(fit_seq$windows, function(w) mean(w$par_sd), numeric(1L))
+tab_filter <- data.frame(
+  Window = seq_along(sd_trace),
+  `Observations assimilated` = vapply(
+    fit_seq$windows, function(w) length(w$obs_indices), integer(1L)
+  ),
+  `Mean parameter SD` = sd_trace,
+  check.names = FALSE
 )
 ```
 
-The posterior at the final window matches what the batch smoother would
-recover, but you also have the intermediate posteriors -- the value of the
-filter is the *trajectory*, not just the endpoint. A multi-fidelity stack
-plugs in through `fidelity_schedule` (one level per window: run cheap early,
-sharpen late), and the result wraps into the same manifest contract via
-`as_manifest()` (tagged `method = "ies_filter"`).
+```{r filter-table, echo = FALSE}
+knitr::kable(
+  tab_filter, digits = 4,
+  caption = paste0(
+    "The filter's posterior spread after each window. The value of the ",
+    "filter is the trajectory, not only the endpoint."
+  )
+)
+```
 
-## When to prefer `pesto_ies()` instead
+A multi-fidelity stack plugs in through `fidelity_schedule`, one level per
+window, so a run can be cheap early and sharpen late, and the result wraps
+into the same manifest contract through `as_manifest()`, tagged
+`method = "ies_filter"`.
 
-Use the classic `.pst` path when:
+### When to prefer the `.pst` path instead
 
-- Your forward model lives behind a non-R executable that PEST++ can
-  drive directly via its template/instruction-file mechanism.
-- You need full bit-for-bit compatibility with `pestpp-ies` behaviour
-  (e.g. for cross-validating against an existing PEST++ workflow).
-- You depend on `pestpp-ies`-specific features not yet exposed by the
-  R driver (full lambda line-search, regularisation modes,
-  Tikhonov priors).
+Use `pesto_ies()` and the classic control-file path when the forward model
+lives behind a non-R executable that PEST++ can drive directly through its
+template and instruction files; when bit-for-bit compatibility with
+`pestpp-ies` behaviour is needed, for instance to cross-validate against an
+existing PEST++ workflow; or when a `pestpp-ies` feature not yet exposed by
+the R driver is required, such as the full lambda line search,
+regularisation modes or Tikhonov priors. Otherwise the callback driver is
+faster to iterate, easier to debug, and avoids per-realisation file
+exchange entirely.
 
-Otherwise the callback driver is faster to iterate, easier to debug,
-and avoids per-realisation file I/O entirely.
+```{r read-facts, include = FALSE}
+phi_first_txt <- format(signif(vec_mean_phi[1L], 4L), big.mark = ",",
+                        scientific = FALSE)
+gap_before_txt <- format(signif(gap_before, 3L), scientific = FALSE)
+gap_after_txt <- sprintf("%.0e", gap_after)
+```
 
-## Reproducibility
+## Read
 
-```{r}
+The driver recovers what it should. Posterior root-mean-square error to the
+truth is `r round(post_rmse, 4)` against a prior figure of
+`r round(prior_rmse, 3)`, a reduction of a factor of
+`r round(prior_rmse / post_rmse)`, and the ensemble mean misfit falls from
+`r phi_first_txt` to
+`r signif(vec_mean_phi[length(vec_mean_phi)], 3)` across
+`r length(vec_mean_phi)` iterations. Handing the driver a typed
+contract instead of a bare function returns a posterior ensemble identical
+to the bare-function run, which is the property that lets a forward model
+move between calling conventions unchanged.
+
+The `obs_sd` sweep is the centre of this vignette. Passing the replicate
+spread gives a mean posterior standard deviation of
+`r signif(tab_boundary$post_sd[1], 3)` and a 90 per cent band that covers
+`r round(100 * tab_boundary$coverage[1])` per cent of the parameters.
+Passing the standard error of a 40-replicate mean, about
+`r round(sqrt(40))` times smaller, shrinks the posterior standard deviation
+to `r signif(spread(fit_collapsed), 3)`, roughly
+`r round(100 * spread(fit_collapsed) / spread(fit_ok))` per cent of the
+well-specified run, and drops coverage to
+`r round(100 * coverage_90(fit_collapsed, theta_true))` per cent. The figure
+shows that this is not a cliff but a slope with a crossing point: the
+distance from the truth in posterior standard deviations rises from
+`r round(tab_boundary$z[1], 2)` at one replicate to
+`r round(tab_boundary$z[nrow(tab_boundary)], 1)` at
+`r tab_boundary$m[nrow(tab_boundary)]`, crossing one standard deviation
+between `r tab_boundary$m[max(which(tab_boundary$z < 1))]` and
+`r tab_boundary$m[min(which(tab_boundary$z > 1))]` replicates. Beyond that
+crossing the posterior can no longer describe its own error, and coverage
+falls from `r round(100 * max(tab_boundary$coverage))` per cent to
+`r round(100 * min(tab_boundary$coverage))` per cent across the sweep.
+
+The spread-ESS trace explains why a diagnostic is not automatically a
+safeguard. The two runs' trajectories sit within
+`r round(max(abs(ess_ratio(fit_ok) - ess_ratio(fit_collapsed))), 3)` of each
+other at every iteration even though one ensemble's spread is a small
+fraction of the other's, because the statistic is invariant to a global
+rescaling of the anomalies. That is the case for reading it as a
+directional-collapse diagnostic and reading coverage as the calibration
+check. Because PESTO does not gate on the sweep's statistic itself, the
+`gate_over_determination()` function above mints the decline a caller wants:
+applied to the well-specified run it returns the run, and applied to the
+collapsed one it returns a `pesto_abstention` with reason
+`over_determined`, which a downstream tool recognises by class rather than
+by reading a message.
+
+The remaining machinery does what it claims, with one price worth naming.
+The multi-fidelity stack, running two cheap iterations before four expensive
+ones, reaches a posterior root-mean-square error of `r round(mf_rmse, 4)`
+against the single-fidelity run's `r round(post_rmse, 4)`: still far better
+than the prior, but a factor of `r round(mf_rmse / post_rmse, 1)` worse than
+spending every iteration on the expensive level. Two of six iterations spent
+on a biased model is not free, and whether that trade is worth taking
+depends on the cost ratio between the levels, which here was declared as 25
+to 1. The control-variate correction, by contrast, is close to exact on this
+problem: the mean absolute gap between the cheap and expensive levels falls
+from `r gap_before_txt` to `r gap_after_txt`, which is machine precision,
+because the cheap level's bias is a constant offset and an affine correction
+removes a constant offset exactly. The logistic growth template recovers a
+ceiling of
+`r round(post_crop[["b_max"]])` g/m2 against a truth of
+`r theta_crop[["b_max"]]` and a growth rate of
+`r round(post_crop[["r"]], 3)` against `r theta_crop[["r"]]`. The epidemic
+template recovers a reproduction number of `r round(r0_post, 2)` against a
+truth of `r round(r0_truth, 1)`. The filter tightens the posterior window by
+window, from a mean parameter standard deviation of
+`r signif(sd_trace[1], 3)` after the first window to
+`r signif(sd_trace[length(sd_trace)], 3)` after the third, which is the
+trajectory an in-season user wants rather than the endpoint alone.
+
+## Limits
+
+Every problem run here is synthetic, and the central one is linear and
+Gaussian, so the recovery it demonstrates is the easiest case there is;
+nothing in this vignette establishes that a real APSIM calibration converges
+or that its posterior is calibrated, which is what *Can PESTO
+recover APSIM's own parameters?* takes up on a simulator-backed run and on
+real measured biomass.
+The APSIM adapter is shown and not executed, so its code path is documented
+rather than exercised here, and the parallel evaluation path is likewise
+shown rather than run. The over-determination boundary is measured against a
+*known* truth, which a real calibration does not have: on a real problem the
+same diagnosis has to be made from held-out predictive coverage rather than
+from distance to a truth, and the minted gate above would have to be
+rewritten around that substitute. The boundary's crossing point is a
+property of this problem's parameter count, ensemble size and design matrix,
+not a universal threshold, so the number to carry away is the method rather
+than the value. Multi-fidelity is demonstrated with a cheap level that
+differs from the expensive one by a constant offset, which is the friendliest
+possible discrepancy; a cheap level whose bias varies with the parameters
+would behave differently and is not tested here. The filter is run on
+observations split into windows after the fact rather than arriving over a
+real season, so it shows the mechanism and not the operational case.
+
+## What to read next
+
+*Can PESTO recover APSIM's own parameters?* is this vignette's counterpart on a
+real simulator: a synthetic-truth recovery experiment against the bundled
+APSIM Wheat example, then a calibration to real measured biomass
+cross-checked against an independent optimiser. *My posterior looks too
+confident: is the ensemble collapsing?* is the second line of defence
+against a narrow posterior, and separates finite-ensemble collapse from the
+mis-specification diagnosed here. *When can a surrogate stand in for the
+simulator?* is the other way to spend fewer expensive model calls.
+*Handing an ensemble to somebody else* documents the record a finished run
+emits. *Is PESTO the same algorithm as the tools it descends from?* measures what the
+in-process driver buys against the file-coupled binaries.
+
+## References
+
+- Chen, Y., & Oliver, D. S. (2013). Levenberg-Marquardt forms of the
+  iterative ensemble smoother for efficient history matching and uncertainty
+  quantification. *Computational Geosciences*, 17(4), 689-703.
+- Emerick, A. A., & Reynolds, A. C. (2013). Ensemble smoother with multiple
+  data assimilation. *Computers & Geosciences*, 55, 3-15.
+- Glasserman, P. (2003). *Monte Carlo Methods in Financial Engineering*.
+  Springer, New York.
+- Holzworth, D., et al. (2014). APSIM: evolution towards a new generation of
+  agricultural systems simulation. *Environmental Modelling & Software*, 62,
+  327-350.
+- Kennedy, M. C., & O'Hagan, A. (2000). Predicting the output from a complex
+  computer code when fast approximations are available. *Biometrika*, 87(1),
+  1-13.
+
+## Reproduce
+
+Seed `20260516` sets the design matrix, the truth and the observation noise;
+seed `42` is passed to every `pesto_ies_callback()` and
+`pesto_ies_filter()` call, where it fixes the per-realisation observation
+perturbation, so all runs are compared on identical perturbed data. No
+external simulator or binary is used. Package versions follow.
+
+```{r session-info}
 sessionInfo()
 ```

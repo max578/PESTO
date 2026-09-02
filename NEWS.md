@@ -2,6 +2,20 @@
 
 * Relicensed from GPL (>= 3) to MIT (orchestra-wide licence unification, 2026-09-02). No code change.
 
+* All seven vignettes rewritten to the orchestra vignette quality bar: each
+  now opens with the question a modeller inverting a crop model would ask,
+  carries a human-readable title, follows the Why / What / Do / Read /
+  Limits / What to read next / Reproduce shape, computes every number in
+  prose inline or cites it to a named artefact, and renders with zero
+  warnings. Three claims that the shipped results did not support were
+  corrected in the process: the surrogate vignette said the twenty-parameter
+  problem produced modest savings when the classification is in fact total
+  and uninformative in sample, the APSIM case study described sowing depth as
+  barely identifiable when the frozen result contracts its spread most of the
+  three, and the PEST++ comparison read a rank-one worked example as though
+  it identified eight parameters. Each now reports what the artefact shows,
+  with a held-out or closed-form check beside it.
+
 ## Bug fixes
 
 * **The native IES now returns a posterior sample.** Every realisation
