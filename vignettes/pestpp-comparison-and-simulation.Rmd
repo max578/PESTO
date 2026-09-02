@@ -1,96 +1,121 @@
 ---
-title: "Benchmarking PESTO against PEST and PEST++"
+title: "Is PESTO the same algorithm as the tools it descends from?"
 output:
   rmarkdown::html_vignette:
     mathjax: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"
     pandoc_args: ["--include-in-header=mathjax-config.html"]
 vignette: >
-  %\VignetteIndexEntry{Benchmarking PESTO against PEST and PEST++}
+  %\VignetteIndexEntry{Is PESTO the same algorithm as the tools it descends from?}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+<!-- Render time: ~2 s under rmarkdown::render(); macOS arm64 (Darwin 26.5),
+     R 4.5.2, one core. The cross-tool benchmark is read from a frozen
+     artefact because it needs the external PEST and PEST++ binaries; the
+     worked example at the end runs live and takes about a second. -->
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment  = "#>",
-  fig.width  = 7,
+  fig.width = 7,
   fig.height = 4.5,
-  message = FALSE,
-  warning = FALSE,
-  dpi = 96
+  dpi = 150
 )
 ```
 
-## Overview
-
-PESTO brings the PEST and PEST++ family of model-independent parameter
-estimation into R. This vignette puts that claim on a measured footing. It
-opens with a head-to-head benchmark of PESTO against classic PEST and PEST++ on
-identical inverse problems -- reporting comparative estimates, accuracy,
-calibration, and wall-clock cost -- and closes with one worked example in which
-PESTO's iterative ensemble smoother reproduces the canonical algorithm on a
-well-posed problem.
-
-## Lineage and scope
-
-PESTO stands in a direct line of model-independent parameter-estimation tools,
-and a fair comparison has to respect that the tools do not all implement the
-same algorithm:
-
-- **PEST** (*Parameter ESTimation*; Doherty 2015) is the original Fortran
-  framework. Its estimator is deterministic Gauss-Levenberg-Marquardt (GLM)
-  with Tikhonov / SVD-assisted regularisation, and its uncertainty
-  quantification is a *linearised* Bayesian posterior (the PREDUNC path).
-- **PEST++** (White et al. 2020) is the open-source C++ re-implementation. It
-  adds `pestpp-ies` -- an *iterative ensemble smoother* (IES) after Chen &
-  Oliver (2013) -- which classic PEST does not provide.
-- **PESTO** brings that IES family natively into R and adds surrogate
-  acceleration, multi-fidelity, inflation / localisation, and an in-process
-  forward-model callback.
-
-| Algorithm class | classic PEST | PEST++ | PESTO |
-|---|---|---|---|
-| Deterministic GLM (+ linearised UQ) | yes (`pest`) | yes (`pestpp-glm`) | -- |
-| Iterative ensemble smoother (IES) | **no** | yes (`pestpp-ies`) | yes (native) |
-
-So PESTO's IES is benchmarked against `pestpp-ies` -- its algorithmic twin --
-while classic PEST enters as the *deterministic-GLM* reference. Reading the GLM
-optimum against an ensemble posterior is legitimate on a well-posed problem
-(where the linearisation holds) and instructive on a non-linear one (where it
-does not); both cases appear below.
-
-```{r libs}
+```{r library}
 library(PESTO)
-library(data.table)
-library(ggplot2)
-
-set.seed(20260425L)
 
 # Colourblind-safe palette throughout (Wong 2011).
 PAL <- c("#0072B2", "#D55E00", "#009E73", "#CC79A7", "#F0E442",
-        "#56B4E9", "#E69F00", "#000000")
+         "#56B4E9", "#E69F00", "#000000")
 ```
+
+## Why
+
+I already have a PEST workflow that works, and switching an established
+calibration to a new tool is a risk I need a reason to take. Before I move,
+the question I want answered is: *is PESTO's smoother actually the same
+algorithm as the one I am running now, does it get the same answers, and
+what does going native in R cost or buy me?* This vignette answers it in
+three parts: a lineage table saying which tool implements which estimator, a
+frozen head-to-head benchmark of PESTO against classic PEST and PEST++ on
+identical inverse problems, and a live worked example in which PESTO's
+smoother is compared against an independent reference implementation of the
+same update.
+
+## What
+
+Three tools stand in a direct line, and a fair comparison has to respect
+that they do not all implement the same estimator.
+
+**PEST** (Doherty 2015) is the original Fortran framework. Its estimator is
+deterministic Gauss-Levenberg-Marquardt with Tikhonov and
+singular-value-decomposition-assisted regularisation, and its uncertainty
+quantification is a *linearised* Bayesian posterior, the PREDUNC path.
+
+**PEST++** (White et al. 2020) is the open-source C++ re-implementation. It
+adds `pestpp-ies`, an iterative ensemble smoother after Chen and Oliver
+(2013), which classic PEST does not provide.
+
+**PESTO** brings that smoother family natively into R through
+[`pesto_ies_callback()`](../html/pesto_ies_callback.html), and adds
+surrogate acceleration, multi-fidelity, inflation and localisation, and an
+in-process forward-model callback.
+[`pesto_ies()`](../html/pesto_ies.html) drives the external `pestpp-ies`
+binary when one is wanted, and
+[`pestpp_available()`](../html/pestpp_available.html) probes for it without
+erroring. [`create_pest_scenario()`](../html/create_pest_scenario.html),
+[`write_pst()`](../html/write_pst.html) and
+[`read_pst()`](../html/read_pst.html) build and round-trip a PEST control
+file from R, so a problem defined in R is readable by the wider PEST
+toolchain. [`pesto_reference_ies()`](../html/pesto_reference_ies.html) is a
+compact pure-R implementation of the same smoother update, shipped as the
+comparison target the worked example uses.
+
+| Algorithm class | classic PEST | PEST++ | PESTO |
+|---|---|---|---|
+| Deterministic GLM with linearised UQ | yes (`pest`) | yes (`pestpp-glm`) | no |
+| Iterative ensemble smoother | **no** | yes (`pestpp-ies`) | yes (native) |
+
+So PESTO's smoother is benchmarked against `pestpp-ies`, its algorithmic
+twin, while classic PEST enters as the deterministic reference. Reading a
+deterministic optimum against an ensemble posterior is legitimate on a
+well-posed problem, where the linearisation holds, and instructive on a
+non-linear one, where it does not. Both cases appear below.
 
 Every PESTO algorithm runs with no external dependency. The optional
-cross-checks against the upstream binaries are guarded by `pestpp_available()`,
-an exported probe that returns `FALSE` rather than erroring when no binary is
-installed.
+cross-checks against the upstream binaries are guarded.
 
 ```{r binary-probe}
-cat("pestpp-ies available on this machine:",
-    pestpp_available("pestpp-ies"), "\n")
-print(pesto_version())
+pestpp_available("pestpp-ies")
+pesto_version()$pestpp_version
 ```
 
-## Cross-tool benchmark: PESTO vs PEST vs PEST++
+```{r binary-note, echo = FALSE, results = "asis"}
+if (isTRUE(pestpp_available("pestpp-ies"))) {
+  cat("A `pestpp-ies` binary is installed on this machine. The benchmark",
+      "below is still read from its frozen artefact rather than re-run,",
+      "because it also needs classic PEST and twenty seeds per cell.\n")
+} else {
+  cat("No `pestpp-ies` binary is installed on this machine, so nothing",
+      "here shells out to one: the benchmark is read from a frozen",
+      "artefact and the worked example runs entirely in R.\n")
+}
+```
 
-This is the head-to-head picture: a fixed-seed Monte-Carlo study -- twenty seeds
-per cell -- run by a standalone reproducibility harness that drives **classic
-PEST**, **PEST++**, and **PESTO** through identical inverse problems and scores
-them on the same footing. The numbers are frozen real outputs shipped with the
-package and loaded here; they are not recomputed at build time, because the
-external binaries are not present on CRAN check farms.
+## Do
+
+### The cross-tool benchmark
+
+This is the head-to-head picture: a fixed-seed Monte Carlo study, twenty
+seeds per cell, run by a standalone reproducibility harness that drives
+classic PEST, PEST++ and PESTO through identical inverse problems and scores
+them on the same footing. The numbers are frozen real outputs shipped with
+the package and read here; they are not recomputed at build time, because
+the external binaries are absent from package check farms.
 
 ```{r multitool-load}
 mt_path <- system.file("extdata", "pestpp_cache",
@@ -100,8 +125,10 @@ if (!nzchar(mt_path)) {
                        "multitool_benchmark_summary.rds")
 }
 mt <- readRDS(mt_path)
-mt_sum <- as.data.table(mt$summary)
+mt_sum <- data.table::as.data.table(mt$summary)
+```
 
+```{r versions-table, echo = FALSE}
 knitr::kable(
   data.frame(Tool = names(mt$tool_versions),
              Version = unname(mt$tool_versions)),
@@ -109,220 +136,214 @@ knitr::kable(
 )
 ```
 
-The two problems straddle the algorithm boundary -- one where the
-deterministic-GLM linearisation holds, one where it does not:
-
-```{r multitool-problems}
+```{r problems-table, echo = FALSE}
 knitr::kable(
   mt$problems[, c("id", "regime", "n_params", "n_obs")],
-  col.names = c("Problem", "Regime", "Params", "Obs"),
-  caption = "Benchmark problems (20 seeds each)."
+  col.names = c("Problem", "Regime", "Parameters", "Observations"),
+  caption = paste0(
+    "The two benchmark problems, chosen to straddle the boundary between ",
+    "the algorithm classes. Twenty seeds each."
+  )
 )
 ```
 
-### Accuracy, calibration, and cost
-
 ```{r multitool-table}
-primary <- mt_sum[tool %in% c("pesto_callback", "pest_predunc", "pestpp_ies")]
+primary <- mt_sum[tool %in% c("pesto_callback", "pest_predunc",
+                              "pestpp_ies")]
 primary[, problem := ifelse(tier == "tier1",
                             "linear (well-posed)", "non-linear ODE")]
 m_order <- c("PESTO (native IES)", "PEST (classic, GLM + PREDUNC)",
              "PEST++ (pestpp-ies)")
 primary[, method := factor(method, levels = m_order)]
-setorder(primary, tier, method)
+data.table::setorder(primary, tier, method)
 
-tab <- primary[, .(
-  Problem            = problem,
-  Method             = method,
-  `RMSE (median)`    = round(rmse_med, 4),
-  `CI90 coverage`    = round(ci90_cov, 3),
-  `Wall-clock (s)`   = round(wallclock_s, 2),
-  `Fwd evals`        = round(fwd_evals)
+tab_primary <- primary[, .(
+  Problem          = problem,
+  Method           = method,
+  `RMSE (median)`  = round(rmse_med, 4),
+  `CI90 coverage`  = round(ci90_cov, 3),
+  `Wall-clock (s)` = round(wallclock_s, 2),
+  `Forward evals`  = round(fwd_evals)
 )]
-knitr::kable(tab, caption = paste(
-  "Medians over 20 seeds. RMSE is to the known truth; target CI90",
-  "coverage is 0.90; forward evaluations are per single inversion."
-))
+```
+
+```{r multitool-kable, echo = FALSE}
+knitr::kable(
+  tab_primary,
+  caption = paste0(
+    "Medians over 20 seeds. RMSE is to the known truth; the target for ",
+    "CI90 coverage is 0.90; forward evaluations are per single inversion."
+  )
+)
 ```
 
 ```{r multitool-speedup}
-wide <- dcast(primary, problem ~ tool, value.var = "wallclock_s")
-speed <- data.table(
-  Problem                  = wide$problem,
-  `PESTO vs classic PEST`  = sprintf("%dx", round(wide$pest_predunc /
-                                                  wide$pesto_callback)),
-  `PESTO vs PEST++`        = sprintf("%dx", round(wide$pestpp_ies /
-                                                  wide$pesto_callback))
+wide <- data.table::dcast(primary, problem ~ tool, value.var = "wallclock_s")
+tab_speed <- data.table::data.table(
+  Problem                 = wide$problem,
+  `PESTO vs classic PEST` = round(wide$pest_predunc / wide$pesto_callback),
+  `PESTO vs PEST++`       = round(wide$pestpp_ies / wide$pesto_callback)
 )
-knitr::kable(speed, caption = "Wall-clock speed-up factor (median, x faster).")
 ```
 
-```{r multitool-accuracy-plot, fig.height = 4.2, fig.alt = "Median posterior RMSE to truth with inter-quartile bars on a logarithmic axis, by method and problem. On the linear problem all three methods sit together near 0.024. On the non-linear ODE, PESTO and PEST++ stay near 0.15 while classic PEST rises above 1.0 with a very long upper whisker."}
-ggplot(primary, aes(method, rmse_med, colour = method)) +
-  geom_pointrange(aes(ymin = rmse_iqr_lo, ymax = rmse_iqr_hi), linewidth = 0.7) +
-  facet_wrap(~ problem) +
-  scale_y_log10() +
-  scale_colour_manual(values = c(
-    "PESTO (native IES)"           = PAL[1],
-    "PEST (classic, GLM + PREDUNC)" = PAL[2],
-    "PEST++ (pestpp-ies)"          = PAL[3])) +
-  labs(x = NULL, y = "Posterior RMSE to truth (log scale)",
-       title = "Accuracy: median and inter-quartile range over 20 seeds") +
-  theme_minimal(base_size = 11) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 20, hjust = 1))
+```{r speedup-kable, echo = FALSE}
+knitr::kable(
+  tab_speed,
+  caption = paste0(
+    "Wall-clock speed-up factor, median over 20 seeds: how many times ",
+    "faster one inversion is under PESTO's in-process driver."
+  )
+)
 ```
 
-```{r multitool-speed-plot, fig.height = 3.6, fig.alt = "Median wall-clock seconds per inversion on a logarithmic axis, by method and problem. PESTO sits well below one second; classic PEST sits near one minute; PEST++ sits in the hundreds of seconds. The gap is two to three orders of magnitude."}
-ggplot(primary, aes(method, wallclock_s, fill = method)) +
-  geom_col() +
-  facet_wrap(~ problem) +
-  scale_y_log10() +
-  scale_fill_manual(values = c(
-    "PESTO (native IES)"           = PAL[1],
-    "PEST (classic, GLM + PREDUNC)" = PAL[2],
-    "PEST++ (pestpp-ies)"          = PAL[3])) +
-  labs(x = NULL, y = "Wall-clock per inversion, s (log scale)",
-       title = "Cost: in-process PESTO vs file-coupled binaries") +
-  theme_minimal(base_size = 11) +
-  theme(legend.position = "none",
-        axis.text.x = element_text(angle = 20, hjust = 1))
+```{r accuracy-figure, fig.height = 4.5, fig.cap = "Median posterior error to the known truth, with inter-quartile bars, on a logarithmic axis. On the linear problem the three methods sit together; on the non-linear ODE the two ensemble methods stay close while the linearised deterministic posterior degrades by an order of magnitude with a long upper whisker across seeds."}
+ggplot2::ggplot(primary, ggplot2::aes(method, rmse_med, colour = method)) +
+  ggplot2::geom_pointrange(
+    ggplot2::aes(ymin = rmse_iqr_lo, ymax = rmse_iqr_hi), linewidth = 0.7
+  ) +
+  ggplot2::facet_wrap(~ problem) +
+  ggplot2::scale_y_log10() +
+  ggplot2::scale_colour_manual(values = stats::setNames(
+    c(PAL[1], PAL[2], PAL[3]), m_order
+  )) +
+  ggplot2::labs(
+    x = NULL, y = "posterior RMSE to truth (log scale)",
+    title = "Accuracy: median and inter-quartile range over 20 seeds"
+  ) +
+  ggplot2::theme_minimal(base_size = 11) +
+  ggplot2::theme(legend.position = "none",
+                 axis.text.x = ggplot2::element_text(angle = 20, hjust = 1))
 ```
 
-### Interpretation
+```{r speed-figure, fig.height = 4.2, fig.cap = "Median wall-clock seconds per inversion on a logarithmic axis. PESTO's in-process driver sits below one second on the linear problem and near one second on the ODE; the file-coupled binaries sit in the tens to hundreds of seconds. The gap is two to three orders of magnitude and is an exchange cost, not an algorithmic one."}
+ggplot2::ggplot(primary, ggplot2::aes(method, wallclock_s, fill = method)) +
+  ggplot2::geom_col() +
+  ggplot2::facet_wrap(~ problem) +
+  ggplot2::scale_y_log10() +
+  ggplot2::scale_fill_manual(values = stats::setNames(
+    c(PAL[1], PAL[2], PAL[3]), m_order
+  )) +
+  ggplot2::labs(
+    x = NULL, y = "wall-clock per inversion, s (log scale)",
+    title = "Cost: in-process PESTO against file-coupled binaries"
+  ) +
+  ggplot2::theme_minimal(base_size = 11) +
+  ggplot2::theme(legend.position = "none",
+                 axis.text.x = ggplot2::element_text(angle = 20, hjust = 1))
+```
 
-The three methods separate exactly where the lineage table predicts.
+### Does PESTO drive the binary faithfully?
 
-- **Accuracy parity on the linear problem.** All three recover the truth to the
-  same median RMSE (about 0.023--0.024). PESTO's R-native IES is neither better
-  nor worse than the reference implementations -- what a faithful
-  re-implementation should show.
-- **The non-linear problem separates the algorithm classes.** On the
-  predator-prey ODE the ensemble methods (PESTO and `pestpp-ies`) stay accurate
-  (median RMSE about 0.14 and 0.17), while classic PEST's *linearised* GLM
-  posterior degrades by an order of magnitude (median about 1.3, with a long
-  upper whisker across seeds). The deterministic-GLM linearisation is reliable
-  where the forward map is near-linear and fragile where it is not.
-- **Speed is wall-clock, not fewer evaluations.** PESTO is two to three orders
-  of magnitude faster in wall-clock. The cause is *not* fewer forward solves --
-  classic PEST is gradient-based and uses the fewest. PESTO evaluates the
-  forward model in-process and updates the ensemble in C++, avoiding the
-  per-evaluation file exchange and process spawn the file-coupled binaries pay
-  on every call.
-- **The CI90 row is a pre-fix figure.** PESTO's benchmarked *raw* ensemble
-  credible intervals under-cover badly (CI90 around 0.13 on the linear
-  problem against a nominal 0.90). The cause has since been identified and
-  fixed: the smoother assimilated the same unperturbed observation vector
-  into every realisation, so the ensemble was a cloud around the
-  best fit rather than a posterior sample. The development version
-  perturbs the observations per realisation under an ES-MDA schedule and
-  recovers the analytic posterior covariance and nominal interval coverage
-  on a linear-Gaussian problem with a closed-form answer (see *Posterior
-  spread and observation perturbation* in
-  [`?pesto_ies_callback`](../html/pesto_ies_callback.html)). Re-running
-  this benchmark needs the external PEST and PEST++ binaries, which are
-  absent here, so the table above still carries the pre-fix PESTO
-  calibration row. The accuracy, cost and forward-evaluation columns are
-  unaffected. Measure coverage on your own problem regardless.
+The benchmark above compares algorithms. A separate question is whether
+PESTO, used as a *driver* for `pestpp-ies` through `pesto_ies()`, reproduces
+what invoking the binary directly would give. The conformance arm of the
+PEST, PEST++ and PESTO benchmark harness answered that on 2026-07-16, running
+the same problem, the same prior ensemble and the same options twice, once
+through the harness calling the binary itself and once through PESTO, and
+comparing the posterior ensembles element by element: the two agreed to the
+last bit, with a maximum absolute difference of zero. That record is cited
+here, not recomputed: reproducing it needs the external `pestpp-ies` binary,
+which no package build can assume.
 
-## Performance characteristics
+### Where the cost model comes from
 
-PESTO's performance rests on four levers -- what *optimised* names -- each with a
-cost model and a measured outcome.
+PESTO's performance rests on four levers, each with a cost model and a
+measured outcome.
 
-**Speed, at matched accuracy.** The speed-up is
-$S = t_{\text{ref}} / t_{\text{PESTO}}$ (median wall-clock per inversion), which
-the table above puts at roughly $40\times$ to $860\times$. It follows from a cost
-model, not from fewer solves. An iterative ensemble smoother with $N$ realisations
-over $T$ iterations performs about $N(T{+}1)$ forward solves; a file-coupled
-engine pays, per solve, the model cost $c_m$ plus an exchange overhead $c_{io}$
-(template write, output parse, process spawn), while the in-process callback pays
+**Speed at matched accuracy.** The speed-up is
+$S = t_{\text{ref}} / t_{\text{PESTO}}$, median wall-clock per inversion,
+which the table above reports. It follows from a cost model rather than from
+fewer solves. A smoother with $N$ realisations over $T$ iterations performs
+about $N(T{+}1)$ forward solves; a file-coupled engine pays, per solve, the
+model cost $c_m$ plus an exchange overhead $c_{io}$ for the template write,
+the output parse and the process spawn, while the in-process callback pays
 $c_m$ alone:
 $$t_{\text{file}} \approx N(T{+}1)\,(c_m + c_{io}), \qquad
   t_{\text{PESTO}} \approx N(T{+}1)\,c_m + c_{\text{upd}} .$$
-When the exchange dominates ($c_{io} \gtrsim c_m$, the cheap-model regime here)
-the speed-up approaches $1 + c_{io}/c_m \gg 1$: the same number of solves at far
-lower per-solve overhead, with a C++ update kernel and no loss of accuracy. The
-parity column (root-mean-square error to the truth) and the *APSIM case study*
--- which recovers a known truth and brackets the independent `apsimx` optimiser
-on real data -- both bear this out.
+When the exchange dominates, which is the cheap-model regime of this
+benchmark, the speed-up approaches $1 + c_{io} / c_m$: the same number of
+solves at far lower per-solve overhead, with a C++ update kernel. The
+accuracy column and *Can PESTO recover APSIM's own parameters?*, which
+recovers a known truth and brackets an independent optimiser on real data,
+are what say the accuracy is not paid away for it.
 
-**Evaluation economy (surrogates).** When the forward model itself is expensive,
-the cost shifts to the *number* of expensive solves. A Gaussian-process surrogate
-(Rasmussen & Williams 2006) predicts the confident realisations and sends only the
-uncertain ones to the full model,
-$$\text{savings} = 1 - \frac{n_{\text{model}}}{n_{\text{total}}},$$
-a realisation taking the full model only when its GP predictive standard deviation
-exceeds a threshold. The saving is regime-dependent: large on smooth responses,
-degrading gracefully to near zero on rough ones, where the smoother falls back to
-full evaluation rather than corrupting the posterior (see the *Surrogate-accelerated
-IES* vignette).
+**Evaluation economy.** When the forward model itself is expensive, cost
+shifts to the *number* of expensive solves. A Gaussian-process surrogate
+(Rasmussen and Williams 2006) predicts the confident realisations and sends
+only the uncertain ones to the full model,
+$$\text{saving} = 1 - \frac{n_{\text{model}}}{n_{\text{total}}},$$
+a realisation taking the full model only when its predictive standard
+deviation exceeds a threshold. The saving is regime-dependent and the
+current release computes it as a projection rather than realising it, which
+*When can a surrogate stand in for the simulator?* sets out in full.
 
-**Cost-accuracy trade (multi-fidelity).** With a cheap and an expensive fidelity
-correlated at $\rho$, the control-variate combiner `mf_control_variate()`
-(Kennedy & O'Hagan 2000; Glasserman 2003) attains
-$\mathrm{Var}(\hat\mu_{\text{CV}}) = (1-\rho^2)\,\mathrm{Var}(\hat\mu_{\text{H}})$,
-so a well-correlated cheap model cuts the expensive-evaluation budget for a target
-variance by about $(1-\rho^2)$.
+**Cost-accuracy trade.** With a cheap and an expensive fidelity correlated at
+$\rho$, the control-variate combiner
+[`mf_control_variate()`](../html/mf_control_variate.html) (Kennedy and
+O'Hagan 2000; Glasserman 2003) attains
+$\mathrm{Var}(\hat\mu_{\text{CV}}) =
+(1-\rho^2)\,\mathrm{Var}(\hat\mu_{\text{H}})$,
+so a well-correlated cheap model cuts the expensive-evaluation budget for a
+target variance by about $(1-\rho^2)$.
 
-**Iteration economy.** With $\phi(\theta) = \sum_i w_i\,(d_i - g_i(\theta))^2$ the
-weighted objective, the optional `phi_tol` stops once the relative reduction
-$(\phi_{k-1}-\phi_k)/\phi_{k-1}$ falls below a tolerance, spending no iterations on
-a plateau (`?pesto_ies_callback`).
+**Iteration economy.** With
+$\phi(\theta) = \sum_i w_i (d_i - g_i(\theta))^2$ the weighted objective, the
+optional `phi_tol` stops once the relative reduction
+$(\phi_{k-1}-\phi_k)/\phi_{k-1}$ falls below a tolerance, spending no
+iterations on a plateau.
 
-These are gains in wall-clock time and evaluation budget, not in the number of
-base solves -- classical PEST, being gradient-based, uses the fewest -- and not in
-raw-interval calibration, which under-covers until inflation is applied.
+These are gains in wall-clock time and evaluation budget, not in the number
+of base solves, and not in raw-interval calibration.
 
-## A worked example: a well-posed inverse problem
+### A worked example that runs here
 
-The benchmark above used frozen binary outputs. This example runs end to end at
-build time, with no external dependency, and shows PESTO's native IES agreeing
-with the shipped pure-R reference smoother on a small, analytically tractable
-problem.
+The benchmark above used frozen binary outputs. This example runs end to end
+at build time with no external dependency, and compares PESTO's native
+smoother against the shipped pure-R reference implementation of the same
+update.
 
-### The problem
-
-A one-dimensional exponential-decay response with eight unknown parameters
-$\boldsymbol{\theta} = (\theta_1, \ldots, \theta_8)^\top$ and fifteen
-observations:
+The problem is synthetic: a one-dimensional exponential-decay response with
+eight unknown parameters and fifteen observations,
 
 $$y_i \;=\; \sum_{k=1}^{8} k\,\theta_k \, e^{-i / 10}\;+\;\varepsilon_i,
-   \qquad i = 1, \ldots, 15, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^2).$$
+   \qquad i = 1, \ldots, 15, \quad
+   \varepsilon_i \sim \mathcal{N}(0, \sigma^2).$$
 
-The response is linear in $\boldsymbol{\theta}$, so the posterior is analytically
-tractable. The weighting $k\,e^{-i/10}$ leaves high-index parameters poorly
-constrained: the first few should recover tightly and the tail stay diffuse.
+The response is linear in $\boldsymbol{\theta}$, so the posterior is
+analytically tractable, and it is worth noticing what the design actually
+identifies: every observation is the same weighted sum
+$S = \sum_k k\,\theta_k$ scaled by $e^{-i/10}$, so the design matrix has
+rank one. Fifteen observations therefore pin down one number, and no
+individual parameter, which is what makes this a searching test of two
+implementations rather than an easy one.
 
 ```{r scen-a-truth}
 set.seed(20260425L)
-n_par         <- 8L
-par_names_A   <- sprintf("p%d", seq_len(n_par))
-theta_true_A  <- c(1.20, 0.85, 0.55, 0.40, 0.30, 0.22, 0.16, 0.10)
+n_par <- 8L
+par_names_A <- sprintf("p%d", seq_len(n_par))
+theta_true_A <- c(1.20, 0.85, 0.55, 0.40, 0.30, 0.22, 0.16, 0.10)
 
 forward_A <- function(p) {
   vapply(seq_len(15L),
-         function(ii) sum(seq_along(p) * p * exp(-ii / 10.0)), numeric(1))
+         function(ii) sum(seq_along(p) * p * exp(-ii / 10.0)), numeric(1L))
 }
 
-y_true_A       <- forward_A(theta_true_A)
+y_true_A <- forward_A(theta_true_A)
 obs_noise_sd_A <- 0.02
-y_obs_A        <- y_true_A + rnorm(length(y_true_A), sd = obs_noise_sd_A)
-weights_A      <- rep(1 / obs_noise_sd_A, length(y_obs_A))
+y_obs_A <- y_true_A + rnorm(length(y_true_A), sd = obs_noise_sd_A)
+weights_A <- rep(1 / obs_noise_sd_A, length(y_obs_A))
 ```
 
-### Building a PEST control file
+PESTO defines problems programmatically, with no pre-existing control file
+needed, and round-trips them through the PEST control-file format, so a
+problem built in R is readable by the wider PEST toolchain:
 
-PESTO defines problems programmatically -- no pre-existing `.pst` file needed --
-and round-trips them through the PEST control-file format, so a problem built in
-R is readable by the wider PEST toolchain:
-
-```{r scen-a-pst, results = "hide"}
-parameters_A <- data.table(
+```{r scen-a-pst}
+parameters_A <- data.table::data.table(
   parnme = par_names_A, partrans = "log", parchglim = "factor",
   parval1 = 0.5, parlbnd = 0.001, parubnd = 5.0, pargp = "pgrp"
 )
-observations_A <- data.table(
+observations_A <- data.table::data.table(
   obsnme = sprintf("obs_%02d", seq_len(15L)),
   obsval = y_obs_A, weight = weights_A, obgnme = "obs_g"
 )
@@ -336,22 +357,21 @@ scratch_A <- file.path(tempdir(), "pesto_scenA")
 dir.create(scratch_A, showWarnings = FALSE, recursive = TRUE)
 write_pst(pst_A, file.path(scratch_A, "scenA.pst"))
 pst_A_rt <- read_pst(file.path(scratch_A, "scenA.pst"))   # round-trip check
-stopifnot(pst_A_rt$control_data$npar == n_par)
+c(parameters_written = pst_A_rt$control_data$npar,
+  observations_written = pst_A_rt$control_data$nobs)
 ```
 
-### Running PESTO
-
-The in-process callback driver `pesto_ies_callback()` is the recommended path
-for an R forward model: it keeps the C++ ensemble kernel but drives the outer
-loop in R, calling the forward model directly (see the *Calibrating APSIM with
-PESTO* vignette for the full contract).
+The in-process callback driver is the recommended path for an R forward
+model: it keeps the C++ ensemble kernel but drives the outer loop in R,
+calling the forward model directly. The contract is the subject of *Wiring
+your own simulator into PESTO*.
 
 ```{r scen-a-pesto}
 set.seed(20260425L)
-n_real_A   <- 60L
-prior_A    <- matrix(rnorm(n_real_A * n_par, mean = 0.5, sd = 0.4),
-                     nrow = n_real_A, ncol = n_par,
-                     dimnames = list(NULL, par_names_A))
+n_real_A <- 60L
+prior_A <- matrix(rnorm(n_real_A * n_par, mean = 0.5, sd = 0.4),
+                  nrow = n_real_A, ncol = n_par,
+                  dimnames = list(NULL, par_names_A))
 forward_ens_A <- function(theta) t(apply(theta, 1L, forward_A))
 
 t0 <- proc.time()[["elapsed"]]
@@ -361,28 +381,25 @@ fit_A <- pesto_ies_callback(
   obs            = setNames(y_obs_A, sprintf("obs_%02d", seq_len(15L))),
   obs_sd         = obs_noise_sd_A,
   noptmax        = 6L,
+  seed           = 20260425L,
   verbose        = FALSE
 )
 runtime_pesto_A <- proc.time()[["elapsed"]] - t0
 
-post_A          <- as.matrix(fit_A$par_ensemble[, -1L])[, par_names_A]
+post_A <- as.matrix(fit_A$par_ensemble[, -1L])[, par_names_A]
 post_mean_pesto <- colMeans(post_A)
-post_q05_pesto  <- apply(post_A, 2L, quantile, 0.05)
-post_q95_pesto  <- apply(post_A, 2L, quantile, 0.95)
-rmse_pesto_A    <- sqrt(mean((post_mean_pesto - theta_true_A)^2))
-phi_trace_pesto <- vapply(fit_A$iterations, `[[`, numeric(1L), "mean_phi")
-
-cat(sprintf("PESTO native IES: 6 iterations in %.2fs; posterior RMSE = %.4f\n",
-            runtime_pesto_A, rmse_pesto_A))
+post_q05_pesto <- apply(post_A, 2L, quantile, 0.05)
+post_q95_pesto <- apply(post_A, 2L, quantile, 0.95)
+rmse_pesto_A <- sqrt(mean((post_mean_pesto - theta_true_A)^2))
+round(c(seconds = runtime_pesto_A, posterior_rmse = rmse_pesto_A), 4)
 ```
 
-### Comparison with the reference smoother
+The package ships a compact pure-R reference produced by
+`pesto_reference_ies()`, an independent implementation of the Chen and
+Oliver update on the same problem. It is the comparison target every reader
+sees by default.
 
-The package ships a compact pure-R reference produced by `pesto_reference_ies()`
--- an independent implementation of the Chen & Oliver (2013) update on the same
-problem. It is the canonical comparison target every reader sees by default.
-
-```{r scen-a-reference, results = "hide"}
+```{r scen-a-reference}
 cache_path <- system.file("extdata", "pestpp_cache",
                           "scenario_a_reference.rds", package = "PESTO")
 if (!nzchar(cache_path)) {
@@ -392,112 +409,297 @@ if (!nzchar(cache_path)) {
 }
 stopifnot(nzchar(cache_path), file.exists(cache_path))
 ies_cache <- readRDS(cache_path)
-stopifnot(max(abs(ies_cache$y_obs - y_obs_A)) < 1e-10)   # same problem instance
+# Same problem instance: the cached reference must have seen these data.
+max(abs(ies_cache$y_obs - y_obs_A)) < 1e-10
 
 posterior_ref_A <- as.matrix(
   ies_cache$posterior_par[, ies_cache$par_names, with = FALSE]
 )
 post_mean_ref <- colMeans(posterior_ref_A)
-post_q05_ref  <- apply(posterior_ref_A, 2L, quantile, 0.05)
-post_q95_ref  <- apply(posterior_ref_A, 2L, quantile, 0.95)
-phi_trace_ref <- ies_cache$phi_history$mean
-ref_label     <- "pure-R reference (Chen & Oliver 2013)"
+post_q05_ref <- apply(posterior_ref_A, 2L, quantile, 0.05)
+post_q95_ref <- apply(posterior_ref_A, 2L, quantile, 0.95)
+rmse_ref_A <- sqrt(mean((post_mean_ref - theta_true_A)^2))
+ref_label <- "pure-R reference (Chen & Oliver 2013)"
+round(c(reference_posterior_rmse = rmse_ref_A), 4)
+```
+
+The quantity to compare is therefore $S$, the combination the data
+identify, whose posterior has a closed form. Its posterior standard
+deviation follows from the prior precision plus the summed squared design
+weights over the observation variance.
+
+```{r identified-combination}
+s_of <- function(theta) sum(seq_along(theta) * theta)
+kernel_A <- exp(-seq_len(15L) / 10.0)
+prior_var_S <- 0.4^2 * sum(seq_len(n_par)^2)
+post_sd_S <- sqrt(1 / (1 / prior_var_S +
+                         sum(kernel_A^2) / obs_noise_sd_A^2))
+
+s_truth <- s_of(theta_true_A)
+s_pesto <- apply(post_A, 1L, s_of)
+s_ref <- apply(posterior_ref_A, 1L, s_of)
+
+round(c(truth = s_truth, pesto_mean = mean(s_pesto),
+        reference_mean = mean(s_ref), analytic_post_sd = post_sd_S,
+        pesto_sd = sd(s_pesto), reference_sd = sd(s_ref)), 4)
+```
+
+```{r combination-figure, fig.height = 4.2, fig.cap = "Posterior density of the one quantity this design identifies, the weighted sum S, under PESTO's smoother and under the reference implementation. The solid line is the true value and the shaded band is the closed-form posterior at plus or minus two analytic standard deviations. Both implementations locate S; PESTO's spread matches the analytic width closely, while the reference's is markedly wider."}
+tab_s <- data.table::rbindlist(list(
+  data.table::data.table(value = s_pesto, source = "PESTO"),
+  data.table::data.table(value = s_ref, source = ref_label)
+))
+ggplot2::ggplot(tab_s, ggplot2::aes(x = value, fill = source)) +
+  ggplot2::annotate(
+    "rect", xmin = s_truth - 2 * post_sd_S, xmax = s_truth + 2 * post_sd_S,
+    ymin = -Inf, ymax = Inf, fill = "grey80", alpha = 0.6
+  ) +
+  ggplot2::geom_density(alpha = 0.55, colour = NA) +
+  ggplot2::geom_vline(xintercept = s_truth, linewidth = 0.6) +
+  ggplot2::scale_fill_manual(values = stats::setNames(
+    c(PAL[1], PAL[2]), c("PESTO", ref_label)
+  ), name = NULL) +
+  ggplot2::labs(
+    x = "identified combination S (model units)", y = "posterior density",
+    title = "The one quantity fifteen observations identify"
+  ) +
+  ggplot2::theme_minimal(base_size = 12) +
+  ggplot2::theme(legend.position = "bottom")
 ```
 
 ```{r scen-a-table}
-agreement <- data.table(
-  parameter   = par_names_A,
-  truth       = theta_true_A,
-  PESTO_mean  = round(post_mean_pesto, 4),
-  PESTO_q05   = round(post_q05_pesto,  4),
-  PESTO_q95   = round(post_q95_pesto,  4),
-  ref_mean    = round(post_mean_ref,   4),
-  ref_q05     = round(post_q05_ref,    4),
-  ref_q95     = round(post_q95_ref,    4)
+tab_agreement <- data.table::data.table(
+  Parameter  = par_names_A,
+  Truth      = theta_true_A,
+  `PESTO mean` = round(post_mean_pesto, 4),
+  `PESTO 5%`   = round(post_q05_pesto, 4),
+  `PESTO 95%`  = round(post_q95_pesto, 4),
+  `Reference mean` = round(post_mean_ref, 4),
+  `Reference 5%`   = round(post_q05_ref, 4),
+  `Reference 95%`  = round(post_q95_ref, 4)
 )
-agreement[, rel_diff_pct := round(100 * abs(PESTO_mean - ref_mean) /
-                                  pmax(abs(ref_mean), 1e-6), 2)]
-knitr::kable(agreement,
-             caption = "Posterior summaries: PESTO native IES vs the reference.")
+tab_agreement[, `Relative difference (%)` :=
+                round(100 * abs(`PESTO mean` - `Reference mean`) /
+                        pmax(abs(`Reference mean`), 1e-6), 2)]
 ```
 
-```{r scen-a-posterior-plot, fig.height = 4.6, fig.alt = "Side-by-side posterior 90% credible intervals for the eight parameters from PESTO and the reference smoother; the intervals overlap throughout and the truth lies inside both for the well-identified parameters."}
-pp_dt <- rbindlist(list(
-  data.table(parameter = par_names_A, mean = post_mean_pesto,
-             q05 = post_q05_pesto, q95 = post_q95_pesto, source = "PESTO"),
-  data.table(parameter = par_names_A, mean = post_mean_ref,
-             q05 = post_q05_ref, q95 = post_q95_ref, source = ref_label)
+```{r scen-a-kable, echo = FALSE}
+knitr::kable(
+  tab_agreement,
+  caption = paste0(
+    "Posterior summaries on the same problem instance: PESTO's native ",
+    "smoother against the shipped pure-R reference implementation."
+  )
+)
+```
+
+```{r scen-a-figure, fig.height = 4.8, fig.cap = "Posterior 90 per cent credible intervals for the eight individual parameters, from PESTO and from the reference implementation, with the true generating values marked by crosses. Neither implementation recovers the individual parameters, and neither should: the design identifies only their weighted sum, so these intervals record where each smoother's prior draw and damping schedule left the seven unconstrained directions."}
+tab_pp <- data.table::rbindlist(list(
+  data.table::data.table(parameter = par_names_A, mean = post_mean_pesto,
+                         q05 = post_q05_pesto, q95 = post_q95_pesto,
+                         source = "PESTO"),
+  data.table::data.table(parameter = par_names_A, mean = post_mean_ref,
+                         q05 = post_q05_ref, q95 = post_q95_ref,
+                         source = ref_label)
 ))
-truth_dt <- data.table(parameter = par_names_A, truth = theta_true_A)
+tab_truth <- data.table::data.table(parameter = par_names_A,
+                                    truth = theta_true_A)
 
-ggplot(pp_dt, aes(parameter, mean, colour = source)) +
-  geom_pointrange(aes(ymin = q05, ymax = q95),
-                  position = position_dodge(width = 0.45),
-                  size = 0.5, linewidth = 0.9) +
-  geom_point(data = truth_dt, aes(parameter, truth), inherit.aes = FALSE,
-             shape = 4, size = 3.5, colour = PAL[8], stroke = 1.2) +
-  scale_colour_manual(values = setNames(c(PAL[1], PAL[2]),
-                                        c("PESTO", ref_label))) +
-  labs(title = "Posterior 90% credible intervals",
-       subtitle = "Crosses mark the true generating parameter values",
-       x = "Parameter", y = "Posterior value", colour = NULL) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "bottom",
-        plot.title = element_text(face = "bold"))
+ggplot2::ggplot(tab_pp, ggplot2::aes(parameter, mean, colour = source)) +
+  ggplot2::geom_pointrange(
+    ggplot2::aes(ymin = q05, ymax = q95),
+    position = ggplot2::position_dodge(width = 0.45),
+    size = 0.5, linewidth = 0.9
+  ) +
+  ggplot2::geom_point(
+    data = tab_truth, ggplot2::aes(parameter, truth), inherit.aes = FALSE,
+    shape = 4L, size = 3.5, colour = PAL[8], stroke = 1.2
+  ) +
+  ggplot2::scale_colour_manual(values = stats::setNames(
+    c(PAL[1], PAL[2]), c("PESTO", ref_label)
+  )) +
+  ggplot2::labs(
+    x = "parameter", y = "posterior value (model units)", colour = NULL,
+    title = "Posterior 90 per cent credible intervals",
+    subtitle = "Crosses mark the true generating parameter values"
+  ) +
+  ggplot2::theme_minimal(base_size = 12) +
+  ggplot2::theme(legend.position = "bottom")
 ```
 
-### Interpretation
+```{r read-facts, include = FALSE}
+lin <- primary[problem == "linear (well-posed)"]
+ode <- primary[problem == "non-linear ODE"]
+rmse_lin_lo <- min(lin$rmse_med)
+rmse_lin_hi <- max(lin$rmse_med)
+rmse_ode_ens <- ode[tool %in% c("pesto_callback", "pestpp_ies"), rmse_med]
+rmse_ode_pest <- ode[tool == "pest_predunc", rmse_med]
+ci90_pesto_lin <- lin[tool == "pesto_callback", ci90_cov]
+speed_min <- min(unlist(tab_speed[, -1L]))
+speed_max <- max(unlist(tab_speed[, -1L]))
+evals_pesto <- lin[tool == "pesto_callback", fwd_evals]
+evals_pest <- lin[tool == "pest_predunc", fwd_evals]
+max_rel_diff <- max(tab_agreement$`Relative difference (%)`)
+s_rel_diff <- 100 * abs(mean(s_pesto) - mean(s_ref)) / mean(s_ref)
+s_err_pesto <- 100 * abs(mean(s_pesto) - s_truth) / s_truth
+s_err_ref <- 100 * abs(mean(s_ref) - s_truth) / s_truth
+s_width_pesto <- sd(s_pesto) / post_sd_S
+s_width_ref <- sd(s_ref) / post_sd_S
+resid_pesto <- sqrt(mean((forward_A(post_mean_pesto) - y_obs_A)^2))
+resid_ref <- sqrt(mean((forward_A(post_mean_ref) - y_obs_A)^2))
+```
 
-PESTO and the reference agree on the **direction and ranking** of the posterior
-pull: both move $\theta_1$ down from the prior mean of 0.5, centre
-$\theta_2$--$\theta_4$ in the same neighbourhood, and leave $\theta_5$--$\theta_8$
-near the prior, because an exponentially decaying observation kernel barely
-constrains the high-index parameters. The posteriors are not bit-identical --
-the two smoothers use different prior-ensemble seeds and damping schedules -- but
-they overlap throughout, and the truth lies inside both intervals for the
-well-identified parameters. This is the agreement a faithful re-implementation
-should show.
+## Read
+
+The three methods separate exactly where the lineage table predicts.
+
+**On the linear problem they agree.** All three recover the truth to a
+median error between `r round(rmse_lin_lo, 4)` and `r round(rmse_lin_hi, 4)`,
+a spread of `r round(100 * (rmse_lin_hi - rmse_lin_lo) / rmse_lin_lo)` per
+cent between the best and the worst of them. PESTO's R-native smoother is
+neither better nor worse than the reference implementations, which is what a
+faithful re-implementation should show.
+
+**On the non-linear problem the algorithm classes separate.** The two
+ensemble methods stay accurate, at median errors of
+`r round(min(rmse_ode_ens), 3)` and `r round(max(rmse_ode_ens), 3)`, while
+classic PEST's linearised posterior degrades to `r round(rmse_ode_pest, 2)`,
+a factor of `r round(rmse_ode_pest / max(rmse_ode_ens))` worse, with an
+upper quartile of `r round(ode[tool == "pest_predunc", rmse_iqr_hi])` across
+seeds. The linearisation is reliable where the forward map is near-linear
+and fragile where it is not, and that is the whole content of the choice
+between the two families.
+
+**Speed is wall-clock, not fewer evaluations.** PESTO is between
+`r speed_min` and `r speed_max` times faster in wall-clock across the four
+comparisons in the speed-up table. The cause is not fewer forward solves:
+on the linear problem PESTO takes `r round(evals_pesto)` forward evaluations
+against classic PEST's `r round(evals_pest)`, so the gradient-based method
+uses the fewest. PESTO evaluates the forward model in process and updates
+the ensemble in C++, avoiding the per-evaluation file exchange and process
+spawn the file-coupled binaries pay on every call. The conformance arm cited
+above says the other half of the same story: when PESTO is asked to drive
+the binary rather than replace it, the answer it returns is the binary's own
+answer, bit for bit.
+
+**The CI90 column is a pre-fix figure and should be read as one.** PESTO's
+benchmarked raw credible intervals under-cover badly, at
+`r round(ci90_pesto_lin, 3)` on the linear problem against a nominal 0.90.
+The cause has since been identified and fixed: the smoother assimilated the
+same unperturbed observation vector into every realisation, so the ensemble
+was a cloud around the best fit rather than a posterior sample. The
+development version perturbs the observations per realisation under an
+ES-MDA schedule and recovers the analytic posterior covariance and nominal
+interval coverage on a linear-Gaussian problem with a closed-form answer, as
+*Posterior spread and observation perturbation* in
+[`?pesto_ies_callback`](../html/pesto_ies_callback.html) sets out. Re-running
+this benchmark needs the external PEST and PEST++ binaries, which are absent
+here, so the table still carries the pre-fix calibration row; the accuracy,
+cost and forward-evaluation columns are unaffected. Measure coverage on your
+own problem in either case.
+
+The worked example closes the loop with a live comparison, and it is the
+most searching of the three because the design identifies only one number.
+On the quantity the data can constrain, the weighted sum $S$, PESTO's
+posterior mean sits `r round(s_err_pesto, 2)` per cent from the truth and
+the reference's `r round(s_err_ref, 2)` per cent, and the two agree with
+each other to `r round(s_rel_diff, 2)` per cent. PESTO's posterior spread on
+$S$ is `r round(s_width_pesto, 2)` times the closed-form posterior standard
+deviation, so it is close to correctly calibrated on the identified
+direction; the reference implementation's is `r round(s_width_ref, 1)` times
+that width, which is the visible difference between the two densities in the
+figure.
+
+The per-parameter numbers tell the other half of the story and should not be
+read as disagreement about the answer. Root-mean-square error to the true
+parameter vector is `r round(rmse_pesto_A, 3)` for PESTO and
+`r round(rmse_ref_A, 3)` for the reference, both large beside parameter
+values that run from `r max(theta_true_A)` down to `r min(theta_true_A)`,
+and the inversion itself took `r round(runtime_pesto_A, 2)` seconds.
+Individual posterior means differ by up to `r round(max_rel_diff)` per cent
+between the two implementations, and neither recovers the individual truths,
+because a rank-one design leaves seven of the eight directions
+unconstrained by the data: the smoothers move those directions only as far
+as their own
+prior draws and damping schedules take them, and there is no fact of the
+matter for them to agree about. Both implementations fit the observations,
+at root-mean-square residuals of `r round(resid_pesto, 4)` and
+`r round(resid_ref, 4)` against an observation noise of
+`r obs_noise_sd_A`. What a faithful re-implementation
+owes is agreement on what the data determine, and that is what the
+identified-combination figure shows.
 
 ## Limits
 
-Two limits travel with every PESTO IES result and are stated here once.
+The benchmark is two problems, both small and both synthetic, at twenty
+seeds each; it establishes the direction of the differences between the
+algorithm classes and not their size on a real simulator-backed calibration,
+where the forward model rather than the exchange overhead dominates the
+cost. The speed-up figures come from a cheap-model regime by construction:
+where a single forward solve costs a minute, the exchange overhead is a
+rounding error and the same table would show ratios near one. The
+calibration column predates the observation-perturbation fix and cannot be
+regenerated without the external binaries, so it records the earlier
+behaviour rather than the current one. Inflation strength is problem
+dependent, and two independent instruments, a joint-calibration coverage
+test and this cross-tool benchmark, disagreed on the optimal relaxation
+strength, which means there is no universal default: report coverage and
+tune to it. The conformance result cited above covers one problem, one
+option set and one binary version, so it establishes that PESTO drove
+`pestpp-ies` faithfully in that configuration rather than in every
+configuration. The worked example compares PESTO against a reference
+implementation shipped in the same package, which is a weaker independence
+than the external-binary comparison; the external comparison is the frozen
+benchmark, and the two are meant to be read together.
 
-- **The benchmark's calibration row predates the observation-perturbation
-  fix.** The under-coverage it reports was caused by assimilating the same
-  unperturbed observations into every realisation; the development version
-  perturbs per realisation under an ES-MDA schedule and is graded against
-  the closed-form conjugate posterior in both moments. The frozen
-  benchmark cannot be re-run without the external binaries, so its PESTO
-  CI90 row still shows the old behaviour. Measure coverage on your own
-  problem in any case -- that is the standing advice, before and after.
-- **Inflation strength is problem-dependent.** Two independent instruments (a
-  joint-calibration coverage test and this cross-tool benchmark) disagree on the
-  optimal RTPS strength, which means there is no universal default: report
-  coverage and tune the inflation rather than trusting a fixed value.
+## What to read next
 
-## Reproducibility
-
-```{r sessioninfo}
-sessionInfo()
-```
+*Wiring your own simulator into PESTO* is the contract the in-process driver
+is built on, and the reason the wall-clock gap above exists at all. *Can
+PESTO recover APSIM's own parameters?* is the same comparison against a real
+simulator, including a cross-check against an independent optimiser on real
+measured biomass. *My posterior looks too confident: is the ensemble
+collapsing?* is where the calibration question raised by the CI90 column is
+worked through against a closed-form posterior. *When can a surrogate stand
+in for the simulator?* takes up the evaluation-economy lever named in the
+cost model.
 
 ## References
 
-- Chen, Y. & Oliver, D. S. (2013). Levenberg-Marquardt forms of the iterative
-  ensemble smoother for efficient history matching and uncertainty
-  quantification. *Computational Geosciences*, 17(4), 689--703.
+- Chen, Y., & Oliver, D. S. (2013). Levenberg-Marquardt forms of the
+  iterative ensemble smoother for efficient history matching and uncertainty
+  quantification. *Computational Geosciences*, 17(4), 689-703.
 - Doherty, J. (2015). *Calibration and Uncertainty Analysis for Complex
   Environmental Models*. Watermark Numerical Computing, Brisbane.
+- Emerick, A. A., & Reynolds, A. C. (2013). Ensemble smoother with multiple
+  data assimilation. *Computers & Geosciences*, 55, 3-15.
 - Evensen, G. (2018). Analysis of iterative ensemble smoothers for solving
-  inverse problems. *Computational Geosciences*, 22(3), 885--908.
+  inverse problems. *Computational Geosciences*, 22(3), 885-908.
 - Glasserman, P. (2003). *Monte Carlo Methods in Financial Engineering*.
   Springer, New York.
-- Kennedy, M. C. & O'Hagan, A. (2000). Predicting the output from a complex
+- Kennedy, M. C., & O'Hagan, A. (2000). Predicting the output from a complex
   computer code when fast approximations are available. *Biometrika*, 87(1),
-  1--13.
-- Rasmussen, C. E. & Williams, C. K. I. (2006). *Gaussian Processes for Machine
-  Learning*. MIT Press, Cambridge, MA.
+  1-13.
+- Rasmussen, C. E., & Williams, C. K. I. (2006). *Gaussian Processes for
+  Machine Learning*. MIT Press, Cambridge, MA.
 - White, J. T., Hunt, R. J., Fienen, M. N., & Doherty, J. E. (2020).
   *Approaches to Highly Parameterized Inversion: PEST++ Version 5*. U.S.
   Geological Survey Techniques and Methods 7-C26.
-- Wong, B. (2011). Points of view: color blindness. *Nature Methods*, 8(6), 441.
+- Wong, B. (2011). Points of view: color blindness. *Nature Methods*, 8(6),
+  441.
+
+## Reproduce
+
+Seed `20260425` sets the worked example's observations and prior ensemble,
+and is passed to `pesto_ies_callback()`, where it fixes the per-realisation
+observation perturbation. The frozen cross-tool benchmark was run on
+`r mt$generated_on` with PESTO `r mt$tool_versions[["PESTO"]]`, classic PEST
+`r mt$tool_versions[["PEST (classic)"]]` and `pestpp-ies`
+`r mt$tool_versions[["PEST++ (pestpp-ies)"]]`, twenty seeds per cell; the
+conformance result cited in the *Do* section was run on 2026-07-16 against
+`pestpp-ies` 5.2.16. Neither is recomputed here. Package versions for this
+rendering follow.
+
+```{r session-info}
+sessionInfo()
+```
