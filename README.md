@@ -7,8 +7,7 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![License: GPL
-v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
 [![R-CMD-check](https://github.com/max578/PESTO/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/max578/PESTO/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
 coverage](https://codecov.io/gh/max578/PESTO/graph/badge.svg)](https://app.codecov.io/gh/max578/PESTO)
@@ -273,4 +272,4 @@ contributions of the author.
 
 ## License
 
-GPL (\>= 3). See [`LICENSE.md`](LICENSE.md) for the full text.
+MIT. See [`LICENSE.md`](LICENSE.md) for the full text.

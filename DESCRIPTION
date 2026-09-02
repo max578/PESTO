@@ -22,7 +22,7 @@ Description: High-performance parameter estimation, uncertainty quantification,
     model -- with first-class in-process coupling to the APSIM
     agricultural-systems model via the 'apsimx' package as its flagship
     simulator partner.
-License: GPL (>= 3)
+License: MIT + file LICENSE
 URL: https://github.com/max578/PESTO,
     https://max578.github.io/PESTO/
 BugReports: https://github.com/max578/PESTO/issues

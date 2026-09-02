@@ -1,5 +1,7 @@
 # PESTO (development version)
 
+* Relicensed from GPL (>= 3) to MIT (orchestra-wide licence unification, 2026-09-02). No code change.
+
 ## Bug fixes
 
 * **The native IES now returns a posterior sample.** Every realisation
