@@ -147,3 +147,8 @@ navbar:
   structure:
     left:  [intro, reference, articles, news]
     right: [github]
+- title: Typed declines
+  desc: The classed abstention PESTO returns instead of a number when a request is off design.
+  contents:
+  - pesto_abstention
+  - is_pesto_abstention
