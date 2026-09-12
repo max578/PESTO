@@ -66,32 +66,38 @@ export(write_ensemble)
 export(write_manifest)
 export(write_pst)
 importFrom(Rcpp,sourceCpp)
-importFrom(data.table,.I)
-importFrom(data.table,.N)
-importFrom(data.table,.SD)
-importFrom(data.table,`:=`)
-importFrom(data.table,as.data.table)
-importFrom(data.table,data.table)
-importFrom(data.table,dcast)
-importFrom(data.table,fread)
-importFrom(data.table,fwrite)
-importFrom(data.table,is.data.table)
-importFrom(data.table,melt)
-importFrom(data.table,rbindlist)
-importFrom(data.table,set)
-importFrom(data.table,setDT)
-importFrom(data.table,setnames)
-importFrom(ggplot2,.data)
-importFrom(ggplot2,aes)
-importFrom(ggplot2,element_text)
-importFrom(ggplot2,geom_line)
-importFrom(ggplot2,geom_point)
-importFrom(ggplot2,geom_ribbon)
-importFrom(ggplot2,ggplot)
-importFrom(ggplot2,labs)
-importFrom(ggplot2,scale_y_log10)
-importFrom(ggplot2,theme)
-importFrom(ggplot2,theme_minimal)
-importFrom(stats,median)
-importFrom(stats,var)
+importFrom(data.table,
+  .I,
+  .N,
+  .SD,
+  `:=`,
+  as.data.table,
+  data.table,
+  dcast,
+  fread,
+  fwrite,
+  is.data.table,
+  melt,
+  rbindlist,
+  set,
+  setDT,
+  setnames
+)
+importFrom(ggplot2,
+  .data,
+  aes,
+  element_text,
+  geom_line,
+  geom_point,
+  geom_ribbon,
+  ggplot,
+  labs,
+  scale_y_log10,
+  theme,
+  theme_minimal
+)
+importFrom(stats,
+  median,
+  var
+)
 useDynLib(PESTO, .registration = TRUE)

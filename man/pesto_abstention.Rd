@@ -12,12 +12,16 @@ pesto_abstention(
 )
 }
 \arguments{
-\item{reason}{Character scalar reason code. One of \code{"degenerate_ensemble"}
-(fewer than two realisations survived a step and the update cannot be
-formed), \code{"over_determined"} (the ensemble is too small relative to the
-number of parameters to support the update -- \code{nreal <= npar}), or
-\code{"surrogate_off_design"} (the GP surrogate's training-point-to-parameter
-ratio falls below \code{\link[=check_surrogate_regime]{check_surrogate_regime()}}'s favourable floor).}
+\item{reason}{Character scalar reason code naming the declined
+condition, e.g. \code{"degenerate_ensemble"} (fewer than two realisations
+survived a step and the update cannot be formed, raised by
+\code{\link[=pesto_ies_callback]{pesto_ies_callback()}} / \code{\link[=pesto_ies_filter]{pesto_ies_filter()}}) or
+\code{"surrogate_off_design"} (the GP surrogate's
+training-point-to-parameter ratio falls below
+\code{\link[=check_surrogate_regime]{check_surrogate_regime()}}'s favourable floor, raised by
+\code{\link[=pesto_surrogate_ies]{pesto_surrogate_ies()}}). Not a closed enum: callers may mint further
+reason codes (e.g. \code{"over_determined"} for a future gate) as long as
+the class stays \code{pesto_abstention}.}
 
 \item{detail}{Character scalar human-readable detail, or \code{NA}.}
 

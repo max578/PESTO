@@ -30,7 +30,6 @@ Encoding: UTF-8
 Language: en-AU
 Roxygen: list(markdown = TRUE, roclets = c("namespace", "rd",
     "srr::srr_stats_roclet"))
-RoxygenNote: 7.3.3
 SystemRequirements: C++17
 Depends:
     R (>= 4.1.0)
@@ -57,3 +56,4 @@ Suggests:
     srr
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0
