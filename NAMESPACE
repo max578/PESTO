@@ -67,10 +67,10 @@ export(write_manifest)
 export(write_pst)
 importFrom(Rcpp,sourceCpp)
 importFrom(data.table,
+  ":=",
   .I,
   .N,
   .SD,
-  `:=`,
   as.data.table,
   data.table,
   dcast,
