@@ -28,3 +28,8 @@ Useful links:
 
 **Maintainer**: Max Moldovan <max.moldovan@adelaide.edu.au>
 ([ORCID](https://orcid.org/0000-0001-9680-8474)) \[copyright holder\]
+
+Authors:
+
+- Max Moldovan <max.moldovan@adelaide.edu.au>
+  ([ORCID](https://orcid.org/0000-0001-9680-8474)) \[copyright holder\]

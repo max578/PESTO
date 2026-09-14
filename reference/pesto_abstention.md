@@ -20,14 +20,20 @@ pesto_abstention(
 
 - reason:
 
-  Character scalar reason code. One of `"degenerate_ensemble"` (fewer
-  than two realisations survived a step and the update cannot be
-  formed), `"over_determined"` (the ensemble is too small relative to
-  the number of parameters to support the update – `nreal <= npar`), or
-  `"surrogate_off_design"` (the GP surrogate's
+  Character scalar reason code naming the declined condition, e.g.
+  `"degenerate_ensemble"` (fewer than two realisations survived a step
+  and the update cannot be formed, raised by
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
+  /
+  [`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md))
+  or `"surrogate_off_design"` (the GP surrogate's
   training-point-to-parameter ratio falls below
   [`check_surrogate_regime()`](https://max578.github.io/PESTO/reference/check_surrogate_regime.md)'s
-  favourable floor).
+  favourable floor, raised by
+  [`pesto_surrogate_ies()`](https://max578.github.io/PESTO/reference/pesto_surrogate_ies.md)).
+  Not a closed enum: callers may mint further reason codes (e.g.
+  `"over_determined"` for a future gate) as long as the class stays
+  `pesto_abstention`.
 
 - detail:
 

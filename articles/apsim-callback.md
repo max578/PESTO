@@ -917,7 +917,7 @@ or binary is used. Package versions follow.
 sessionInfo()
 #> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 24.04.5 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -944,7 +944,7 @@ sessionInfo()
 #>  [7] blob_1.3.0          jquerylib_0.1.4     systemfonts_1.3.2  
 #> [10] scales_1.4.0        textshaping_1.0.5   apsimx_2.8.271     
 #> [13] yaml_2.3.12         fastmap_1.2.0       ggplot2_4.0.3      
-#> [16] R6_2.6.1            labeling_0.4.3      knitr_1.51         
+#> [16] R6_2.6.1            labeling_0.4.3      knitr_1.52         
 #> [19] desc_1.4.3          DBI_1.3.0           bslib_0.12.0       
 #> [22] RColorBrewer_1.1-3  rlang_1.3.0         cachem_1.1.0       
 #> [25] xfun_0.60           fs_2.1.0            sass_0.4.10        

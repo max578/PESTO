@@ -65,12 +65,16 @@ uncaught error or a half-populated result.</p>
 
 
 <dl><dt id="arg-reason">reason<a class="anchor" aria-label="anchor" href="#arg-reason"></a></dt>
-<dd><p>Character scalar reason code. One of <code>"degenerate_ensemble"</code>
-(fewer than two realisations survived a step and the update cannot be
-formed), <code>"over_determined"</code> (the ensemble is too small relative to the
-number of parameters to support the update – <code>nreal &lt;= npar</code>), or
-<code>"surrogate_off_design"</code> (the GP surrogate's training-point-to-parameter
-ratio falls below <code><a href="check_surrogate_regime.html">check_surrogate_regime()</a></code>'s favourable floor).</p></dd>
+<dd><p>Character scalar reason code naming the declined
+condition, e.g. <code>"degenerate_ensemble"</code> (fewer than two realisations
+survived a step and the update cannot be formed, raised by
+<code><a href="pesto_ies_callback.html">pesto_ies_callback()</a></code> / <code><a href="pesto_ies_filter.html">pesto_ies_filter()</a></code>) or
+<code>"surrogate_off_design"</code> (the GP surrogate's
+training-point-to-parameter ratio falls below
+<code><a href="check_surrogate_regime.html">check_surrogate_regime()</a></code>'s favourable floor, raised by
+<code><a href="pesto_surrogate_ies.html">pesto_surrogate_ies()</a></code>). Not a closed enum: callers may mint further
+reason codes (e.g. <code>"over_determined"</code> for a future gate) as long as
+the class stays <code>pesto_abstention</code>.</p></dd>
 
 
 <dt id="arg-detail">detail<a class="anchor" aria-label="anchor" href="#arg-detail"></a></dt>

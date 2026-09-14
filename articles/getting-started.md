@@ -384,7 +384,7 @@ elapsed_ms <- 1000 * system.time(
   } # ends i1, over the timing repetitions
 )[["elapsed"]] / s1_rep
 round(elapsed_ms, 3)
-#> [1] 0.11
+#> [1] 0.14
 ```
 
 **The decomposition backend.** The update needs a singular value
@@ -405,7 +405,7 @@ res_svd <- adaptive_svd(mat_a, k = 20L, method = "auto")
 res_svd$method_used
 #> [1] "rsvd (Halko-Martinsson-Tropp)"
 round(res_svd$time_ms, 1)
-#> [1] 16.4
+#> [1] 16.8
 round(res_svd$d[seq_len(5L)], 2)
 #> [1] 51.93 50.87 50.19 49.83 49.68
 ```
@@ -546,7 +546,7 @@ is available when it should abort the run instead.
 recommends 180 realisations against the 120 used here, because the
 coefficient of variation of the final misfit is 0.78: a few realisations
 still fit markedly better than the rest, and more of them would even
-that out. One update of the C++ kernel costs 0.11 milliseconds on this
+that out. One update of the C++ kernel costs 0.14 milliseconds on this
 problem, with the decomposition backend chosen automatically as rsvd
 (Halko-Martinsson-Tropp); both sit far below the cost of a real forward
 model, which is the regime the whole design assumes.
@@ -618,7 +618,7 @@ recorded on the manifest. Package versions follow.
 sessionInfo()
 #> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 24.04.5 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -640,7 +640,7 @@ sessionInfo()
 #> [1] PESTO_0.10.1
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.51         
+#>  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.52         
 #>  [4] rlang_1.3.0         xfun_0.60           otel_0.2.0         
 #>  [7] S7_0.2.2            textshaping_1.0.5   jsonlite_2.0.0     
 #> [10] data.table_1.18.6.1 labeling_0.4.3      glue_1.8.1         

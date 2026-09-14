@@ -638,7 +638,7 @@ in-sample root-mean-square error of 5^{-4} against the exact process’s
 0.00012, a large relative loss on a quantity that is near zero by
 construction. What it buys is in the scaling figure: over ensemble sizes
 from 30 to 500 the exact process’s training time grows by a factor of
-2300, while the approximation’s grows by a factor of 7.
+2400, while the approximation’s grows by a factor of 7.
 
 ## Limits
 
@@ -700,7 +700,7 @@ versions follow.
 sessionInfo()
 #> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 24.04.5 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -722,7 +722,7 @@ sessionInfo()
 #> [1] PESTO_0.10.1
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.51         
+#>  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.52         
 #>  [4] rlang_1.3.0         xfun_0.60           otel_0.2.0         
 #>  [7] S7_0.2.2            textshaping_1.0.5   jsonlite_2.0.0     
 #> [10] data.table_1.18.6.1 labeling_0.4.3      glue_1.8.1         

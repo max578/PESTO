@@ -400,7 +400,7 @@ post_q95_pesto <- apply(post_A, 2L, quantile, 0.95)
 rmse_pesto_A <- sqrt(mean((post_mean_pesto - theta_true_A)^2))
 round(c(seconds = runtime_pesto_A, posterior_rmse = rmse_pesto_A), 4)
 #>        seconds posterior_rmse 
-#>         0.0420         0.3072
+#>         0.0460         0.3072
 ```
 
 The package ships a compact pure-R reference produced by
@@ -644,7 +644,7 @@ The per-parameter numbers tell the other half of the story and should
 not be read as disagreement about the answer. Root-mean-square error to
 the true parameter vector is 0.307 for PESTO and 0.355 for the
 reference, both large beside parameter values that run from 1.2 down to
-0.1, and the inversion itself took 0.04 seconds. Individual posterior
+0.1, and the inversion itself took 0.05 seconds. Individual posterior
 means differ by up to 83 per cent between the two implementations, and
 neither recovers the individual truths, because a rank-one design leaves
 seven of the eight directions unconstrained by the data: the smoothers
@@ -736,7 +736,7 @@ versions for this rendering follow.
 sessionInfo()
 #> R version 4.6.1 (2026-06-24)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.4 LTS
+#> Running under: Ubuntu 24.04.5 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
@@ -758,7 +758,7 @@ sessionInfo()
 #> [1] PESTO_0.10.1
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.51         
+#>  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.52         
 #>  [4] rlang_1.3.0         xfun_0.60           otel_0.2.0         
 #>  [7] S7_0.2.2            textshaping_1.0.5   jsonlite_2.0.0     
 #> [10] data.table_1.18.6.1 labeling_0.4.3      glue_1.8.1         
