@@ -1,5 +1,11 @@
 # PESTO (development version)
 
+* Fixed data.table's `:=` failing inside `pesto_run()` when the package was loaded
+  for development (`devtools::test()`, `pkgload::load_all()`): the roxygen import
+  named `:=` as a backtick symbol, which did not register, so data.table refused
+  the in-place update and three adapter-contract tests failed. The import is now
+  the quoted string `":="` that data.table documents.
+
 * Relicensed from GPL (>= 3) to MIT (orchestra-wide licence unification, 2026-09-02). No code change.
 
 * All seven vignettes rewritten to the orchestra vignette quality bar: each
