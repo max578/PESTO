@@ -6,8 +6,8 @@
 # behaviour would re-admit the defect, because at the default an ignored
 # parameter and an honoured one agree.
 #
-# Found by the RB25 dead-formal gate:
-#   Rscript ~/.claude/skills/rpkg/scripts/rpkg_rb25_gate.R <pkg-root>
+# Found by a static check that flags any formal of an exported function that
+# the function body never reads.
 
 
 # ---- helper ----------------------------------------------------------------
