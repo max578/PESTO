@@ -21,7 +21,7 @@ flagship simulator partner.
 PESTO is a high-performance R package for model-independent parameter
 estimation and uncertainty quantification. It brings the algorithms of
 **PEST** (*Parameter ESTimation*; Doherty 2015) and its C++ successor
-[**PEST++**](https://github.com/usgs/pestpp) (White et al. 2020) –
+[**PEST++**](https://github.com/pestpp/pestpp) (White et al. 2020) –
 notably the iterative ensemble smoother (IES) – natively into R, and is
 the first R-native implementation of that algorithm family. It adds a
 typed forward-model contract, an in-process simulator callback,
@@ -269,7 +269,7 @@ citation("PESTO")
 ## Acknowledgements
 
 PESTO builds on the algorithmic legacy of the
-[PEST++](https://github.com/usgs/pestpp) project (US Geological Survey)
+[PEST++](https://github.com/pestpp/pestpp) project (US Geological Survey)
 and the underlying PEST framework by John Doherty. Developed at Adelaide
 University; the surrogate-acceleration, adaptive-ensemble-sizing,
 multi-fidelity, and convergence-aware components are original
