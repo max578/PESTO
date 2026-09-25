@@ -115,7 +115,12 @@ CRAN submission is in preparation.
 > `build_vignettes = TRUE` to an `install_github()` call. All articles
 > are also on the [package website](https://max578.github.io/PESTO/).
 
-## Bayesian inference with the Iterative Ensemble Smoother (IES)
+## Usage
+
+The examples below calibrate an R forward model, couple a simulator, and call
+the update kernels directly.
+
+### Bayesian inference with the Iterative Ensemble Smoother (IES)
 
 PESTO performs approximate Bayesian inference for parameter estimation.
 You specify a **prior as a parameter ensemble** – a matrix of draws
@@ -152,7 +157,7 @@ inflation (`pesto_inflation()`), and localisation
 (`pesto_localisation()`) are documented in `?pesto_ies_callback` and the
 *Getting started* vignette.
 
-## Coupling to APSIM and other simulators
+### Coupling to APSIM and other simulators
 
 The forward model above is a plain R function. To calibrate a
 process-based simulator, supply an adapter that maps a parameter vector
@@ -179,7 +184,7 @@ the built-in `crop_growth_forward_model()` is in that vignette, and the
 `apsim-callback` article shows Python-bridge and multi-fidelity
 variants.
 
-## Low-level kernels
+### Low-level kernels
 
 The C++ update kernels are exported for advanced use (no PEST++ binary
 needed):
