@@ -101,12 +101,12 @@ fit <- pesto_ies_callback(
 man <- as_manifest(fit, seed = 20260902L, apsim_version = NA_character_)
 man
 #> <pesto_ensemble_manifest> schema 1.1.0
-#>   run_id        : ies_callback_20260914_011433_5f09acbf
+#>   run_id        : ies_callback_20260925_050439_9e1a0e90
 #>   method        : ies_callback  (noptmax=8)
 #>   ensemble      : 120 realisations x 3 parameters | 12 observations
 #>   failure rate  : 1.20%
 #>   pesto version : 0.10.1  apsim: NA
-#>   timestamp     : 2026-09-14T01:14:33+0000
+#>   timestamp     : 2026-09-25T05:04:39+0000
 #>   data hash     : sha256:86b1bf4cdfb541f322a3b2acb7dd01af92f7b7a6a0b3f31c5fab6fe2ae122658
 ```
 
@@ -116,7 +116,7 @@ a consumer uses instead of reaching into a list:
 ``` r
 
 man@run_id
-#> [1] "ies_callback_20260914_011433_5f09acbf"
+#> [1] "ies_callback_20260925_050439_9e1a0e90"
 man@schema_version
 #> [1] "1.1.0"
 man@data_hash
@@ -182,7 +182,7 @@ cat(paste(
   collapse = "\n"
 ))
 #> schema_version: 1.1.0
-#> run_id: ies_callback_20260914_011433_5f09acbf
+#> run_id: ies_callback_20260925_050439_9e1a0e90
 #> data_hash: sha256:86b1bf4cdfb541f322a3b2acb7dd01af92f7b7a6a0b3f31c5fab6fe2ae122658
 #> format: rds
 #> integrity: verifiable
@@ -440,7 +440,7 @@ consume <- function(path, max_failure = 0.05) {
 }
 
 consume(file.path(dir_both, "wagga_2026_run01.yaml"))
-#> [1] "accepted: 120 realisations, run ies_callback_20260914_011433_5f09acbf"
+#> [1] "accepted: 120 realisations, run ies_callback_20260925_050439_9e1a0e90"
 consume(file.path(dir_export, "snapshot.yaml"))
 #> [1] "declined: integrity not verifiable"
 consume(file.path(dir_declined, "declined.yaml"))
@@ -557,7 +557,7 @@ sessionInfo()
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.52         
-#>  [4] rlang_1.3.0         xfun_0.60           otel_0.2.0         
+#>  [4] rlang_1.3.0         xfun_0.61           otel_0.2.0         
 #>  [7] S7_0.2.2            textshaping_1.0.5   jsonlite_2.0.0     
 #> [10] data.table_1.18.6.1 labeling_0.4.3      glue_1.8.1         
 #> [13] htmltools_0.5.9     ragg_1.5.2          sass_0.4.10        

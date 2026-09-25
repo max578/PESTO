@@ -7,7 +7,7 @@ flagship simulator partner.
 PESTO is a high-performance R package for model-independent parameter
 estimation and uncertainty quantification. It brings the algorithms of
 **PEST** (*Parameter ESTimation*; Doherty 2015) and its C++ successor
-[**PEST++**](https://github.com/usgs/pestpp) (White et al. 2020) –
+[**PEST++**](https://github.com/pestpp/pestpp) (White et al. 2020) –
 notably the iterative ensemble smoother (IES) – natively into R, and is
 the first R-native implementation of that algorithm family. It adds a
 typed forward-model contract, an in-process simulator callback,
@@ -102,7 +102,12 @@ CRAN submission is in preparation.
 > `build_vignettes = TRUE` to an `install_github()` call. All articles
 > are also on the [package website](https://max578.github.io/PESTO/).
 
-## Bayesian inference with the Iterative Ensemble Smoother (IES)
+## Usage
+
+The examples below calibrate an R forward model, couple a simulator, and
+call the update kernels directly.
+
+### Bayesian inference with the Iterative Ensemble Smoother (IES)
 
 PESTO performs approximate Bayesian inference for parameter estimation.
 You specify a **prior as a parameter ensemble** – a matrix of draws
@@ -144,7 +149,7 @@ are documented in
 [`?pesto_ies_callback`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md)
 and the *Getting started* vignette.
 
-## Coupling to APSIM and other simulators
+### Coupling to APSIM and other simulators
 
 The forward model above is a plain R function. To calibrate a
 process-based simulator, supply an adapter that maps a parameter vector
@@ -175,7 +180,7 @@ agricultural demonstration using the built-in
 is in that vignette, and the `apsim-callback` article shows
 Python-bridge and multi-fidelity variants.
 
-## Low-level kernels
+### Low-level kernels
 
 The C++ update kernels are exported for advanced use (no PEST++ binary
 needed):
@@ -265,11 +270,11 @@ citation("PESTO")
 ## Acknowledgements
 
 PESTO builds on the algorithmic legacy of the
-[PEST++](https://github.com/usgs/pestpp) project (US Geological Survey)
-and the underlying PEST framework by John Doherty. Developed at Adelaide
-University; the surrogate-acceleration, adaptive-ensemble-sizing,
-multi-fidelity, and convergence-aware components are original
-contributions of the author.
+[PEST++](https://github.com/pestpp/pestpp) project (US Geological
+Survey) and the underlying PEST framework by John Doherty. Developed at
+Adelaide University; the surrogate-acceleration,
+adaptive-ensemble-sizing, multi-fidelity, and convergence-aware
+components are original contributions of the author.
 
 ## License
 

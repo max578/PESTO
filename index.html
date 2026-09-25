@@ -59,7 +59,7 @@
 <!-- badges: start -->
 
 <p><strong>P</strong>arameter <strong>EST</strong>imation <strong>O</strong>ptimised – the <strong>PEST</strong> approach (Doherty 2015), brought to R and optimised, with <strong>APSIM</strong> as its flagship simulator partner.</p>
-<p>PESTO is a high-performance R package for model-independent parameter estimation and uncertainty quantification. It brings the algorithms of <strong>PEST</strong> (<em>Parameter ESTimation</em>; Doherty 2015) and its C++ successor <a href="https://github.com/usgs/pestpp" class="external-link"><strong>PEST++</strong></a> (White et al. 2020) – notably the iterative ensemble smoother (IES) – natively into R, and is the first R-native implementation of that algorithm family. It adds a typed forward-model contract, an in-process simulator callback, multi-fidelity acceleration, covariance inflation / localisation, and surrogate methods.</p>
+<p>PESTO is a high-performance R package for model-independent parameter estimation and uncertainty quantification. It brings the algorithms of <strong>PEST</strong> (<em>Parameter ESTimation</em>; Doherty 2015) and its C++ successor <a href="https://github.com/pestpp/pestpp" class="external-link"><strong>PEST++</strong></a> (White et al. 2020) – notably the iterative ensemble smoother (IES) – natively into R, and is the first R-native implementation of that algorithm family. It adds a typed forward-model contract, an in-process simulator callback, multi-fidelity acceleration, covariance inflation / localisation, and surrogate methods.</p>
 <p>PESTO is model-independent: any R function mapping parameters to outputs can be the forward model. Its <strong>flagship partner is <a href="https://www.apsim.info" class="external-link">APSIM</a></strong>, the agricultural-systems simulator, coupled in-process through the <a href="https://cran.r-project.org/package=apsimx" class="external-link"><code>apsimx</code></a> package – the use case PESTO’s callback was built for. The same callback couples any other process-based simulator just as directly: the groundwater / hydrology models of PEST’s own heritage, other crop models, and compartmental ODE systems.</p>
 <div class="section level2">
 <h2 id="key-features">Key Features<a class="anchor" aria-label="anchor" href="#key-features"></a>
@@ -147,8 +147,12 @@
 </blockquote>
 </div>
 <div class="section level2">
-<h2 id="bayesian-inference-with-the-iterative-ensemble-smoother-ies">Bayesian inference with the Iterative Ensemble Smoother (IES)<a class="anchor" aria-label="anchor" href="#bayesian-inference-with-the-iterative-ensemble-smoother-ies"></a>
+<h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
 </h2>
+<p>The examples below calibrate an R forward model, couple a simulator, and call the update kernels directly.</p>
+<div class="section level3">
+<h3 id="bayesian-inference-with-the-iterative-ensemble-smoother-ies">Bayesian inference with the Iterative Ensemble Smoother (IES)<a class="anchor" aria-label="anchor" href="#bayesian-inference-with-the-iterative-ensemble-smoother-ies"></a>
+</h3>
 <p>PESTO performs approximate Bayesian inference for parameter estimation. You specify a <strong>prior as a parameter ensemble</strong> – a matrix of draws encoding your prior belief about each parameter (rows are realisations, columns are parameters) – together with the observations and their error standard deviation. PESTO conditions the ensemble on the observations through the IES update and returns an approximate <strong>posterior ensemble</strong> with uncertainty diagnostics. Any R function mapping a parameter matrix to an observation matrix can be the forward model.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/max578/PESTO" class="external-link">PESTO</a></span><span class="op">)</span></span>
@@ -171,9 +175,9 @@
 <span><span class="co">#&gt;  1.0136949 -0.4936717  1.9847292</span></span></code></pre></div>
 <p>Optional convergence-based early stopping (<code>phi_tol</code>), covariance inflation (<code><a href="reference/pesto_inflation.html">pesto_inflation()</a></code>), and localisation (<code><a href="reference/pesto_localisation.html">pesto_localisation()</a></code>) are documented in <code><a href="reference/pesto_ies_callback.html">?pesto_ies_callback</a></code> and the <em>Getting started</em> vignette.</p>
 </div>
-<div class="section level2">
-<h2 id="coupling-to-apsim-and-other-simulators">Coupling to APSIM and other simulators<a class="anchor" aria-label="anchor" href="#coupling-to-apsim-and-other-simulators"></a>
-</h2>
+<div class="section level3">
+<h3 id="coupling-to-apsim-and-other-simulators">Coupling to APSIM and other simulators<a class="anchor" aria-label="anchor" href="#coupling-to-apsim-and-other-simulators"></a>
+</h3>
 <p>The forward model above is a plain R function. To calibrate a process-based simulator, supply an adapter that maps a parameter vector to that simulator’s outputs. PESTO’s flagship partner is <strong>APSIM</strong>: <code><a href="reference/apsim_callback.html">apsim_callback()</a></code> turns an <code>.apsimx</code> model file plus a parameter map into exactly the forward-model callable the IES driver expects, running the ensemble in-process via <code>apsimx</code>.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Requires the apsimx package and a working APSIM installation.</span></span>
@@ -185,9 +189,9 @@
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/pesto_ies_callback.html">pesto_ies_callback</a></span><span class="op">(</span><span class="va">fm</span>, <span class="va">prior</span>, <span class="va">obs</span>, obs_sd <span class="op">=</span> <span class="fl">0.05</span>, noptmax <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span></code></pre></div>
 <p>The full worked example is in the <em>Calibrating APSIM with PESTO</em> vignette (it needs APSIM installed, so its run blocks are disabled on CRAN). The same <code><a href="reference/pesto_ies_callback.html">pesto_ies_callback()</a></code> pattern couples any other simulator: a CRAN-safe, fully-runnable agricultural demonstration using the built-in <code><a href="reference/crop_growth_forward_model.html">crop_growth_forward_model()</a></code> is in that vignette, and the <code>apsim-callback</code> article shows Python-bridge and multi-fidelity variants.</p>
 </div>
-<div class="section level2">
-<h2 id="low-level-kernels">Low-level kernels<a class="anchor" aria-label="anchor" href="#low-level-kernels"></a>
-</h2>
+<div class="section level3">
+<h3 id="low-level-kernels">Low-level kernels<a class="anchor" aria-label="anchor" href="#low-level-kernels"></a>
+</h3>
 <p>The C++ update kernels are exported for advanced use (no PEST++ binary needed):</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
@@ -217,6 +221,7 @@
 <span><span class="op">)</span></span>
 <span><span class="va">pst</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/create_pest_scenario.html">create_pest_scenario</a></span><span class="op">(</span><span class="va">pars</span>, <span class="va">obs</span>, <span class="st">"python model.py"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/write_pst.html">write_pst</a></span><span class="op">(</span><span class="va">pst</span>, <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"model.pst"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="dependencies">Dependencies<a class="anchor" aria-label="anchor" href="#dependencies"></a>
@@ -265,7 +270,7 @@
 <div class="section level2">
 <h2 id="acknowledgements">Acknowledgements<a class="anchor" aria-label="anchor" href="#acknowledgements"></a>
 </h2>
-<p>PESTO builds on the algorithmic legacy of the <a href="https://github.com/usgs/pestpp" class="external-link">PEST++</a> project (US Geological Survey) and the underlying PEST framework by John Doherty. Developed at Adelaide University; the surrogate-acceleration, adaptive-ensemble-sizing, multi-fidelity, and convergence-aware components are original contributions of the author.</p>
+<p>PESTO builds on the algorithmic legacy of the <a href="https://github.com/pestpp/pestpp" class="external-link">PEST++</a> project (US Geological Survey) and the underlying PEST framework by John Doherty. Developed at Adelaide University; the surrogate-acceleration, adaptive-ensemble-sizing, multi-fidelity, and convergence-aware components are original contributions of the author.</p>
 </div>
 <div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
