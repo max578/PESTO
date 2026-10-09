@@ -638,7 +638,7 @@ in-sample root-mean-square error of 5^{-4} against the exact process’s
 0.00012, a large relative loss on a quantity that is near zero by
 construction. What it buys is in the scaling figure: over ensemble sizes
 from 30 to 500 the exact process’s training time grows by a factor of
-20, while the approximation’s grows by a factor of 7.
+2500, while the approximation’s grows by a factor of 4.
 
 ## Limits
 
