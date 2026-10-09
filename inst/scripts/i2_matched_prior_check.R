@@ -118,10 +118,8 @@ cat(sprintf("\nMedian per-parameter |rel diff| = %.2f %%\n",
 cat(sprintf("Max    per-parameter |rel diff| = %.2f %%\n",
             max(rel_diff_pc)))
 
-# Persist artefact for the I2 information note.
-out_path <- normalizePath(file.path("..", "..", "..",
-  "Library", "CloudStorage", "Box-Box", "A_UniAdelaide", "aa_at_work",
-  "PEST_plus_plus", "I2_matched_prior_result.rds"), mustWork = FALSE)
+# Save the comparison to the session temporary directory.
+out_path <- file.path(tempdir(), "I2_matched_prior_result.rds")
 tryCatch(saveRDS(list(
   date            = Sys.Date(),
   protocol        = "matched prior, multi-lambda sweep, no Marquardt sub-cycle",

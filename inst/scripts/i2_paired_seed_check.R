@@ -25,7 +25,7 @@
 # Status: standalone diagnostic, NOT a unit test. Run from package root via
 #   Rscript inst/scripts/i2_paired_seed_check.R
 # Logs to stdout; saves a paired-seed comparison RDS to
-# ../../<repo>/I2_paired_seed_result.rds in the project tracker location.
+# I2_paired_seed_result.rds in tempdir().
 
 suppressMessages({
   library(PESTO)
@@ -174,10 +174,8 @@ cat("\nPhi traces:\n")
 cat("  PESTO    : ", paste(signif(phi_pesto, 4), collapse = " -> "), "\n")
 cat("  reference: ", paste(signif(phi_ref,   4), collapse = " -> "), "\n")
 
-# Save artefact for the project log.
-out_path <- normalizePath(file.path("..", "..", "..",
-  "Library", "CloudStorage", "Box-Box", "A_UniAdelaide", "aa_at_work",
-  "PEST_plus_plus", "I2_paired_seed_result.rds"), mustWork = FALSE)
+# Save the comparison to the session temporary directory.
+out_path <- file.path(tempdir(), "I2_paired_seed_result.rds")
 result <- list(
   date         = Sys.Date(),
   problem      = "Scenario A 8-par exponential decay",
