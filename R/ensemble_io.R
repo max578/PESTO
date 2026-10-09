@@ -123,7 +123,7 @@ write_ensemble <- function(ensemble, file, format = "csv") {
     data.table::set(dt, j = col_names[j], value = mat[, j])
   }
 
-  # Record which labels are placeholders rather than names the file carried, so
+  # Record which labels are generic names rather than names the file carried, so
   # a caller holding the authoritative names can substitute them. Without this
   # the substitution is unavailable: `p1` is indistinguishable from a parameter
   # genuinely called `p1`.

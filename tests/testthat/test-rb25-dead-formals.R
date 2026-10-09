@@ -97,7 +97,7 @@ test_that("a named .jco keeps the names the file carries", {
 # ---- plot_identifiability(pst) ---------------------------------------------
 
 test_that("pst labels an unnamed .jco, and changes the plot", {
-  # Was: `pst` was never read, so the plot showed placeholders whether or not a
+  # Was: `pst` was never read, so the plot showed generic names whether or not a
   # pst was supplied. Both branches are asserted here -- equality of the two
   # would mean `pst` is inert again.
   set.seed(42L)

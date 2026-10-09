@@ -295,8 +295,8 @@ plot_identifiability <- function(jacobian = NULL,
     par_names <- names(jco)[-1]
     mat <- as.matrix(jco[, -1, with = FALSE])
 
-    # A .jco written without column names reads back with positional
-    # placeholders; `pst` is the documented source of the real labels. Applied
+    # A .jco written without column names reads back with generic names (`p1`,
+    # `p2`, ...); `pst` is the documented source of the real labels. Applied
     # positionally, which is only defensible when the counts agree -- a
     # mismatch means this `pst` does not describe this Jacobian, and labelling
     # the columns anyway would attach confident wrong names to real numbers.
