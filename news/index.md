@@ -1,6 +1,6 @@
 # Changelog
 
-## PESTO (development version)
+## PESTO 0.11.0
 
 - Fixed data.table’s `:=` failing inside `pesto_run()` when the package
   was loaded for development (`devtools::test()`,

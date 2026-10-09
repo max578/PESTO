@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.10.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -544,7 +544,7 @@ subject of <em>Wiring your own simulator into PESTO</em>.</p>
 <span><span class="va">rmse_pesto_A</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">post_mean_pesto</span> <span class="op">-</span> <span class="va">theta_true_A</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>seconds <span class="op">=</span> <span class="va">runtime_pesto_A</span>, posterior_rmse <span class="op">=</span> <span class="va">rmse_pesto_A</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        seconds posterior_rmse </span></span>
-<span><span class="co">#&gt;         0.0460         0.3072</span></span></code></pre></div>
+<span><span class="co">#&gt;         0.0270         0.3072</span></span></code></pre></div>
 <p>The package ships a compact pure-R reference produced by
 <code><a href="../reference/pesto_reference_ies.html">pesto_reference_ies()</a></code>, an independent implementation of the
 Chen and Oliver update on the same problem. It is the comparison target
@@ -859,7 +859,7 @@ figure.</p>
 not be read as disagreement about the answer. Root-mean-square error to
 the true parameter vector is 0.307 for PESTO and 0.355 for the
 reference, both large beside parameter values that run from 1.2 down to
-0.1, and the inversion itself took 0.05 seconds. Individual posterior
+0.1, and the inversion itself took 0.03 seconds. Individual posterior
 means differ by up to 83 per cent between the two implementations, and
 neither recovers the individual truths, because a rank-one design leaves
 seven of the eight directions unconstrained by the data: the smoothers
@@ -979,7 +979,7 @@ here. Package versions for this rendering follow.</p>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] PESTO_0.10.1</span></span>
+<span><span class="co">#&gt; [1] PESTO_0.11.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.52         </span></span>

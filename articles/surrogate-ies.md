@@ -638,7 +638,7 @@ in-sample root-mean-square error of 5^{-4} against the exact process’s
 0.00012, a large relative loss on a quantity that is near zero by
 construction. What it buys is in the scaling figure: over ensemble sizes
 from 30 to 500 the exact process’s training time grows by a factor of
-2500, while the approximation’s grows by a factor of 4.
+1600, while the approximation’s grows by a factor of 5.
 
 ## Limits
 
@@ -719,7 +719,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.10.1
+#> [1] PESTO_0.11.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.52         
