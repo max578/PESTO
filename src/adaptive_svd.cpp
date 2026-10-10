@@ -12,7 +12,7 @@
 //   - Halko, Martinsson, Tropp (2011). Finding structure with randomness.
 //   - Liberty et al. (2007). Randomized algorithms for the low-rank approximation.
 //
-// Copyright (c) 2026 Max Moldovan. Licensed under GPL-3 or any later version.
+// Copyright (c) 2026 Max Moldovan. MIT licence, see LICENSE.
 
 // Must precede every R header: passes the hidden Fortran string-length
 // arguments that WebAssembly and gfortran builds require.

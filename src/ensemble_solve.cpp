@@ -1,6 +1,7 @@
 // PESTO: Scalable Tools for Estimation of Parameters
-// Core ensemble solution kernel (ported from PEST++ EnsembleMethodUtils.cpp)
-// Licensed under GPL-3
+// Core ensemble solution kernel (ported from PEST++ EnsembleMethodUtils.cpp,
+// which is public domain under CC0 1.0)
+// Copyright (c) 2026 Max Moldovan. MIT licence, see LICENSE.
 
 #include <Rcpp.h>
 #include <RcppEigen.h>

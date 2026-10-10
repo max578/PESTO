@@ -11,7 +11,7 @@
 // it lives here in ensemble_solution_localized() rather than as a flag on
 // the SVD path.
 //
-// Licensed under GPL-3.
+// Copyright (c) 2026 Max Moldovan. MIT licence, see LICENSE.
 
 #include <Rcpp.h>
 #include <RcppEigen.h>
