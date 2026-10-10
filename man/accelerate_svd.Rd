@@ -12,7 +12,10 @@ accelerate_svd(A, thin = TRUE)
 \item{thin}{Logical. If TRUE (default), compute thin SVD.}
 }
 \value{
-A list with components U, d, V.
+A list with components \code{u}, \code{d} and \code{v}, so that
+\code{A = u \%*\% diag(d) \%*\% t(v)}. With \code{thin = TRUE}, \code{u} is m x k and \code{v}
+is n x k, where k = min(m, n). With \code{thin = FALSE}, \code{u} is m x m and \code{v}
+is n x n, and only their first k columns pair with \code{d}.
 }
 \description{
 Uses R's linked LAPACK (which on macOS is Apple Accelerate/AMX,
@@ -24,5 +27,6 @@ set.seed(1L)
 A <- matrix(rnorm(8 * 5), nrow = 8, ncol = 5)
 res <- accelerate_svd(A, thin = TRUE)
 length(res$d)
-all.equal(sort(res$d, decreasing = TRUE), svd(A)$d)
+all.equal(res$d, svd(A)$d)
+max(abs(A - res$u \%*\% diag(res$d) \%*\% t(res$v)))
 }

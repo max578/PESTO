@@ -39,13 +39,17 @@ rsvd <- function(A, k, p = 10L, q = 2L) {
 #'
 #' @param A Matrix (m x n). Input matrix.
 #' @param thin Logical. If TRUE (default), compute thin SVD.
-#' @return A list with components U, d, V.
+#' @return A list with components `u`, `d` and `v`, so that
+#'   `A = u %*% diag(d) %*% t(v)`. With `thin = TRUE`, `u` is m x k and `v`
+#'   is n x k, where k = min(m, n). With `thin = FALSE`, `u` is m x m and `v`
+#'   is n x n, and only their first k columns pair with `d`.
 #' @examples
 #' set.seed(1L)
 #' A <- matrix(rnorm(8 * 5), nrow = 8, ncol = 5)
 #' res <- accelerate_svd(A, thin = TRUE)
 #' length(res$d)
-#' all.equal(sort(res$d, decreasing = TRUE), svd(A)$d)
+#' all.equal(res$d, svd(A)$d)
+#' max(abs(A - res$u %*% diag(res$d) %*% t(res$v)))
 #' @export
 accelerate_svd <- function(A, thin = TRUE) {
     .Call(`_PESTO_accelerate_svd`, A, thin)

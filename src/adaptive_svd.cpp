@@ -14,8 +14,15 @@
 //
 // Copyright (c) 2026 Max Moldovan. Licensed under GPL-3 or any later version.
 
+// Must precede every R header: passes the hidden Fortran string-length
+// arguments that WebAssembly and gfortran builds require.
+#define USE_FC_LEN_T
 #include <Rcpp.h>
 #include <RcppEigen.h>
+#include <R_ext/Lapack.h>
+#ifndef FCONE
+# define FCONE
+#endif
 #include <cmath>
 #include <algorithm>
 #include <vector>
@@ -124,13 +131,6 @@ Rcpp::List rsvd(const Eigen::MatrixXd& A, int k, int p = 10, int q = 2) {
 
 // LAPACK SVD via R's linked BLAS/LAPACK
 // Works on all platforms (macOS uses Accelerate/AMX under the hood)
-extern "C" {
-    void dgesvd_(const char* jobu, const char* jobvt,
-                 const int* m, const int* n, double* a, const int* lda,
-                 double* s, double* u, const int* ldu,
-                 double* vt, const int* ldvt,
-                 double* work, const int* lwork, int* info);
-}
 
 //' Hardware-Accelerated SVD via LAPACK
 //'
@@ -140,25 +140,31 @@ extern "C" {
 //'
 //' @param A Matrix (m x n). Input matrix.
 //' @param thin Logical. If TRUE (default), compute thin SVD.
-//' @return A list with components U, d, V.
+//' @return A list with components `u`, `d` and `v`, so that
+//'   `A = u %*% diag(d) %*% t(v)`. With `thin = TRUE`, `u` is m x k and `v`
+//'   is n x k, where k = min(m, n). With `thin = FALSE`, `u` is m x m and `v`
+//'   is n x n, and only their first k columns pair with `d`.
 //' @examples
 //' set.seed(1L)
 //' A <- matrix(rnorm(8 * 5), nrow = 8, ncol = 5)
 //' res <- accelerate_svd(A, thin = TRUE)
 //' length(res$d)
-//' all.equal(sort(res$d, decreasing = TRUE), svd(A)$d)
+//' all.equal(res$d, svd(A)$d)
+//' max(abs(A - res$u %*% diag(res$d) %*% t(res$v)))
 //' @export
 // [[Rcpp::export]]
 Rcpp::List accelerate_svd(const Eigen::MatrixXd& A, bool thin = true) {
     int m = A.rows();
     int n = A.cols();
     int k = std::min(m, n);
+    int ucols = thin ? k : m;
+    int vtrows = thin ? k : n;
 
     // Copy to column-major for LAPACK
     std::vector<double> a_data(A.data(), A.data() + m * n);
     std::vector<double> s(k);
-    std::vector<double> u(m * k);
-    std::vector<double> vt(k * n);
+    std::vector<double> u(static_cast<size_t>(m) * ucols);
+    std::vector<double> vt(static_cast<size_t>(vtrows) * n);
     std::vector<double> work(1);
     int lwork = -1;
     int info = 0;
@@ -167,27 +173,29 @@ Rcpp::List accelerate_svd(const Eigen::MatrixXd& A, bool thin = true) {
     char jobvt = thin ? 'S' : 'A';
 
     // Query optimal workspace size
-    dgesvd_(&jobu, &jobvt, &m, &n, a_data.data(), &m,
-            s.data(), u.data(), &m, vt.data(), &k,
-            work.data(), &lwork, &info);
+    F77_CALL(dgesvd)(&jobu, &jobvt, &m, &n, a_data.data(), &m,
+                     s.data(), u.data(), &m, vt.data(), &vtrows,
+                     work.data(), &lwork, &info FCONE FCONE);
+    if (info != 0) {
+        Rcpp::stop("LAPACK dgesvd workspace query failed with info = %d", info);
+    }
 
     lwork = static_cast<int>(work[0]);
     work.resize(lwork);
 
     // Compute SVD
-    dgesvd_(&jobu, &jobvt, &m, &n, a_data.data(), &m,
-            s.data(), u.data(), &m, vt.data(), &k,
-            work.data(), &lwork, &info);
+    F77_CALL(dgesvd)(&jobu, &jobvt, &m, &n, a_data.data(), &m,
+                     s.data(), u.data(), &m, vt.data(), &vtrows,
+                     work.data(), &lwork, &info FCONE FCONE);
 
     if (info != 0) {
         Rcpp::stop("LAPACK dgesvd failed with info = %d", info);
     }
 
-    // Map back to Eigen
-    Eigen::Map<MatrixXd> U_mat(u.data(), m, k);
+    // LAPACK returns V transposed, column-major with leading dimension vtrows
+    Eigen::Map<MatrixXd> U_mat(u.data(), m, ucols);
     Eigen::Map<VectorXd> s_vec(s.data(), k);
-    Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        Vt_mat(vt.data(), k, n);
+    Eigen::Map<MatrixXd> Vt_mat(vt.data(), vtrows, n);
 
     return Rcpp::List::create(
         Rcpp::Named("u") = MatrixXd(U_mat),
