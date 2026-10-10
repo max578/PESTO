@@ -400,7 +400,7 @@ post_q95_pesto <- apply(post_A, 2L, quantile, 0.95)
 rmse_pesto_A <- sqrt(mean((post_mean_pesto - theta_true_A)^2))
 round(c(seconds = runtime_pesto_A, posterior_rmse = rmse_pesto_A), 4)
 #>        seconds posterior_rmse 
-#>         0.0470         0.3072
+#>         0.0450         0.3072
 ```
 
 The package ships a compact pure-R reference produced by

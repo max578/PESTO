@@ -384,7 +384,7 @@ elapsed_ms <- 1000 * system.time(
   } # ends i1, over the timing repetitions
 )[["elapsed"]] / s1_rep
 round(elapsed_ms, 3)
-#> [1] 0.14
+#> [1] 0.13
 ```
 
 **The decomposition backend.** The update needs a singular value
@@ -405,7 +405,7 @@ res_svd <- adaptive_svd(mat_a, k = 20L, method = "auto")
 res_svd$method_used
 #> [1] "rsvd (Halko-Martinsson-Tropp)"
 round(res_svd$time_ms, 1)
-#> [1] 16.8
+#> [1] 16.7
 round(res_svd$d[seq_len(5L)], 2)
 #> [1] 51.93 50.87 50.19 49.83 49.68
 ```
@@ -546,7 +546,7 @@ is available when it should abort the run instead.
 recommends 180 realisations against the 120 used here, because the
 coefficient of variation of the final misfit is 0.78: a few realisations
 still fit markedly better than the rest, and more of them would even
-that out. One update of the C++ kernel costs 0.14 milliseconds on this
+that out. One update of the C++ kernel costs 0.13 milliseconds on this
 problem, with the decomposition backend chosen automatically as rsvd
 (Halko-Martinsson-Tropp); both sit far below the cost of a real forward
 model, which is the regime the whole design assumes.

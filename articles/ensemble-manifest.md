@@ -101,12 +101,12 @@ fit <- pesto_ies_callback(
 man <- as_manifest(fit, seed = 20260902L, apsim_version = NA_character_)
 man
 #> <pesto_ensemble_manifest> schema 1.1.0
-#>   run_id        : ies_callback_20261010_123904_4dbea076
+#>   run_id        : ies_callback_20261010_224129_3243cc44
 #>   method        : ies_callback  (noptmax=8)
 #>   ensemble      : 120 realisations x 3 parameters | 12 observations
 #>   failure rate  : 1.20%
 #>   pesto version : 0.11.1  apsim: NA
-#>   timestamp     : 2026-10-10T12:39:04+0000
+#>   timestamp     : 2026-10-10T22:41:29+0000
 #>   data hash     : sha256:86b1bf4cdfb541f322a3b2acb7dd01af92f7b7a6a0b3f31c5fab6fe2ae122658
 ```
 
@@ -116,7 +116,7 @@ a consumer uses instead of reaching into a list:
 ``` r
 
 man@run_id
-#> [1] "ies_callback_20261010_123904_4dbea076"
+#> [1] "ies_callback_20261010_224129_3243cc44"
 man@schema_version
 #> [1] "1.1.0"
 man@data_hash
@@ -182,7 +182,7 @@ cat(paste(
   collapse = "\n"
 ))
 #> schema_version: 1.1.0
-#> run_id: ies_callback_20261010_123904_4dbea076
+#> run_id: ies_callback_20261010_224129_3243cc44
 #> data_hash: sha256:86b1bf4cdfb541f322a3b2acb7dd01af92f7b7a6a0b3f31c5fab6fe2ae122658
 #> format: rds
 #> integrity: verifiable
@@ -440,7 +440,7 @@ consume <- function(path, max_failure = 0.05) {
 }
 
 consume(file.path(dir_both, "wagga_2026_run01.yaml"))
-#> [1] "accepted: 120 realisations, run ies_callback_20261010_123904_4dbea076"
+#> [1] "accepted: 120 realisations, run ies_callback_20261010_224129_3243cc44"
 consume(file.path(dir_export, "snapshot.yaml"))
 #> [1] "declined: integrity not verifiable"
 consume(file.path(dir_declined, "declined.yaml"))
