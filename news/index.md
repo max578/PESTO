@@ -1,5 +1,27 @@
 # Changelog
 
+## PESTO 0.11.1
+
+- [`accelerate_svd()`](https://max578.github.io/PESTO/reference/accelerate_svd.md)
+  returned a wrong `v`: the singular values were right, but
+  `u %*% diag(d) %*% t(v)` did not reproduce the input for any shape.
+  With `thin = FALSE` it also wrote past the end of its `u` and `v`
+  buffers whenever the matrix was not square. Both are fixed. The error
+  reached
+  [`adaptive_svd()`](https://max578.github.io/PESTO/reference/adaptive_svd.md)
+  with `method = "accelerate"` (and `"auto"` when it chose that backend)
+  and the upgrades from
+  [`ensemble_solution_adaptive()`](https://max578.github.io/PESTO/reference/ensemble_solution_adaptive.md).
+  No other PESTO function calls this code, so the inversion functions
+  ([`pesto_ies()`](https://max578.github.io/PESTO/reference/pesto_ies.md),
+  [`pesto_ies_callback()`](https://max578.github.io/PESTO/reference/pesto_ies_callback.md),
+  [`pesto_ies_filter()`](https://max578.github.io/PESTO/reference/pesto_ies_filter.md),
+  [`pesto_surrogate_ies()`](https://max578.github.io/PESTO/reference/pesto_surrogate_ies.md))
+  give the same results as before.
+
+- The LAPACK call now uses R’s own `dgesvd` declaration with the Fortran
+  string-length arguments, so the package builds for WebAssembly.
+
 ## PESTO 0.11.0
 
 - Fixed data.table’s `:=` failing inside `pesto_run()` when the package

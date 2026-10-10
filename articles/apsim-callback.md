@@ -936,7 +936,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.11.0
+#> [1] PESTO_0.11.1
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] bit_4.6.0           gtable_0.3.6        jsonlite_2.0.0     

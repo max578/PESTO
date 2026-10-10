@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">PESTO</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,11 @@
       <small>Source: <a href="https://github.com/max578/PESTO/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.11.1" id="pesto-0111">PESTO 0.11.1<a class="anchor" aria-label="anchor" href="#pesto-0111"></a></h2>
+<ul><li><p><code><a href="../reference/accelerate_svd.html">accelerate_svd()</a></code> returned a wrong <code>v</code>: the singular values were right, but <code>u %*% diag(d) %*% t(v)</code> did not reproduce the input for any shape. With <code>thin = FALSE</code> it also wrote past the end of its <code>u</code> and <code>v</code> buffers whenever the matrix was not square. Both are fixed. The error reached <code><a href="../reference/adaptive_svd.html">adaptive_svd()</a></code> with <code>method = "accelerate"</code> (and <code>"auto"</code> when it chose that backend) and the upgrades from <code><a href="../reference/ensemble_solution_adaptive.html">ensemble_solution_adaptive()</a></code>. No other PESTO function calls this code, so the inversion functions (<code><a href="../reference/pesto_ies.html">pesto_ies()</a></code>, <code><a href="../reference/pesto_ies_callback.html">pesto_ies_callback()</a></code>, <code><a href="../reference/pesto_ies_filter.html">pesto_ies_filter()</a></code>, <code><a href="../reference/pesto_surrogate_ies.html">pesto_surrogate_ies()</a></code>) give the same results as before.</p></li>
+<li><p>The LAPACK call now uses R’s own <code>dgesvd</code> declaration with the Fortran string-length arguments, so the package builds for WebAssembly.</p></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.11.0" id="pesto-0110">PESTO 0.11.0<a class="anchor" aria-label="anchor" href="#pesto-0110"></a></h2>
 <ul><li><p>Fixed data.table’s <code>:=</code> failing inside <code>pesto_run()</code> when the package was loaded for development (<code>devtools::test()</code>, <code><a href="https://pkgload.r-lib.org/reference/load_all.html" class="external-link">pkgload::load_all()</a></code>): the roxygen import named <code>:=</code> as a backtick symbol, which did not register, so data.table refused the in-place update and three adapter-contract tests failed. The import is now the quoted string <code>":="</code> that data.table documents.</p></li>

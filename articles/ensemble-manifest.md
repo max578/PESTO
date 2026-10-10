@@ -101,12 +101,12 @@ fit <- pesto_ies_callback(
 man <- as_manifest(fit, seed = 20260902L, apsim_version = NA_character_)
 man
 #> <pesto_ensemble_manifest> schema 1.1.0
-#>   run_id        : ies_callback_20261009_224959_642c81b8
+#>   run_id        : ies_callback_20261010_123904_4dbea076
 #>   method        : ies_callback  (noptmax=8)
 #>   ensemble      : 120 realisations x 3 parameters | 12 observations
 #>   failure rate  : 1.20%
-#>   pesto version : 0.11.0  apsim: NA
-#>   timestamp     : 2026-10-09T22:49:59+0000
+#>   pesto version : 0.11.1  apsim: NA
+#>   timestamp     : 2026-10-10T12:39:04+0000
 #>   data hash     : sha256:86b1bf4cdfb541f322a3b2acb7dd01af92f7b7a6a0b3f31c5fab6fe2ae122658
 ```
 
@@ -116,7 +116,7 @@ a consumer uses instead of reaching into a list:
 ``` r
 
 man@run_id
-#> [1] "ies_callback_20261009_224959_642c81b8"
+#> [1] "ies_callback_20261010_123904_4dbea076"
 man@schema_version
 #> [1] "1.1.0"
 man@data_hash
@@ -182,7 +182,7 @@ cat(paste(
   collapse = "\n"
 ))
 #> schema_version: 1.1.0
-#> run_id: ies_callback_20261009_224959_642c81b8
+#> run_id: ies_callback_20261010_123904_4dbea076
 #> data_hash: sha256:86b1bf4cdfb541f322a3b2acb7dd01af92f7b7a6a0b3f31c5fab6fe2ae122658
 #> format: rds
 #> integrity: verifiable
@@ -194,7 +194,7 @@ cat(paste(
 #> seed: 20260902
 #> fidelity: ~
 #> apsim_version: ~
-#> pesto_version: 0.11.0
+#> pesto_version: 0.11.1
 ```
 
 ### Three formats, three integrity contracts
@@ -440,7 +440,7 @@ consume <- function(path, max_failure = 0.05) {
 }
 
 consume(file.path(dir_both, "wagga_2026_run01.yaml"))
-#> [1] "accepted: 120 realisations, run ies_callback_20261009_224959_642c81b8"
+#> [1] "accepted: 120 realisations, run ies_callback_20261010_123904_4dbea076"
 consume(file.path(dir_export, "snapshot.yaml"))
 #> [1] "declined: integrity not verifiable"
 consume(file.path(dir_declined, "declined.yaml"))
@@ -553,7 +553,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] PESTO_0.11.0
+#> [1] PESTO_0.11.1
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] vctrs_0.7.3         cli_3.6.6           knitr_1.52         
