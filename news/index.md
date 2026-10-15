@@ -1,5 +1,16 @@
 # Changelog
 
+## PESTO (development version)
+
+- The package has a logo.
+
+- README lists related packages and has a pkgdown badge.
+
+- The version in the README and `inst/CITATION` citations now comes from
+  DESCRIPTION; it said 0.8.0.
+
+- CI runs lintr (report-only).
+
 ## PESTO 0.11.1
 
 - [`accelerate_svd()`](https://max578.github.io/PESTO/reference/accelerate_svd.md)

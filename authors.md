@@ -11,13 +11,13 @@ Source:
 [`inst/CITATION`](https://github.com/max578/PESTO/blob/main/inst/CITATION)
 
 Moldovan M (2026). *PESTO: Parameter ESTimation Optimised*. R package
-version 0.8.0, <https://github.com/max578/PESTO>.
+version 0.11.1.9000, <https://github.com/max578/PESTO>.
 
     @Manual{,
       title = {PESTO: Parameter ESTimation Optimised},
       author = {Max Moldovan},
       year = {2026},
-      note = {R package version 0.8.0},
+      note = {R package version 0.11.1.9000},
       url = {https://github.com/max578/PESTO},
     }
 

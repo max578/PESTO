@@ -74,6 +74,24 @@ schedule, graded against the closed-form conjugate posterior in both
 moments. Re-running the benchmark needs the external PEST and PEST++
 binaries, so its calibration row still shows the old behaviour.
 
+## Related packages
+
+- [FME](https://CRAN.R-project.org/package=FME) fits models to data and
+  runs Monte Carlo, sensitivity and identifiability analysis, mainly for
+  differential-equation models solved with deSolve or rootSolve.
+- [BayesianTools](https://CRAN.R-project.org/package=BayesianTools)
+  provides general-purpose MCMC and SMC samplers, with diagnostics, for
+  calibrating complex system models.
+- [calibrar](https://CRAN.R-project.org/package=calibrar) estimates the
+  parameters of complex and stochastic models by optimisation, with the
+  same syntax as [`optim()`](https://rdrr.io/r/stats/optim.html).
+
+PESTO uses the iterative ensemble smoother from PEST++ instead: the
+whole prior ensemble is updated against the observations at each
+iteration, and the result is an approximate posterior ensemble rather
+than a single best fit or a long chain. It also reads and writes PEST
+control files, so a problem set up for PEST or PEST++ can be run from R.
+
 ## Installation
 
 The canonical home for PESTO is
@@ -137,7 +155,7 @@ fit <- pesto_ies_callback(forward, prior, obs, obs_sd = 0.05, noptmax = 6,
                           verbose = FALSE)
 colMeans(as.matrix(fit$par_ensemble[, -1]))   # posterior mean -> (1, -0.5, 2)
 #>          a          b          c 
-#>  1.0136949 -0.4936717  1.9847292
+#>  1.0155313 -0.4949939  1.9845372
 ```
 
 Optional convergence-based early stopping (`phi_tol`), covariance
@@ -265,7 +283,7 @@ citation("PESTO")
 ```
 
 > Moldovan, M. (2026). PESTO: Parameter ESTimation Optimised. R package
-> version 0.8.0. <https://github.com/max578/PESTO>
+> version 0.11.1.9000. <https://github.com/max578/PESTO>
 
 ## Acknowledgements
 
