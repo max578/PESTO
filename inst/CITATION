@@ -3,7 +3,7 @@ bibentry(
   title    = "PESTO: Parameter ESTimation Optimised",
   author   = person("Max", "Moldovan"),
   year     = "2026",
-  note     = "R package version 0.8.0",
+  note     = paste("R package version", meta$Version),
   url      = "https://github.com/max578/PESTO"
 )
 

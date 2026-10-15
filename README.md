@@ -1,17 +1,19 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# PESTO
+# PESTO <img src="man/figures/logo.png" align="right" height="139" alt="PESTO logo" />
 
 <!-- badges: start -->
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
+[![License:
+MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/license/mit)
 [![R-CMD-check](https://github.com/max578/PESTO/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/max578/PESTO/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
 coverage](https://codecov.io/gh/max578/PESTO/graph/badge.svg)](https://app.codecov.io/gh/max578/PESTO)
 [![r-universe](https://max578.r-universe.dev/badges/PESTO)](https://max578.r-universe.dev/PESTO)
+[![pkgdown](https://github.com/max578/PESTO/actions/workflows/pkgdown.yaml/badge.svg)](https://max578.github.io/PESTO/)
 <!-- badges: end -->
 
 **P**arameter **EST**imation **O**ptimised – the **PEST** approach
@@ -79,14 +81,32 @@ PEST and PEST++* vignette:
 Where PESTO does *not* win is stated just as plainly in the vignettes:
 total solve count is unchanged – the speed-up is wall-clock, not fewer
 evaluations (the *Benchmarking PESTO against PEST and PEST++* vignette).
-That benchmark's frozen table also carries a CI90 of about 0.13 against a
-nominal 0.90 for PESTO's raw ensemble intervals. That figure predates the
-current development version: the smoother assimilated the same
-unperturbed observation vector into every realisation, which is now fixed
-by per-realisation observation perturbation under an ES-MDA schedule,
-graded against the closed-form conjugate posterior in both moments.
-Re-running the benchmark needs the external PEST and PEST++ binaries, so
-its calibration row still shows the old behaviour.
+That benchmark’s frozen table also carries a CI90 of about 0.13 against
+a nominal 0.90 for PESTO’s raw ensemble intervals. That figure predates
+the current development version: the smoother assimilated the same
+unperturbed observation vector into every realisation, which is now
+fixed by per-realisation observation perturbation under an ES-MDA
+schedule, graded against the closed-form conjugate posterior in both
+moments. Re-running the benchmark needs the external PEST and PEST++
+binaries, so its calibration row still shows the old behaviour.
+
+## Related packages
+
+- [FME](https://CRAN.R-project.org/package=FME) fits models to data and
+  runs Monte Carlo, sensitivity and identifiability analysis, mainly for
+  differential-equation models solved with deSolve or rootSolve.
+- [BayesianTools](https://CRAN.R-project.org/package=BayesianTools)
+  provides general-purpose MCMC and SMC samplers, with diagnostics, for
+  calibrating complex system models.
+- [calibrar](https://CRAN.R-project.org/package=calibrar) estimates the
+  parameters of complex and stochastic models by optimisation, with the
+  same syntax as `optim()`.
+
+PESTO uses the iterative ensemble smoother from PEST++ instead: the
+whole prior ensemble is updated against the observations at each
+iteration, and the result is an approximate posterior ensemble rather
+than a single best fit or a long chain. It also reads and writes PEST
+control files, so a problem set up for PEST or PEST++ can be run from R.
 
 ## Installation
 
@@ -117,8 +137,8 @@ CRAN submission is in preparation.
 
 ## Usage
 
-The examples below calibrate an R forward model, couple a simulator, and call
-the update kernels directly.
+The examples below calibrate an R forward model, couple a simulator, and
+call the update kernels directly.
 
 ### Bayesian inference with the Iterative Ensemble Smoother (IES)
 
@@ -149,7 +169,7 @@ fit <- pesto_ies_callback(forward, prior, obs, obs_sd = 0.05, noptmax = 6,
                           verbose = FALSE)
 colMeans(as.matrix(fit$par_ensemble[, -1]))   # posterior mean -> (1, -0.5, 2)
 #>          a          b          c 
-#>  1.0136949 -0.4936717  1.9847292
+#>  1.0155313 -0.4949939  1.9845372
 ```
 
 Optional convergence-based early stopping (`phi_tol`), covariance
@@ -264,16 +284,16 @@ citation("PESTO")
 ```
 
 > Moldovan, M. (2026). PESTO: Parameter ESTimation Optimised. R package
-> version 0.8.0. <https://github.com/max578/PESTO>
+> version 0.11.1.9000. <https://github.com/max578/PESTO>
 
 ## Acknowledgements
 
 PESTO builds on the algorithmic legacy of the
-[PEST++](https://github.com/pestpp/pestpp) project (US Geological Survey)
-and the underlying PEST framework by John Doherty. Developed at Adelaide
-University; the surrogate-acceleration, adaptive-ensemble-sizing,
-multi-fidelity, and convergence-aware components are original
-contributions of the author.
+[PEST++](https://github.com/pestpp/pestpp) project (US Geological
+Survey) and the underlying PEST framework by John Doherty. Developed at
+Adelaide University; the surrogate-acceleration,
+adaptive-ensemble-sizing, multi-fidelity, and convergence-aware
+components are original contributions of the author.
 
 ## License
 
