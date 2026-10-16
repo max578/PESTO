@@ -37,5 +37,5 @@ length(res$d)
 all.equal(res$d, svd(A)$d)
 #> [1] TRUE
 max(abs(A - res$u %*% diag(res$d) %*% t(res$v)))
-#> [1] 7.827072e-15
+#> [1] 7.271961e-15
 ```
